@@ -20,7 +20,8 @@ namespace CluVRP_GRASP
                     Logger.GetInstance().logLine("Capacity demanded can't be served by the vehicules");
                 }
 
-                double[][] a = calculateInterClusterDistance(instance);
+                Tuple<int, int, double>[][][] a = calculateInterClusterMatrixDistance(instance);
+                a = null;
 
             }
 
@@ -36,7 +37,7 @@ namespace CluVRP_GRASP
             return availableCapacity >= clusterDemand.Sum();
         }
 
-        static private double[][] calculateInterClusterDistance(CluVRPInstance instance)
+        static private double[][] calculateNodesMatrixDistance(CluVRPInstance instance)
         {
             double[][] nodesDistanceMatrix = new double[instance.dimension()][];
             NodePoint[] nodesPosition = instance.nodes();
@@ -49,23 +50,36 @@ namespace CluVRP_GRASP
                     nodesDistanceMatrix[i][j] = distance(nodesPosition[i].getX(), nodesPosition[i].getY(), nodesPosition[j].getX(), nodesPosition[j].getY());
                 }
             }
+            return nodesDistanceMatrix;
+        }
 
-            double[][] clusterDistanceMatrix = new double[instance.dimension()][];
+        static private Tuple<int, int, double>[][][] calculateInterClusterMatrixDistance(CluVRPInstance instance)
+        {
+            Tuple<int, int, double>[][][] clusterDistanceMatrix = new Tuple<int, int, double>[instance.clusters().Length][][];
             int[][] clusters = instance.clusters();
+            double[][] nodesDistanceMatrix = calculateNodesMatrixDistance(instance);
 
-            for(int i = 0; i < clusters[i].Length; i++)
+            for (int i = 0; i<clusters.Length; i++)
             {
-                for(int j = 1; j < clusters[j].Length; j++)
+                clusterDistanceMatrix[i] = new Tuple<int, int, double>[clusters.Length][];
+                for (int j = 0; j<clusters.Length; j++)
                 {
-                    
+                    clusterDistanceMatrix[i][j] = new Tuple<int, int, double>[clusters[i].Length * clusters[j].Length];
+                    int idx = 0;
+                    for (int k = 0; k < clusters[i].Length; k++)
+                    {
+                        for (int p = 0; p < clusters[j].Length; p++)
+                        {
+                            Tuple<int, int, double> t = new Tuple<int, int, double>(clusters[i][k], clusters[j][p], nodesDistanceMatrix[clusters[i][k]][clusters[j][p]]);
+                            clusterDistanceMatrix[i][j][idx] = t;
+                            idx++;
+                        }
+                    }
                 }
             }
-
-
-
-
-            return null;            
-        }
+            return clusterDistanceMatrix;
+          }
+        
 
         static public double distance(double x1, double y1, double x2, double y2)
         {

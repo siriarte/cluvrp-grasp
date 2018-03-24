@@ -63,7 +63,7 @@ namespace CluVRP_GRASP
             string edge_weight_type = instanceText[6].Substring(19);
 
             // Set dynamic parameters
-            NodePoint[] nodes = new NodePoint[dimension + 1]; //sum 1 for the start node
+            NodePoint[] nodes = new NodePoint[dimension + 1]; //sum 1 for the start node 
             int[][] clusters = new int[gvrp_sets][];
             int[] clusters_demand = new int[gvrp_sets];
             int GVRP_SET_SECTION_IDX = GVRP_NODE_COORD_SECTION_IDX + dimension + 1;
@@ -73,14 +73,14 @@ namespace CluVRP_GRASP
             Char[] separator = new Char[] {' '};
 
             // Build Nodes Array
-            nodes[0] = new NodePoint(0, 0);
-            for (int i = 0; i < dimension; i++)
+            nodes[0] = new NodePoint(0, 0); // For the depot
+            for (int i = 1; i < nodes.Length; i++)
             {
-                string[] nodeParsed = instanceText[GVRP_NODE_COORD_SECTION_IDX + i].Split(separator);
+                string[] nodeParsed = instanceText[GVRP_NODE_COORD_SECTION_IDX + i - 1].Split(separator);
                 int x = Int32.Parse(nodeParsed[1]);
                 int y = Int32.Parse(nodeParsed[2]);
                 NodePoint node = new NodePoint(x, y);
-                nodes[i+1] = node;
+                nodes[i] = node;
             }
 
             // Build Clusters Array
@@ -104,7 +104,7 @@ namespace CluVRP_GRASP
              }
 
             // Return parsed instance
-            return new CluVRPInstance(name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
+            return new CluVRPInstance(name, comment, dimension + 1, vehicules, gvrp_sets, capacity, edge_weight_type,
                 nodes, clusters, clusters_demand);
         }
         
