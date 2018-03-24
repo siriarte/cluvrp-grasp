@@ -56,14 +56,14 @@ namespace CluVRP_GRASP
             // Set static parameters
             string name = instanceText[0].Substring(7);
             string comment = instanceText[1].Substring(10);
-            int dimension = Int32.Parse(instanceText[2].Substring(12));
+            int dimension = Int32.Parse(instanceText[2].Substring(12)); 
             int vehicules = Int32.Parse(instanceText[3].Substring(11));
             int gvrp_sets = Int32.Parse(instanceText[4].Substring(12));
             int capacity = Int32.Parse(instanceText[5].Substring(11));
             string edge_weight_type = instanceText[6].Substring(19);
 
             // Set dynamic parameters
-            NodePoint[] nodes = new NodePoint[dimension];
+            NodePoint[] nodes = new NodePoint[dimension + 1]; //sum 1 for the start node
             int[][] clusters = new int[gvrp_sets][];
             int[] clusters_demand = new int[gvrp_sets];
             int GVRP_SET_SECTION_IDX = GVRP_NODE_COORD_SECTION_IDX + dimension + 1;
@@ -73,13 +73,14 @@ namespace CluVRP_GRASP
             Char[] separator = new Char[] {' '};
 
             // Build Nodes Array
+            nodes[0] = new NodePoint(0, 0);
             for (int i = 0; i < dimension; i++)
             {
                 string[] nodeParsed = instanceText[GVRP_NODE_COORD_SECTION_IDX + i].Split(separator);
                 int x = Int32.Parse(nodeParsed[1]);
                 int y = Int32.Parse(nodeParsed[2]);
                 NodePoint node = new NodePoint(x, y);
-                nodes[i] = node;
+                nodes[i+1] = node;
             }
 
             // Build Clusters Array

@@ -13,7 +13,7 @@ namespace CluVRP_GRASP
 
             Logger logger = Logger.GetInstance();
             CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances("prueba");
-            logger.logLine("CLIENTES " + instancias[0].gvrp_sets());
+            Grasp.ConstructGreedySolution(instancias[0],3);
 
         }
     }

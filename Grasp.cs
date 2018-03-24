@@ -12,13 +12,16 @@ namespace CluVRP_GRASP
         static public void ConstructGreedySolution(CluVRPInstance instance, int iterationsForBestSolution)
         {
             float maxSolution = float.MaxValue;
-            
-            for(int iteration = 0; iteration < iterationsForBestSolution; iteration++)
+
+            for (int iteration = 0; iteration < iterationsForBestSolution; iteration++)
             {
-                if(!verifyClustersDemand(instance))
+                if (!verifyClustersDemand(instance))
                 {
-                    Logger.GetInstance().logLine("Capacity demmanded can't be served by the vehicules");
+                    Logger.GetInstance().logLine("Capacity demanded can't be served by the vehicules");
                 }
+
+                double[][] a = calculateInterClusterDistance(instance);
+
             }
 
 
@@ -31,6 +34,42 @@ namespace CluVRP_GRASP
             int availableCapacity = instance.vehicules() * instance.capacity();
             int[] clusterDemand = instance.clusters_demand();
             return availableCapacity >= clusterDemand.Sum();
+        }
+
+        static private double[][] calculateInterClusterDistance(CluVRPInstance instance)
+        {
+            double[][] nodesDistanceMatrix = new double[instance.dimension()][];
+            NodePoint[] nodesPosition = instance.nodes();
+
+            for (int i = 0; i < instance.dimension(); i++)
+            {
+                nodesDistanceMatrix[i] = new double[instance.dimension()];
+                for (int j = 0; j < instance.dimension(); j++)
+                {
+                    nodesDistanceMatrix[i][j] = distance(nodesPosition[i].getX(), nodesPosition[i].getY(), nodesPosition[j].getX(), nodesPosition[j].getY());
+                }
+            }
+
+            double[][] clusterDistanceMatrix = new double[instance.dimension()][];
+            int[][] clusters = instance.clusters();
+
+            for(int i = 0; i < clusters[i].Length; i++)
+            {
+                for(int j = 1; j < clusters[j].Length; j++)
+                {
+                    
+                }
+            }
+
+
+
+
+            return null;            
+        }
+
+        static public double distance(double x1, double y1, double x2, double y2)
+        {
+            return Math.Sqrt(Math.Pow(x1-x2, 2) + Math.Pow(y1-y2, 2));
         }
     }
 }
