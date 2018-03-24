@@ -64,8 +64,8 @@ namespace CluVRP_GRASP
 
             // Set dynamic parameters
             NodePoint[] nodes = new NodePoint[dimension + 1]; //sum 1 for the start node 
-            int[][] clusters = new int[gvrp_sets][];
-            int[] clusters_demand = new int[gvrp_sets];
+            int[][] clusters = new int[gvrp_sets + 1][];
+            int[] clusters_demand = new int[gvrp_sets + 1];
             int GVRP_SET_SECTION_IDX = GVRP_NODE_COORD_SECTION_IDX + dimension + 1;
             int GVRP_DEMAND_SECTION_IDX = GVRP_SET_SECTION_IDX + gvrp_sets + 1;
 
@@ -84,23 +84,26 @@ namespace CluVRP_GRASP
             }
 
             // Build Clusters Array
+            clusters[0] = new int[1];
+            clusters[0][0] = 0;
             for (int i = 0; i < gvrp_sets; i++)
             {
                 string[] setParsed = instanceText[GVRP_SET_SECTION_IDX + i].Split(separator);
-                clusters[i] = new int[setParsed.Length - 2];
+                clusters[i+1] = new int[setParsed.Length - 2];
                 int idx = 0;
                 for (int j = 1; j + 1 < setParsed.Length; j++)
                 {
-                    clusters[i][idx] = Int32.Parse(setParsed[j]);
+                    clusters[i+1][idx] = Int32.Parse(setParsed[j]);
                     idx++;
                 }               
             }
 
             // Build Custumer demand Array
+            clusters_demand[0] = 0;
             for (int i = 0; i < gvrp_sets; i++)
             {
                 string[] demandParsed = instanceText[GVRP_DEMAND_SECTION_IDX + i].Split(separator);
-                clusters_demand[i] = Int32.Parse(demandParsed[1]);
+                clusters_demand[i+1] = Int32.Parse(demandParsed[1]);
              }
 
             // Return parsed instance

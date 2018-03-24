@@ -13,8 +13,8 @@ namespace CluVRP_GRASP
 
             Logger logger = Logger.GetInstance();
             CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances("prueba");
-            Grasp.ConstructGreedySolution(instancias[0],3);
-
+            double v = Grasp.ConstructGreedySolution(instancias[0],1);
+            v = 0;
         }
     }
         
