@@ -9,12 +9,13 @@ namespace CluVRP_GRASP
 
     public class Logger
     {
-        static string defaultLogFilePath = "grasp.log";
+        // Private variables
+        private static string defaultLogFilePath = "grasp.log";
         private static Logger instance = null;
+        private string logFilePath;
+        private bool verbose;
 
-        string logFilePath;
-        bool verbose;
-
+        // To get singleton instance 
         public static Logger GetInstance()
         {
             if (instance == null)
@@ -23,7 +24,8 @@ namespace CluVRP_GRASP
             return instance;
         }
 
-        public Logger(string logFilePath, bool verbose)
+        // Constructor for singleton
+        private Logger(string logFilePath, bool verbose)
         {
             this.logFilePath = logFilePath;
             this.verbose = verbose;
@@ -39,6 +41,7 @@ namespace CluVRP_GRASP
             this.verbose = verbose;
         }
 
+        // To log a single string
         public void logLine(string line)
         {
             try
@@ -59,6 +62,7 @@ namespace CluVRP_GRASP
 
         }
 
+        // To log an array of string
         public void logBuffer(string[] buffer)
         {
             try

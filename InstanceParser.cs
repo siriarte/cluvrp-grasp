@@ -7,23 +7,23 @@ namespace CluVRP_GRASP
 
         static int GVRP_NODE_COORD_SECTION_IDX = 8; 
 
-        static public GVRPInstance[] loadGVRPSetOfInstances(string InstanceSetName)
+        static public CluVRPInstance[] loadGVRPSetOfInstances(string InstanceSetName)
         {
 
             string filePath = InstanceSetName + ".set";
-            GVRPInstance[] gvrpInstances;
+            CluVRPInstance[] gvrpInstances;
 
             try
             {
                 string[] lines = System.IO.File.ReadAllLines(filePath);
-                gvrpInstances = new GVRPInstance[lines.Length];
+                gvrpInstances = new CluVRPInstance[lines.Length];
 
                 foreach (string instanceFilePath in lines)
                 {
                     int i = 0;
                     try
                     {
-                        GVRPInstance instance;
+                        CluVRPInstance instance;
                         string[] instanceFileText = System.IO.File.ReadAllLines(instanceFilePath);
                         instance = parseGVRPInstance(instanceFileText);
                         gvrpInstances[i] = instance;
@@ -45,7 +45,13 @@ namespace CluVRP_GRASP
             return gvrpInstances;
         }
 
-        static private GVRPInstance parseGVRPInstance(string[] instanceText)
+        /*
+            Parser for GVRP02 and GVRP03 modified instances. 
+            http://www.personal.soton.ac.uk/tb12v07/gvrp.html
+            Instances of CVRP (Bektas 2011) a adpter by Battarra (2014)  
+
+        */
+        static private CluVRPInstance parseGVRPInstance(string[] instanceText)
         {
             // Set static parameters
             string name = instanceText[0].Substring(7);
@@ -96,7 +102,8 @@ namespace CluVRP_GRASP
                 clusters_demand[i] = Int32.Parse(demandParsed[1]);
              }
 
-            return new GVRPInstance(name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
+            // Return parsed instance
+            return new CluVRPInstance(name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
                 nodes, clusters, clusters_demand);
         }
         

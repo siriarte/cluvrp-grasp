@@ -22,12 +22,8 @@ namespace CluVRP_GRASP
         public int getY() { return y; }
     }
 
+
     class CluVRPInstance
-    {
-
-    }
-
-    class GVRPInstance : CluVRPInstance
     {
         private string _name;
         private string _comment;
@@ -40,12 +36,12 @@ namespace CluVRP_GRASP
         private int[][] _clusters;
         private int[] _clusters_demand;
 
-        public GVRPInstance()
+        public CluVRPInstance()
         {
 
         }
 
-        public GVRPInstance(string name, string comment, int dimension, int vehicules, int gvrp_sets, 
+        public CluVRPInstance(string name, string comment, int dimension, int vehicules, int gvrp_sets, 
             int capacity, string edge_weight_type, NodePoint[] nodes, int[][] clusters, int[] clusters_demand)
         {
             this._name = name;
@@ -60,16 +56,16 @@ namespace CluVRP_GRASP
             this._clusters_demand = clusters_demand;
         }
 
-        public string name { get; }
-        public string comment { get; }
-        public int dimension { get; }
-        public int vehicules { get; }
-        public int gvrp_sets { get; }
-        public int capacity { get; }
-        public int edge_weight_type { get; }
-        public NodePoint[] nodes { get; }
-        public int clusters { get; }
-        public int clusters_demand { get; }
+        public string name() { return this._name; }
+        public string comment() { return this._comment; }
+        public int dimension() { return this._dimension; }
+        public int vehicules() { return this._vehicules; }
+        public int gvrp_sets() { return this._gvrp_sets; }
+        public int capacity() { return this._capacity; }
+        public string edge_weight_type() { return this._edge_weight_type; }
+        public NodePoint[] nodes() { return this._nodes; }
+        public int[][] clusters() { return this._clusters; }
+        public int[] clusters_demand() { return this._clusters_demand; }
 
     }
 

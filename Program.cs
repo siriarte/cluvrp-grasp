@@ -12,8 +12,8 @@ namespace CluVRP_GRASP
         {
 
             Logger logger = Logger.GetInstance();
-            GVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances("prueba");
-
+            CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances("prueba");
+            logger.logLine("CLIENTES " + instancias[0].gvrp_sets());
 
         }
     }
