@@ -9,16 +9,16 @@ namespace CluVRP_GRASP
     class Program
     {
 
-        static string instanceSetFile = "../../instances/prueba";
-
+        static string instanceSetPath = "../../instances/prueba";
+       
         static void Main(string[] args)
         {
 
             Logger logger = Logger.GetInstance();
-            CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(instanceSetFile);
+            CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(instanceSetPath);
             foreach(CluVRPInstance instance in instancias)
             {
-                double bestDistance = Grasp.ConstructGreedySolution(instance, 1);
+                double bestDistance = Grasp.ConstructGreedySolution(instance, 1000);
                 string result = String.Format("{0}\t{1}", instance.file_name(), bestDistance.ToString());
                 Logger.GetInstance().logLine(result);
             }

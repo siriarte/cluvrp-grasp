@@ -10,7 +10,7 @@ namespace CluVRP_GRASP
     public class Logger
     {
         // Private variables
-        private static string defaultLogFilePath = "grasp.log";
+        private static string defaultLogFilePath = "../../grasp.log";
         private static Logger instance = null;
         private string logFilePath;
         private bool verbose;

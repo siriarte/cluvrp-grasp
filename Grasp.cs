@@ -10,15 +10,13 @@ namespace CluVRP_GRASP
    
     static class Grasp
     {
-        static public double ConstructGreedySolution(CluVRPInstance instance, int iterationsForBestSolution)
+        static public double ConstructGreedySolution(CluVRPInstance instance, int iterationsForBestSolution = 10)
         {
  
             double[][] nodesMatrixDistance = calculateNodesMatrixDistance(instance);
             bool[][] clustersMatrix = Grasp.clustersMatrix(instance.clusters(), instance.dimension());
+            double bestDistance = double.MaxValue;
             double totalDistance = 0;
-            NodeTupleDistance[][][] interClusterDistancesv2 = calculateInterClusterMatrixDistanceTupleVersion(instance);
-            double[][][][] interClusterDistances = calculateInterClusterMatrixDistance(instance);
-            List<int>[] vehiculeAssignation = assignVehicules(instance, interClusterDistancesv2);
 
             for (int iteration = 0; iteration < iterationsForBestSolution; iteration++)
             {
@@ -28,6 +26,8 @@ namespace CluVRP_GRASP
                 }
 
                 totalDistance = 0;
+                List<int>[] vehiculeAssignation = assignVehicules(instance);
+
                 for (int vehiculeIndex = 0; vehiculeIndex < vehiculeAssignation.Length; vehiculeIndex++)
                 {
                     int actualNode = 0;
@@ -37,55 +37,121 @@ namespace CluVRP_GRASP
                     for(int clusterIt = 0; clusterIt < clustersToVisit.Count; clusterIt++)
                     {
                         clustersToVisit.Remove(actualCluster);
-                        Tuple<int, int, double> nextClusterAndNode = selectNextClusterAndNodeRandomizedGreedy(actualNode, actualCluster, clustersToVisit, nodesMatrixDistance, clustersMatrix);
+                        Tuple<int, int, double> nextClusterAndNode = selectNextClusterAndNode(actualNode, actualCluster, clustersToVisit, nodesMatrixDistance, clustersMatrix);
                         actualNode = nextClusterAndNode.Item1;
                         actualCluster = nextClusterAndNode.Item2;
                         totalDistance += nextClusterAndNode.Item3;
 
-                        Tuple<List<int>, double> intraClusterTravel = calculateIntraClusterTravelRandomizedGreedy(actualNode, actualCluster, instance.clusters()[actualCluster], nodesMatrixDistance);
+                        Tuple<List<int>, double> intraClusterTravel = calculateIntraClusterTravel(actualNode, actualCluster, instance.clusters()[actualCluster], nodesMatrixDistance);
                         totalDistance += intraClusterTravel.Item2;
                         actualNode = intraClusterTravel.Item1[intraClusterTravel.Item1.Count - 1];
                         //Logger.GetInstance().logLine(String.Join(",", intraClusterTravel.Item1));
                     }
+                    
                     totalDistance += nodesMatrixDistance[actualNode][0];
                 }
 
+                // Update best solution
+                if (totalDistance < bestDistance)
+                {
+                    bestDistance = totalDistance;
+                }
             }
-            return totalDistance;
+            return bestDistance;
+        }
+
+        // Return an assignation of nodes to vehicules
+        static private List<int>[] assignVehicules(CluVRPInstance instance)
+        {
+            int[] clusterDemand = instance.clusters_demand();
+            int vehiculesNumber = instance.vehicules();
+            int capacity = instance.capacity();
+            return assignVehiculesBestFitAlgorithm(clusterDemand, vehiculesNumber, capacity);
+        }
+        static private List<int>[] assignVehiculesBestFitAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity)
+        {
+            List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
+            int[] vehiculeCapacity = new int[vehiculesNumber];
+            for (int i = 0; i < vehiculesNumber; i++)
+            {
+                vehiculeCapacity[i] = capacity;
+                clusterRouteForVehicule[i] = new List<int>();
+            }
+
+            int[] indexSortedClustedDemand = arraySortedByIndex(clusterDemand);
+            for (int i = 0; i < clusterDemand.Length; i++)
+            {
+                int minCapacityIndex = indexSortedClustedDemand[i];
+                for (int j = 0; j < vehiculeCapacity.Length; j++)
+                {
+                    if (vehiculeCapacity[j] - clusterDemand[minCapacityIndex] >= 0)
+                    {
+                        clusterRouteForVehicule[j].Add(minCapacityIndex);
+                        vehiculeCapacity[j] = vehiculeCapacity[j] - clusterDemand[minCapacityIndex];
+                        break;
+                    }
+                }
+            }
+            return clusterRouteForVehicule;
+        }
+        static private List<int>[] assignVehiculesBestFitRandomizedAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int rclsize = 3)
+        {
+            List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
+            bool[] visitedCluster = new bool[clusterDemand.Length];
+            int[] vehiculeCapacity = new int[vehiculesNumber];
+            int totalDemand = clusterDemand.Sum();
+            int totalClusterVisited = 0;
+
+            for (int i = 0; i < vehiculesNumber; i++)
+            {
+                vehiculeCapacity[i] = capacity;
+                clusterRouteForVehicule[i] = new List<int>();
+            }
+
+            int[] indexSortedClusterDemand = arraySortedByIndex(clusterDemand);           
+
+            while (totalClusterVisited != clusterDemand.Length)
+            {
+                List<int> RCL = new List<int>();
+                int rclIt = 0;
+                for (int i = 0; i < clusterDemand.Length; i++)
+                {
+                    int minDemandIndex = indexSortedClusterDemand[i];
+                    if (!visitedCluster[minDemandIndex])
+                    {
+                        RCL.Add(minDemandIndex);
+                        rclIt++;
+                    }
+                    if (rclIt == rclsize) break;
+                }
+
+                Random rnd = new Random();
+                int clusterRndIndex = rnd.Next(0, RCL.Count);
+                while (true)
+                {
+                    int vehiculeRndIndex = rnd.Next(0, vehiculesNumber);
+                    if (vehiculeCapacity[vehiculeRndIndex] - clusterDemand[clusterRndIndex] >= 0)
+                    {
+                        vehiculeCapacity[vehiculeRndIndex] -= clusterDemand[clusterRndIndex];
+                        clusterRouteForVehicule[vehiculeRndIndex].Add(clusterRndIndex);
+                        visitedCluster[clusterRndIndex] = true;
+                        totalDemand -= clusterDemand[clusterRndIndex];
+                        totalClusterVisited++;
+                        break;
+                    }
+                }                         
+
+            }
+            return clusterRouteForVehicule;
         }
 
         static private Tuple<int, int, double> selectNextClusterAndNode(int actualNode, int actualCluster, List<int> clusterToVisit, double[][] nodesMatrixDistance, bool[][] clusterMatrix)
         {
-            return selectNextClusterAndNodeGreedy(actualNode, actualCluster, clusterToVisit, nodesMatrixDistance, clusterMatrix);
+            return selectNextClusterAndNodeGreedyRandomized(actualNode, actualCluster, clusterToVisit, nodesMatrixDistance, clusterMatrix);
         }
-        
-        static private Tuple<List<int>, double> calculateIntraClusterTravel(int actualNode, int actualCluster, int[] nodesOnCluster, double[][] nodesMatrixDistance)
+        static private Tuple<int, int, double> selectNextClusterAndNodeGreedyRandomized(int actualNode, int actualCluster, List<int> clusterToVisit, double[][] nodesMatrixDistance, bool[][] clustersMatrix, int rclsize = 2)
         {
-            return calculateIntraClusterTravelGreedy(actualNode, actualCluster, nodesOnCluster, nodesMatrixDistance);
-        }
-
-        static private Tuple<int, int, double> selectNextClusterAndNodeGreedy(int actualNode, int actualCluster, List<int> clusterToVisit, double[][] nodesMatrixDistance, bool[][] clustersMatrix)
-        {
-            Tuple<int, int, double> bestTravel = new Tuple<int, int, double>(actualNode, actualCluster, double.MaxValue);
-            for (int nextCluster = 0; nextCluster < clustersMatrix.Length; nextCluster++)
-            {
-                if (clusterToVisit.Contains(nextCluster))
-                {
-                    for (int closeNode = 0; closeNode < nodesMatrixDistance.Length; closeNode++)
-                    {
-                        if (clustersMatrix[nextCluster][closeNode] && actualNode != closeNode && nodesMatrixDistance[closeNode][actualNode] < bestTravel.Item3)
-                        {
-                            bestTravel = new Tuple<int, int, double>(closeNode, nextCluster, nodesMatrixDistance[closeNode][actualNode]);
-                        }
-                    }
-                }
-            }
-            return bestTravel;
-        }
-
-        static private Tuple<int, int, double> selectNextClusterAndNodeRandomizedGreedy(int actualNode, int actualCluster, List<int> clusterToVisit, double[][] nodesMatrixDistance, bool[][] clustersMatrix, int clsize = 3)
-        {
-            Tuple < int, int, double>[] CL = new Tuple<int, int, double>[clsize];
+            Tuple<int, int, double>[] RCL = new Tuple<int, int, double>[rclsize];
             for (int nextCluster = 0; nextCluster < clustersMatrix.Length; nextCluster++)
             {
                 if (clusterToVisit.Contains(nextCluster))
@@ -94,20 +160,23 @@ namespace CluVRP_GRASP
                     {
                         if (clustersMatrix[nextCluster][closeNode] && actualNode != closeNode)
                         {
-                            Tuple<int, int, double>  nextPossibleNode = new Tuple<int, int, double>(closeNode, nextCluster, nodesMatrixDistance[closeNode][actualNode]);
-                            insertIntoCL(nextPossibleNode, CL);                           
+                            Tuple<int, int, double> nextPossibleNode = new Tuple<int, int, double>(closeNode, nextCluster, nodesMatrixDistance[closeNode][actualNode]);
+                            insertIntoRCL(nextPossibleNode, RCL);
                         }
                     }
                 }
             }
             Random rnd = new Random();
-            int notNullPositions = countNotNullPositions(CL);
+            int notNullPositions = countNotNullPositions(RCL);
             int rndIndex = rnd.Next(0, notNullPositions);
-            return CL[rndIndex];
+            return RCL[rndIndex];
         }
 
-
-        static private Tuple<List<int>, double> calculateIntraClusterTravelGreedy(int actualNode, int actualCluster, int[] nodesOnCluster, double[][] nodesMatrixDistance)
+        static private Tuple<List<int>, double> calculateIntraClusterTravel(int actualNode, int actualCluster, int[] nodesOnCluster, double[][] nodesMatrixDistance)
+        {
+            return calculateIntraClusterTravelGreedyRandomized(actualNode, actualCluster, nodesOnCluster, nodesMatrixDistance);
+        }
+        static private Tuple<List<int>, double> calculateIntraClusterTravelGreedyRandomized(int actualNode, int actualCluster, int[] nodesOnCluster, double[][] nodesMatrixDistance, int rclsize = 2)
         {
             double totalDistance = 0;
             List<int> intraClusterTravel = new List<int>();
@@ -115,35 +184,7 @@ namespace CluVRP_GRASP
 
             while (intraClusterTravel.Count < nodesOnCluster.Length)
             {
-                double bestDistance = double.MaxValue;
-                int nextBestNode = 0;
-                for (int nextNodeIdx = 0; nextNodeIdx < nodesOnCluster.Length; nextNodeIdx++)
-                {
-                    int nextNode = nodesOnCluster[nextNodeIdx];
-                    if(nodesMatrixDistance[actualNode][nextNode] < bestDistance && !intraClusterTravel.Contains(nextNode))
-                    {
-                        bestDistance = nodesMatrixDistance[actualNode][nextNode];
-                        nextBestNode = nodesOnCluster[nextNodeIdx];
-                    }
-                }
-                intraClusterTravel.Add(nextBestNode);
-                actualNode = nextBestNode;
-                totalDistance += bestDistance;
-            }
-
-            return new Tuple<List<int>, double>(intraClusterTravel, totalDistance);
-        }
-
-
-        static private Tuple<List<int>, double> calculateIntraClusterTravelRandomizedGreedy(int actualNode, int actualCluster, int[] nodesOnCluster, double[][] nodesMatrixDistance, int clsize = 3)
-        {
-            double totalDistance = 0;
-            List<int> intraClusterTravel = new List<int>();
-            intraClusterTravel.Add(actualNode);
-
-            while (intraClusterTravel.Count < nodesOnCluster.Length)
-            {
-                Tuple<int, int, double>[] CL = new NodeTupleDistance[clsize];
+                Tuple<int, int, double>[] RCL = new NodeTupleDistance[rclsize];
                 for (int nextNodeIdx = 0; nextNodeIdx < nodesOnCluster.Length; nextNodeIdx++)
                 {
                     int nextNode = nodesOnCluster[nextNodeIdx];
@@ -151,21 +192,21 @@ namespace CluVRP_GRASP
                     {
                         double distance = nodesMatrixDistance[actualNode][nextNode];
                         NodeTupleDistance nextTupleNode = new NodeTupleDistance(nextNode, actualCluster, distance);
-                        insertIntoCL(nextTupleNode, CL);
+                        insertIntoRCL(nextTupleNode, RCL);
                     }
                 }
                 Random rnd = new Random();
-                int notNullPositions = countNotNullPositions(CL);
+                int notNullPositions = countNotNullPositions(RCL);
                 int rndIndex = rnd.Next(0, notNullPositions);
-                actualNode = CL[rndIndex].Item1;
-                totalDistance += CL[rndIndex].Item3;
+                actualNode = RCL[rndIndex].Item1;
+                totalDistance += RCL[rndIndex].Item3;
                 intraClusterTravel.Add(actualNode);                
             }
 
             return new Tuple<List<int>, double>(intraClusterTravel, totalDistance);
         }
 
-
+        // Return a bi-dimensional matrix where M[i][j] is true if cluster i contains node j
         static private bool[][] clustersMatrix(int[][] clusters, int nodesNumber)
         {
             bool[][] ret = new bool[clusters.Length][];
@@ -180,7 +221,7 @@ namespace CluVRP_GRASP
             return ret;
         }
         
-        // Create a nodes distance matrix
+        // Return a node's distance matrix
         static private double[][] calculateNodesMatrixDistance(CluVRPInstance instance)
         {
             double[][] nodesDistanceMatrix = new double[instance.dimension()][];
@@ -211,44 +252,8 @@ namespace CluVRP_GRASP
             return Math.Sqrt(Math.Pow(x1-x2, 2) + Math.Pow(y1-y2, 2));
         }
 
-        // Return an assignation of nodes to vehicules
-        static private List<int>[] assignVehicules(CluVRPInstance instance, NodeTupleDistance[][][] interClusterMatrixDistance)
-        {
-            int[] clusterDemand = instance.clusters_demand();
-            int vehiculesNumber = instance.vehicules();
-            int capacity = instance.capacity();
-            return assignVehiculesBestFitAlgorithm(clusterDemand, vehiculesNumber, capacity);
-        }
-
-        static private List<int>[] assignVehiculesBestFitAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity)
-        {
-            List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
-            int[] vehiculeCapacity = new int[vehiculesNumber];
-            for (int i = 0; i < vehiculesNumber; i++)
-            {
-                vehiculeCapacity[i] = capacity;
-                clusterRouteForVehicule[i] = new List<int>();
-            }
-
-            int[] indexSortedClustedDemand = arraySortedByIndex(clusterDemand);
-            for (int i = 0; i < clusterDemand.Length; i++)
-            {
-                int minCapacityIndex = indexSortedClustedDemand[i];
-                for(int j = 0; j < vehiculeCapacity.Length; j++)
-                {
-                    if(vehiculeCapacity[j] - clusterDemand[minCapacityIndex] >= 0)
-                    {
-                        clusterRouteForVehicule[j].Add(minCapacityIndex);
-                        vehiculeCapacity[j] = vehiculeCapacity[j] - clusterDemand[minCapacityIndex];
-                        break;
-                    } 
-                }
-            }
-            return clusterRouteForVehicule;
-        }
-
-        //Insert Node into candidate list
-        static private void insertIntoCL(Tuple<int, int, double> nextPossibleNode, Tuple<int, int, double>[] CL)
+        // Insert Node into candidate list
+        static private void insertIntoRCL(Tuple<int, int, double> nextPossibleNode, Tuple<int, int, double>[] CL)
         {
 
             int bestIndex = -1;
@@ -270,6 +275,7 @@ namespace CluVRP_GRASP
             }
         } 
 
+        // Return the last not null position on array
         static private int countNotNullPositions(Object[] arr)
         {
             int idx = arr.Length;
@@ -283,42 +289,8 @@ namespace CluVRP_GRASP
             }
             return idx;
         }
-
-        //
-        // DEPRECATED
-        //     
-
-        // Create a inter-clusters distance array 
-        // [i][j] is the array of tubles <node1, node2, distance> of distances between all nodes
-        // on the i-cluster and j-cluster
-        static private NodeTupleDistance[][][] calculateInterClusterMatrixDistanceTupleVersion(CluVRPInstance instance)
-        {
-            double[][] nodesDistanceMatrix = calculateNodesMatrixDistance(instance);
-            int clustersNumber = instance.clusters_demand().Length;
-            NodeTupleDistance[][][] clusterDistanceMatrix = new Tuple<int, int, double>[clustersNumber][][];
-            int[][] clusters = instance.clusters();
-
-            for (int i = 0; i < clustersNumber; i++)
-            {
-                clusterDistanceMatrix[i] = new Tuple<int, int, double>[clustersNumber][];
-                for (int j = 0; j < clusters.Length; j++)
-                {
-                    clusterDistanceMatrix[i][j] = new Tuple<int, int, double>[clusters[i].Length * clusters[j].Length];
-                    int idx = 0;
-                    for (int k = 0; k < clusters[i].Length; k++)
-                    {
-                        for (int p = 0; p < clusters[j].Length; p++)
-                        {
-                            Tuple<int, int, double> t = new Tuple<int, int, double>(clusters[i][k], clusters[j][p], nodesDistanceMatrix[clusters[i][k]][clusters[j][p]]);
-                            clusterDistanceMatrix[i][j][idx] = t;
-                            idx++;
-                        }
-                    }
-                }
-            }
-            return clusterDistanceMatrix;
-        }
-
+        
+        // Return an array with the index of the input array sorted
         static private int[] arraySortedByIndex(int[] arr)
         {
             int[] ret = new int[arr.Length];
@@ -341,123 +313,6 @@ namespace CluVRP_GRASP
             }
             return ret;
         }
-
-        static private double[][][][] calculateInterClusterMatrixDistance(CluVRPInstance instance)
-        {
-            double[][] nodesDistanceMatrix = calculateNodesMatrixDistance(instance);
-            int nodesNumber = nodesDistanceMatrix.Length;
-            int clustersNumber = instance.clusters_demand().Length;
-            double[][][][] interClusterDistance = new double[clustersNumber][][][];
-            int[][] clusters = instance.clusters();
-
-            for (int clusterAIt = 0; clusterAIt < clustersNumber; clusterAIt++)
-            {
-                Console.WriteLine(clusterAIt);
-                interClusterDistance[clusterAIt] = new double[clustersNumber][][];
-
-                for (int clusterBIt = 0; clusterBIt < clustersNumber; clusterBIt++)
-                {
-                    interClusterDistance[clusterAIt][clusterBIt] = new double[nodesNumber][];
-
-                    for (int nodeAIt = 0; nodeAIt < nodesNumber; nodeAIt++)
-                    {
-                        interClusterDistance[clusterAIt][clusterBIt][nodeAIt] = new double[nodesNumber];
-
-                        if (clusters[clusterAIt].Contains(nodeAIt))
-                        {
-                            for (int nodeBIt = 0; nodeBIt < nodesNumber; nodeBIt++)
-                            {
-                                if (clusters[clusterBIt].Contains(nodeBIt))
-                                {
-                                    interClusterDistance[clusterAIt][clusterBIt][nodeAIt][nodeBIt] = nodesDistanceMatrix[nodeAIt][nodeBIt];
-                                    //string result = String.Format("{0}\t{1}\t{2}\t{3}\t{4}", clusterAIt, clusterBIt, nodeAIt, nodeBIt, nodesDistanceMatrix[nodeAIt][nodeBIt]);
-                                    //Logger.GetInstance().logLine(result);
-                                }
-                                else
-                                {
-                                    interClusterDistance[clusterAIt][clusterBIt][nodeAIt][nodeBIt] = double.MaxValue;
-                                }
-                            }
-
-                        }
-                        else
-                        {
-                            for (int nodeBIt = 0; nodeBIt < nodesNumber; nodeBIt++)
-                            {
-                                interClusterDistance[clusterAIt][clusterBIt][nodeAIt][nodeBIt] = double.MaxValue;
-
-                            }
-                        }
-                    }
-
-                }
-            }
-            return interClusterDistance;
-        }
-
-        static private Tuple<int, int, double> selectNextClusterAndNodeGreedyTupleVersion(int actualNode, int actualCluster, List<int> clusterToVisit, NodeTupleDistance[][][] interClusterDistances)
-        {
-            NodeTupleDistance[][] clustersDistance = interClusterDistances[actualCluster];
-            Tuple<int, int, double> bestTravel = new Tuple<int, int, double>(actualNode, actualCluster, double.MaxValue);
-            for (int nextCluster = 0; nextCluster < clustersDistance.Length; nextCluster++)
-            {
-                if (nextCluster != actualCluster && clusterToVisit.Contains(nextCluster))
-                {
-                    for (int nodeDistanceIt = 0; nodeDistanceIt < clustersDistance[nextCluster].Length; nodeDistanceIt++)
-                    {
-                        if (clustersDistance[nextCluster][nodeDistanceIt].Item1 == actualNode)
-                        {
-                            if (bestTravel.Item3 > clustersDistance[nextCluster][nodeDistanceIt].Item3)
-                            {
-                                bestTravel = new Tuple<int, int, double>(clustersDistance[nextCluster][nodeDistanceIt].Item2, nextCluster, clustersDistance[nextCluster][nodeDistanceIt].Item3);
-                            }
-                        }
-                        if (clustersDistance[nextCluster][nodeDistanceIt].Item2 == actualNode)
-                        {
-                            if (bestTravel.Item3 > clustersDistance[nextCluster][nodeDistanceIt].Item3)
-                            {
-                                bestTravel = new Tuple<int, int, double>(clustersDistance[nextCluster][nodeDistanceIt].Item1, nextCluster, clustersDistance[nextCluster][nodeDistanceIt].Item3);
-                            }
-                        }
-                    }
-                }
-            }
-            return bestTravel;
-        }
-
-        static private Tuple<List<int>, double> calculateIntraClusterTravelGreedyTupleVersion(int actualNode, int actualCluster, int[] nodesOnCluster, NodeTupleDistance[][][] interClusterDistances)
-        {
-            NodeTupleDistance[] intraClusterDistance = interClusterDistances[actualCluster][actualCluster];
-            double totalDistance = 0;
-            List<int> intraClusterTravel = new List<int>();
-            intraClusterTravel.Add(actualNode);
-
-
-            for (int nodesVisited = 1; nodesVisited < nodesOnCluster.Length; nodesVisited++)
-            {
-                double bestDistance = double.MaxValue;
-
-                for (int it = 0; it < intraClusterDistance.Length; it++)
-                {
-                    if (intraClusterDistance[it].Item2 != actualNode && intraClusterDistance[it].Item1 == actualNode &&
-                        intraClusterDistance[it].Item3 < bestDistance && !intraClusterTravel.Contains(intraClusterDistance[it].Item2))
-                    {
-                        actualNode = intraClusterDistance[it].Item2;
-                        bestDistance = intraClusterDistance[it].Item3;
-
-                    }
-                    if (intraClusterDistance[it].Item1 != actualNode && intraClusterDistance[it].Item2 == actualNode
-                        && intraClusterDistance[it].Item3 < bestDistance && !intraClusterTravel.Contains(intraClusterDistance[it].Item1))
-                    {
-                        actualNode = intraClusterDistance[it].Item1;
-                        bestDistance = intraClusterDistance[it].Item3;
-                    }
-                }
-                intraClusterTravel.Add(actualNode);
-                totalDistance += bestDistance;
-            }
-            return new Tuple<List<int>, double>(intraClusterTravel, totalDistance);
-        }
-
+               
     }
 }
