@@ -8,13 +8,21 @@ namespace CluVRP_GRASP
 {
     class Program
     {
+
+        static string instanceSetFile = "../../instances/prueba";
+
         static void Main(string[] args)
         {
 
             Logger logger = Logger.GetInstance();
-            CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances("prueba");
-            double v = Grasp.ConstructGreedySolution(instancias[0],1);
-            v = 0;
+            CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(instanceSetFile);
+            foreach(CluVRPInstance instance in instancias)
+            {
+                double bestDistance = Grasp.ConstructGreedySolution(instance, 1);
+                string result = String.Format("{0}\t{1}", instance.file_name(), bestDistance.ToString());
+                Logger.GetInstance().logLine(result);
+            }
+            
         }
     }
         

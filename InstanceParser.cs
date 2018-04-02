@@ -18,14 +18,14 @@ namespace CluVRP_GRASP
                 string[] lines = System.IO.File.ReadAllLines(filePath);
                 gvrpInstances = new CluVRPInstance[lines.Length];
 
+                int i = 0;
                 foreach (string instanceFilePath in lines)
                 {
-                    int i = 0;
                     try
                     {
                         CluVRPInstance instance;
                         string[] instanceFileText = System.IO.File.ReadAllLines(instanceFilePath);
-                        instance = parseGVRPInstance(instanceFileText);
+                        instance = parseGVRPInstance(instanceFilePath, instanceFileText);
                         gvrpInstances[i] = instance;
                         i++;
                     }
@@ -51,9 +51,10 @@ namespace CluVRP_GRASP
             Instances of CVRP (Bektas 2011) a adpter by Battarra (2014)  
 
         */
-        static private CluVRPInstance parseGVRPInstance(string[] instanceText)
+        static private CluVRPInstance parseGVRPInstance(string fileName, string[] instanceText)
         {
             // Set static parameters
+            string file_name = fileName;
             string name = instanceText[0].Substring(7);
             string comment = instanceText[1].Substring(10);
             int dimension = Int32.Parse(instanceText[2].Substring(12)); 
@@ -107,7 +108,7 @@ namespace CluVRP_GRASP
              }
 
             // Return parsed instance
-            return new CluVRPInstance(name, comment, dimension + 1, vehicules, gvrp_sets, capacity, edge_weight_type,
+            return new CluVRPInstance(file_name, name, comment, dimension + 1, vehicules, gvrp_sets, capacity, edge_weight_type,
                 nodes, clusters, clusters_demand);
         }
         

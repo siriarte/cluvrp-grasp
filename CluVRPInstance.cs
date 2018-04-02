@@ -25,6 +25,7 @@ namespace CluVRP_GRASP
 
     class CluVRPInstance
     {
+        private string _file_name;
         private string _name;
         private string _comment;
         private int _dimension;
@@ -41,9 +42,10 @@ namespace CluVRP_GRASP
 
         }
 
-        public CluVRPInstance(string name, string comment, int dimension, int vehicules, int gvrp_sets, 
+        public CluVRPInstance(string file_name, string name, string comment, int dimension, int vehicules, int gvrp_sets, 
             int capacity, string edge_weight_type, NodePoint[] nodes, int[][] clusters, int[] clusters_demand)
         {
+            this._file_name = file_name;
             this._name = name;
             this._comment = comment;
             this._dimension = dimension;
@@ -56,6 +58,7 @@ namespace CluVRP_GRASP
             this._clusters_demand = clusters_demand;
         }
 
+        public string file_name() { return this._file_name; }
         public string name() { return this._name; }
         public string comment() { return this._comment; }
         public int dimension() { return this._dimension; }
