@@ -76,10 +76,12 @@ namespace CluVRP_GRASP
             {
                 vehiculeCapacity[i] = capacity;
                 clusterRouteForVehicule[i] = new List<int>();
+                // add base (cluster 0)
+                clusterRouteForVehicule[i].Add(0);
             }
 
             int[] indexSortedClustedDemand = arraySortedByIndex(clusterDemand);
-            for (int i = 0; i < clusterDemand.Length; i++)
+            for (int i = 1; i < clusterDemand.Length; i++)
             {
                 int minCapacityIndex = indexSortedClustedDemand[i];
                 for (int j = 0; j < vehiculeCapacity.Length; j++)
@@ -101,6 +103,7 @@ namespace CluVRP_GRASP
             int[] vehiculeCapacity = new int[vehiculesNumber];
             int totalDemand = clusterDemand.Sum();
             int totalClusterVisited = 0;
+            int totalClusters = clusterDemand.Length;
 
             for (int i = 0; i < vehiculesNumber; i++)
             {
@@ -110,38 +113,45 @@ namespace CluVRP_GRASP
 
             int[] indexSortedClusterDemand = arraySortedByIndex(clusterDemand);           
 
-            while (totalClusterVisited != clusterDemand.Length)
+            while (totalClusterVisited < totalClusters)
             {
                 List<int> RCL = new List<int>();
-                int rclIt = 0;
                 for (int i = 0; i < clusterDemand.Length; i++)
                 {
                     int minDemandIndex = indexSortedClusterDemand[i];
                     if (!visitedCluster[minDemandIndex])
                     {
                         RCL.Add(minDemandIndex);
-                        rclIt++;
                     }
-                    if (rclIt == rclsize) break;
+                    if (RCL.Count == rclsize) break;
                 }
 
                 Random rnd = new Random();
                 int clusterRndIndex = rnd.Next(0, RCL.Count);
+                int clusterRndSelected = RCL[clusterRndIndex];
+                int maxRndVehiculeIt = 0;
                 while (true)
                 {
                     int vehiculeRndIndex = rnd.Next(0, vehiculesNumber);
-                    if (vehiculeCapacity[vehiculeRndIndex] - clusterDemand[clusterRndIndex] >= 0)
+                    if (vehiculeCapacity[vehiculeRndIndex] - clusterDemand[clusterRndSelected] >= 0)
                     {
-                        vehiculeCapacity[vehiculeRndIndex] -= clusterDemand[clusterRndIndex];
-                        clusterRouteForVehicule[vehiculeRndIndex].Add(clusterRndIndex);
-                        visitedCluster[clusterRndIndex] = true;
-                        totalDemand -= clusterDemand[clusterRndIndex];
+                        vehiculeCapacity[vehiculeRndIndex] -= clusterDemand[clusterRndSelected];
+                        clusterRouteForVehicule[vehiculeRndIndex].Add(clusterRndSelected);
+                        visitedCluster[clusterRndSelected] = true;
+                        totalDemand -= clusterDemand[clusterRndSelected];
                         totalClusterVisited++;
                         break;
+                    }
+                    maxRndVehiculeIt++;
+                    if (maxRndVehiculeIt > 100)
+                    {
+                        //Logger.GetInstance().logLine("----BEST FIT----");
+                        return assignVehiculesBestFitAlgorithm(clusterDemand, vehiculesNumber, capacity);
                     }
                 }                         
 
             }
+            //Logger.GetInstance().logLine("----NO BEST FIT----");
             return clusterRouteForVehicule;
         }
 
