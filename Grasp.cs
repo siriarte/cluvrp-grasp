@@ -61,14 +61,15 @@ namespace CluVRP_GRASP
         }
 
         // Return an assignation of nodes to vehicules
-        static private List<int>[] assignVehicules(CluVRPInstance instance)
+        static private List<int>[] assignVehicules(CluVRPInstance instance, int baseNode = 0)
         {
             int[] clusterDemand = instance.clusters_demand();
             int vehiculesNumber = instance.vehicules();
             int capacity = instance.capacity();
-            return assignVehiculesBestFitAlgorithm(clusterDemand, vehiculesNumber, capacity);
+            return assignVehiculesBestFitAlgorithm(clusterDemand, vehiculesNumber, capacity, baseNode);
         }
-        static private List<int>[] assignVehiculesBestFitAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity)
+
+        static private List<int>[] assignVehiculesBestFitAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode)
         {
             List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
             int[] vehiculeCapacity = new int[vehiculesNumber];
@@ -76,27 +77,75 @@ namespace CluVRP_GRASP
             {
                 vehiculeCapacity[i] = capacity;
                 clusterRouteForVehicule[i] = new List<int>();
-                // add base (cluster 0)
-                clusterRouteForVehicule[i].Add(0);
+                clusterRouteForVehicule[i].Add(baseNode);
+            }
+
+            int res = 0;
+
+            for (int i = 1; i < clusterDemand.Length; i++)
+            {
+                int j;
+                int min = capacity + 1, bi = 0;
+
+                for (j = 0; j < res; j++)
+                {
+                    if (vehiculeCapacity[j] >= clusterDemand[i] &&
+                        vehiculeCapacity[j] - clusterDemand[i] < min)
+                    {
+                        bi = j;
+                        min = vehiculeCapacity[j] - clusterDemand[i];
+                    }
+                }
+
+                if (min == capacity + 1)
+                {
+                    vehiculeCapacity[res] = capacity - clusterDemand[i];
+                    clusterRouteForVehicule[bi].Add(i);
+                    res++;
+                } else
+                {
+                    vehiculeCapacity[bi] -= clusterDemand[i];
+                    clusterRouteForVehicule[bi].Add(i);
+                }
+            }
+
+            return clusterRouteForVehicule;
+        }  
+            static private List<int>[] assignVehiculesFirstFitAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode)
+        {
+            List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
+            int[] vehiculeCapacity = new int[vehiculesNumber];
+            for (int i = 0; i < vehiculesNumber; i++)
+            {
+                vehiculeCapacity[i] = capacity;
+                clusterRouteForVehicule[i] = new List<int>();
+
+                // add base
+                clusterRouteForVehicule[i].Add(baseNode);
             }
 
             int[] indexSortedClustedDemand = arraySortedByIndex(clusterDemand);
-            for (int i = 1; i < clusterDemand.Length; i++)
+            for (int i = 0; i < clusterDemand.Length; i++)
             {
                 int minCapacityIndex = indexSortedClustedDemand[i];
-                for (int j = 0; j < vehiculeCapacity.Length; j++)
+                if (minCapacityIndex != baseNode)
                 {
-                    if (vehiculeCapacity[j] - clusterDemand[minCapacityIndex] >= 0)
+                    for (int j = 0; j < vehiculeCapacity.Length; j++)
                     {
-                        clusterRouteForVehicule[j].Add(minCapacityIndex);
-                        vehiculeCapacity[j] = vehiculeCapacity[j] - clusterDemand[minCapacityIndex];
-                        break;
+                        if (vehiculeCapacity[j] - clusterDemand[minCapacityIndex] >= 0)
+                        {
+                            clusterRouteForVehicule[j].Add(minCapacityIndex);
+                            vehiculeCapacity[j] = vehiculeCapacity[j] - clusterDemand[minCapacityIndex];
+                            break;
+                        }
                     }
-                }
+                } 
             }
+            
             return clusterRouteForVehicule;
         }
-        static private List<int>[] assignVehiculesBestFitRandomizedAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int rclsize = 3)
+
+        static private List<int>[] assignVehiculesBestFitRandomizedAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode, int rclsize = 3)
         {
             List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
             bool[] visitedCluster = new bool[clusterDemand.Length];
@@ -146,12 +195,13 @@ namespace CluVRP_GRASP
                     if (maxRndVehiculeIt > 100)
                     {
                         //Logger.GetInstance().logLine("----BEST FIT----");
-                        return assignVehiculesBestFitAlgorithm(clusterDemand, vehiculesNumber, capacity);
+                        return assignVehiculesFirstFitAlgorithm(clusterDemand, vehiculesNumber, capacity, baseNode);
                     }
                 }                         
 
             }
             //Logger.GetInstance().logLine("----NO BEST FIT----");
+
             return clusterRouteForVehicule;
         }
 
@@ -313,7 +363,7 @@ namespace CluVRP_GRASP
             {
                 for(int j = i + 1; j < arr.Length; j++)
                 {
-                    if (arr[ret[j]] <= arr[ret[i]])
+                    if (arr[ret[j]] >= arr[ret[i]])
                     {
                         int temp = ret[i];
                         ret[i] = ret[j];
