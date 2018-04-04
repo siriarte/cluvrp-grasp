@@ -8,57 +8,144 @@ using NodeTupleDistance = System.Tuple<int, int, double>;
 namespace CluVRP_GRASP
 {
    
-    static class Grasp
+    class Grasp
     {
+        double[][] nodesMatrixDistance;
+        bool[][] clustersMatrix;
+
         static public double ConstructGreedySolution(CluVRPInstance instance, int iterationsForBestSolution = 10)
-        {
- 
+        { 
             double[][] nodesMatrixDistance = calculateNodesMatrixDistance(instance);
-            bool[][] clustersMatrix = Grasp.clustersMatrix(instance.clusters(), instance.dimension());
-            double bestDistance = double.MaxValue;
-            double totalDistance = 0;
+            bool[][] clustersMatrix = Grasp.calculateClustersMatrix(instance.clusters(), instance.dimension());
+            CluVRPSolution bestCluVRPSolution = new CluVRPSolution(null, null, double.MaxValue);
+            double totalDistance;
+
+            if (!verifyClustersDemand(instance))
+            {
+                Logger.GetInstance().logLine("Capacity demanded can't be served by the vehicules");
+            }
+
 
             for (int iteration = 0; iteration < iterationsForBestSolution; iteration++)
             {
-                if (!verifyClustersDemand(instance))
-                {
-                    Logger.GetInstance().logLine("Capacity demanded can't be served by the vehicules");
-                }
 
                 totalDistance = 0;
+                List<int>[] nodesRoute = new List<int>[instance.clusters().Length];
+                List<int>[] clustersRoute = new List<int>[instance.vehicules()];
+
                 List<int>[] vehiculeAssignation = assignVehicules(instance);
 
                 for (int vehiculeIndex = 0; vehiculeIndex < vehiculeAssignation.Length; vehiculeIndex++)
                 {
                     int actualNode = 0;
                     int actualCluster = 0;
+                    nodesRoute[actualCluster] = new List<int>();
+                    nodesRoute[actualCluster].Add(actualNode);
 
                     List<int> clustersToVisit = vehiculeAssignation[vehiculeIndex];
-                    for(int clusterIt = 0; clusterIt < clustersToVisit.Count; clusterIt++)
+                    int numberOfClusterToVisit = clustersToVisit.Count;
+                    clustersRoute[vehiculeIndex] = new List<int>();
+
+                    for (int clusterIt = 0; clusterIt + 1 < numberOfClusterToVisit; clusterIt++)
                     {
+                        clustersRoute[vehiculeIndex].Add(actualCluster);
                         clustersToVisit.Remove(actualCluster);
-                        Tuple<int, int, double> nextClusterAndNode = selectNextClusterAndNode(actualNode, actualCluster, clustersToVisit, nodesMatrixDistance, clustersMatrix);
+
+                        Tuple<int, int, double> nextClusterAndNode = selectNextClusterAndNode(actualNode, actualCluster, 
+                            clustersToVisit, nodesMatrixDistance, clustersMatrix);
+
                         actualNode = nextClusterAndNode.Item1;
                         actualCluster = nextClusterAndNode.Item2;
                         totalDistance += nextClusterAndNode.Item3;
 
-                        Tuple<List<int>, double> intraClusterTravel = calculateIntraClusterTravel(actualNode, actualCluster, instance.clusters()[actualCluster], nodesMatrixDistance);
+                        Tuple<List<int>, double> intraClusterTravel = calculateIntraClusterTravel(actualNode, actualCluster, 
+                            instance.clusters()[actualCluster], nodesMatrixDistance);
+
                         totalDistance += intraClusterTravel.Item2;
                         actualNode = intraClusterTravel.Item1[intraClusterTravel.Item1.Count - 1];
-                        //Logger.GetInstance().logLine(String.Join(",", intraClusterTravel.Item1));
+                        nodesRoute[actualCluster] = intraClusterTravel.Item1;
                     }
-                    
+
                     totalDistance += nodesMatrixDistance[actualNode][0];
+                    clustersRoute[vehiculeIndex].Add(0);
                 }
 
+                CluVRPSolution solution = new CluVRPSolution(clustersRoute, nodesRoute, totalDistance);
+                localSearchs(solution, nodesMatrixDistance);
+
                 // Update best solution
-                if (totalDistance < bestDistance)
+                if (solution.totalDistance < bestCluVRPSolution.totalDistance)
                 {
-                    bestDistance = totalDistance;
+                    bestCluVRPSolution.totalDistance = solution.totalDistance;
+                    bestCluVRPSolution.nodesRoute = nodesRoute;
+                    bestCluVRPSolution.clustersRoute = clustersRoute;
                 }
             }
-            return bestDistance;
+
+            return bestCluVRPSolution.totalDistance;
         }
+
+        static public void localSearchs(CluVRPSolution solution, double[][] nodesMatrixDistance)
+        {
+            swapInstraCluster(solution, nodesMatrixDistance);                  
+        }
+
+        static public void swapInstraCluster(CluVRPSolution solution, double[][] nodesMatrixDistance)
+        {
+            double r = calculateRouteDistance(solution.nodesRoute, solution.clustersRoute, nodesMatrixDistance);
+            /*
+            for (int vehiculeIndex = 0; vehiculeIndex < solution.clustersRoute.Length; vehiculeIndex++)
+            {
+                int clusterSize = solution.clustersRoute[vehiculeIndex].Count;
+
+                for(int clusterIt1 = 0; clusterIt1 < clusterSize; clusterIt1++)
+                {
+                    for (int clusterIt2 = clusterIt1 + 1; clusterIt2 < clusterSize; clusterIt2++)
+                    {
+                         
+                    }
+                }
+            }*/
+        }
+
+        static public double calculateRouteDistance(List<int>[] nodesRoute, List<int>[] clustersRoute, double[][] nodesMatrixDistance)
+        {
+            double totalDistance = 0;
+            int lastNode;
+            int nextNode;
+            int actualCluster = 0;
+            int nextCluster;
+
+            for(int vehiculeIndex = 0; vehiculeIndex < clustersRoute.Length; vehiculeIndex++)
+            {
+                for(int clusterIndex = 0; clusterIndex < clustersRoute[vehiculeIndex].Count; clusterIndex++)
+                {
+
+                    actualCluster = clustersRoute[vehiculeIndex][clusterIndex];
+
+                    // Sum intracluster distance
+                    for (int k = 0; k + 1 < nodesRoute[actualCluster].Count; k++)
+                    {
+                        lastNode = nodesRoute[actualCluster][k];
+                        nextNode = nodesRoute[actualCluster][k + 1];
+                        totalDistance += nodesMatrixDistance[lastNode][nextNode];
+                    }
+
+                    // Jump to next cluster node
+                    if(clusterIndex + 1 < clustersRoute[vehiculeIndex].Count)
+                    {
+                        nextCluster = clustersRoute[vehiculeIndex][clusterIndex+1];
+                        lastNode = nodesRoute[actualCluster][nodesRoute[actualCluster].Count - 1];
+                        nextNode = nodesRoute[nextCluster][0];
+                        totalDistance += nodesMatrixDistance[lastNode][nextNode];
+                    }
+                }
+          }
+
+            Logger.GetInstance().logLine("aaaaaaa    " + totalDistance.ToString());
+            return totalDistance;
+        }
+
 
         // Return an assignation of nodes to vehicules
         static private List<int>[] assignVehicules(CluVRPInstance instance, int baseNode = 0)
@@ -68,14 +155,15 @@ namespace CluVRP_GRASP
             int capacity = instance.capacity();
             return assignVehiculesBestFitAlgorithm(clusterDemand, vehiculesNumber, capacity, baseNode);
         }
-
+        // Return a vehicule assignation using best fit algorithm
+        // https://www.geeksforgeeks.org/bin-packing-problem-minimize-number-of-used-bins/
         static private List<int>[] assignVehiculesBestFitAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode)
         {
             List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
-            int[] vehiculeCapacity = new int[vehiculesNumber];
+            int[] vechiculeRemSpace = new int[vehiculesNumber];
             for (int i = 0; i < vehiculesNumber; i++)
             {
-                vehiculeCapacity[i] = capacity;
+                //vechiculeRemSpace[i] = capacity;
                 clusterRouteForVehicule[i] = new List<int>();
                 clusterRouteForVehicule[i].Add(baseNode);
             }
@@ -89,29 +177,41 @@ namespace CluVRP_GRASP
 
                 for (j = 0; j < res; j++)
                 {
-                    if (vehiculeCapacity[j] >= clusterDemand[i] &&
-                        vehiculeCapacity[j] - clusterDemand[i] < min)
+                    if (vechiculeRemSpace[j] >= clusterDemand[i] &&
+                        vechiculeRemSpace[j] - clusterDemand[i] < min)
                     {
                         bi = j;
-                        min = vehiculeCapacity[j] - clusterDemand[i];
+                        min = vechiculeRemSpace[j] - clusterDemand[i];
                     }
                 }
 
                 if (min == capacity + 1)
                 {
-                    vehiculeCapacity[res] = capacity - clusterDemand[i];
-                    clusterRouteForVehicule[bi].Add(i);
+                    vechiculeRemSpace[res] = capacity - clusterDemand[i];
+                    clusterRouteForVehicule[res].Add(i);
                     res++;
                 } else
                 {
-                    vehiculeCapacity[bi] -= clusterDemand[i];
+                    vechiculeRemSpace[bi] -= clusterDemand[i];
                     clusterRouteForVehicule[bi].Add(i);
                 }
             }
 
+            int clusterVisited = 0;
+            for(int i = 0; i < clusterRouteForVehicule.Length; i++)
+            {
+                clusterVisited += clusterRouteForVehicule[i].Count;
+            }
+
+            if(clusterVisited - 1 < clusterDemand.Length)
+            {
+                Logger.GetInstance().logLine("Hay clusters sin visitar");
+            }
+
+
             return clusterRouteForVehicule;
         }  
-            static private List<int>[] assignVehiculesFirstFitAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode)
+        static private List<int>[] assignVehiculesFirstFitAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode)
         {
             List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
             int[] vehiculeCapacity = new int[vehiculesNumber];
@@ -144,7 +244,6 @@ namespace CluVRP_GRASP
             
             return clusterRouteForVehicule;
         }
-
         static private List<int>[] assignVehiculesBestFitRandomizedAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode, int rclsize = 3)
         {
             List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
@@ -267,7 +366,7 @@ namespace CluVRP_GRASP
         }
 
         // Return a bi-dimensional matrix where M[i][j] is true if cluster i contains node j
-        static private bool[][] clustersMatrix(int[][] clusters, int nodesNumber)
+        static private bool[][] calculateClustersMatrix(int[][] clusters, int nodesNumber)
         {
             bool[][] ret = new bool[clusters.Length][];
             for(int i = 0; i < clusters.Length; i++)
