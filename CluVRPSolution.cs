@@ -11,12 +11,14 @@ namespace CluVRP_GRASP
         public double totalDistance;
         public List<int>[] clustersRoute;
         public List<int>[] nodesRoute;
+        public int[] vehiculeCapacity;
 
-        public CluVRPSolution(List<int>[] clustersRoute, List<int>[] nodesRoute, double totalDistance)
+        public CluVRPSolution(List<int>[] clustersRoute, List<int>[] nodesRoute, double totalDistance, int[] vehiculeCapacity)
         {
             this.clustersRoute = clustersRoute;
             this.nodesRoute = nodesRoute;
-            this.totalDistance = totalDistance;           
+            this.totalDistance = totalDistance;
+            this.vehiculeCapacity = vehiculeCapacity;
         }
 
         public CluVRPSolution()

@@ -7,17 +7,14 @@ using NodeTupleDistance = System.Tuple<int, int, double>;
 
 namespace CluVRP_GRASP
 {
-   
+
     class Grasp
     {
-        double[][] nodesMatrixDistance;
-        bool[][] clustersMatrix;
-
         static public double ConstructGreedySolution(CluVRPInstance instance, int iterationsForBestSolution = 10)
-        { 
+        {
             double[][] nodesMatrixDistance = calculateNodesMatrixDistance(instance);
             bool[][] clustersMatrix = Grasp.calculateClustersMatrix(instance.clusters(), instance.dimension());
-            CluVRPSolution bestCluVRPSolution = new CluVRPSolution(null, null, double.MaxValue);
+            CluVRPSolution bestCluVRPSolution = new CluVRPSolution(null, null, double.MaxValue, null);
             double totalDistance;
 
             if (!verifyClustersDemand(instance))
@@ -34,6 +31,8 @@ namespace CluVRP_GRASP
                 List<int>[] clustersRoute = new List<int>[instance.vehicules()];
 
                 List<int>[] vehiculeAssignation = assignVehicules(instance);
+                int[] vehiculeFreeSpace = calculateFreeSpace(vehiculeAssignation, instance.capacity(), instance.clusters_demand());
+
 
                 for (int vehiculeIndex = 0; vehiculeIndex < vehiculeAssignation.Length; vehiculeIndex++)
                 {
@@ -51,14 +50,17 @@ namespace CluVRP_GRASP
                         clustersRoute[vehiculeIndex].Add(actualCluster);
                         clustersToVisit.Remove(actualCluster);
 
-                        Tuple<int, int, double> nextClusterAndNode = selectNextClusterAndNode(actualNode, actualCluster, 
-                            clustersToVisit, nodesMatrixDistance, clustersMatrix);
+                        if (clustersToVisit.Count != 0)
+                        {
+                            Tuple<int, int, double> nextClusterAndNode = selectNextClusterAndNode(actualNode, actualCluster,
+                                clustersToVisit, nodesMatrixDistance, clustersMatrix);
+                            actualNode = nextClusterAndNode.Item1;
+                            actualCluster = nextClusterAndNode.Item2;
+                            totalDistance += nextClusterAndNode.Item3;
+                        }
 
-                        actualNode = nextClusterAndNode.Item1;
-                        actualCluster = nextClusterAndNode.Item2;
-                        totalDistance += nextClusterAndNode.Item3;
 
-                        Tuple<List<int>, double> intraClusterTravel = calculateIntraClusterTravel(actualNode, actualCluster, 
+                        Tuple<List<int>, double> intraClusterTravel = calculateIntraClusterTravel(actualNode, actualCluster,
                             instance.clusters()[actualCluster], nodesMatrixDistance);
 
                         totalDistance += intraClusterTravel.Item2;
@@ -67,11 +69,13 @@ namespace CluVRP_GRASP
                     }
 
                     totalDistance += nodesMatrixDistance[actualNode][0];
+                    clustersRoute[vehiculeIndex].Add(actualCluster);
                     clustersRoute[vehiculeIndex].Add(0);
                 }
 
-                CluVRPSolution solution = new CluVRPSolution(clustersRoute, nodesRoute, totalDistance);
-                localSearchs(solution, nodesMatrixDistance);
+
+                CluVRPSolution solution = new CluVRPSolution(clustersRoute, nodesRoute, totalDistance, vehiculeFreeSpace);
+                localSearchs(solution, instance, nodesMatrixDistance, vehiculeFreeSpace);
 
                 // Update best solution
                 if (solution.totalDistance < bestCluVRPSolution.totalDistance)
@@ -85,28 +89,106 @@ namespace CluVRP_GRASP
             return bestCluVRPSolution.totalDistance;
         }
 
-        static public void localSearchs(CluVRPSolution solution, double[][] nodesMatrixDistance)
+        static public void localSearchs(CluVRPSolution solution, CluVRPInstance instance, double[][] nodesMatrixDistance, int[] vehiculeFreeSpace)
         {
-            swapInstraCluster(solution, nodesMatrixDistance);                  
+            swapIntraCluster(solution, nodesMatrixDistance);
+            swapInterCluster(solution, instance, nodesMatrixDistance, vehiculeFreeSpace);
         }
 
-        static public void swapInstraCluster(CluVRPSolution solution, double[][] nodesMatrixDistance)
+        static public int[] calculateFreeSpace(List<int>[] vechiculeRoute, int capacity, int[] clusterDemand)
         {
-            double r = calculateRouteDistance(solution.nodesRoute, solution.clustersRoute, nodesMatrixDistance);
-            /*
+            int[] res = new int[vechiculeRoute.Length];
+            for (int i = 0; i < vechiculeRoute.Length; i++)
+            {
+                res[i] = capacity;
+                for (int j = 0; j < vechiculeRoute[i].Count; j++)
+                {
+                    res[i] -= clusterDemand[vechiculeRoute[i][j]];
+                }
+            }
+            return res;
+        }
+
+        static public void swapIntraCluster(CluVRPSolution solution, double[][] nodesMatrixDistance)
+        {
+
             for (int vehiculeIndex = 0; vehiculeIndex < solution.clustersRoute.Length; vehiculeIndex++)
             {
                 int clusterSize = solution.clustersRoute[vehiculeIndex].Count;
 
-                for(int clusterIt1 = 0; clusterIt1 < clusterSize; clusterIt1++)
+                for (int clusterIt1 = 1; clusterIt1 < clusterSize; clusterIt1++)
                 {
                     for (int clusterIt2 = clusterIt1 + 1; clusterIt2 < clusterSize; clusterIt2++)
                     {
-                         
+                        Swap(solution.clustersRoute[vehiculeIndex], clusterIt1, clusterIt2);
+                        double newDistance = calculateRouteDistance(solution.nodesRoute, solution.clustersRoute, nodesMatrixDistance);
+                        if (newDistance > solution.totalDistance || 
+                            solution.clustersRoute[vehiculeIndex][clusterIt1] == solution.clustersRoute[vehiculeIndex][clusterIt2] )
+                        {
+                            Swap(solution.clustersRoute[vehiculeIndex], clusterIt2, clusterIt1);
+                        }
+                        else
+                        {
+                            solution.totalDistance = newDistance;
+                        }
+
                     }
                 }
-            }*/
+            }
         }
+
+        static public void swapInterCluster(CluVRPSolution solution, CluVRPInstance instance, double[][] nodesMatrixDistance, int[] vehiculeFreeSpace)
+        {            
+            for(int vechiculeIt1 = 0; vechiculeIt1 < solution.clustersRoute[vechiculeIt1].Count; vechiculeIt1++)
+            {
+                int clusterSize1 = solution.clustersRoute[vechiculeIt1].Count;
+
+                for (int vechiculeIt2 = vechiculeIt1 + 1; vechiculeIt2 < solution.clustersRoute[vechiculeIt2].Count; vechiculeIt2++)
+                {
+                    int clusterSize2 = solution.clustersRoute[vechiculeIt1].Count;
+
+                    for (int clusterIt1 = 1; clusterIt1 < clusterSize2; clusterIt1++)
+                    {
+                        for (int clusterIt2 = clusterIt1 + 1; clusterIt2 < clusterSize2; clusterIt2++)
+                        {
+                            if(swapCluster(solution.clustersRoute, vechiculeIt1, vechiculeIt2, clusterIt1, clusterIt2, instance, vehiculeFreeSpace))
+                            {
+                                double newDistance = calculateRouteDistance(solution.nodesRoute, solution.clustersRoute, nodesMatrixDistance);
+                                if (newDistance > solution.totalDistance)
+                                {
+                                    swapCluster(solution.clustersRoute, vechiculeIt1, vechiculeIt2, clusterIt1, clusterIt2, instance, vehiculeFreeSpace);
+                                }
+                                else
+                                {
+                                    solution.totalDistance = newDistance;
+                                }
+                            }
+
+                        }
+                    }
+                }                    
+            }                    
+        }
+
+        static bool swapCluster(List<int>[] clustersRoute, int vehiculeIdx1, int vehiculeIdx2, int clusterIdx1, int clusterIdx2, CluVRPInstance instance, int[] vehiculeFreeSpace)
+        {
+            int cluster1 = clustersRoute[vehiculeIdx1][clusterIdx1];
+            int cluster2 = clustersRoute[vehiculeIdx2][clusterIdx2];
+
+            int clu1Demand = instance.clusters_demand()[cluster1];
+            int clu2Demand = instance.clusters_demand()[cluster2];
+            
+            if( vehiculeFreeSpace[vehiculeIdx1] - clu1Demand + clu2Demand > 0 &&
+                vehiculeFreeSpace[vehiculeIdx2] - clu2Demand + clu1Demand > 0 
+              )
+            {
+                clustersRoute[vehiculeIdx1][clusterIdx1] = cluster2;
+                clustersRoute[vehiculeIdx2][clusterIdx2] = cluster1;
+                return true;
+            }
+            return false;
+        }
+
 
         static public double calculateRouteDistance(List<int>[] nodesRoute, List<int>[] clustersRoute, double[][] nodesMatrixDistance)
         {
@@ -141,8 +223,6 @@ namespace CluVRP_GRASP
                     }
                 }
           }
-
-            Logger.GetInstance().logLine("aaaaaaa    " + totalDistance.ToString());
             return totalDistance;
         }
 
@@ -155,6 +235,7 @@ namespace CluVRP_GRASP
             int capacity = instance.capacity();
             return assignVehiculesBestFitAlgorithm(clusterDemand, vehiculesNumber, capacity, baseNode);
         }
+
         // Return a vehicule assignation using best fit algorithm
         // https://www.geeksforgeeks.org/bin-packing-problem-minimize-number-of-used-bins/
         static private List<int>[] assignVehiculesBestFitAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode)
@@ -244,7 +325,7 @@ namespace CluVRP_GRASP
             
             return clusterRouteForVehicule;
         }
-        static private List<int>[] assignVehiculesBestFitRandomizedAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode, int rclsize = 3)
+        static private List<int>[] assignVehiculesBestFitRandomizedAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode, int rclsize = 1)
         {
             List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
             bool[] visitedCluster = new bool[clusterDemand.Length];
@@ -308,7 +389,7 @@ namespace CluVRP_GRASP
         {
             return selectNextClusterAndNodeGreedyRandomized(actualNode, actualCluster, clusterToVisit, nodesMatrixDistance, clusterMatrix);
         }
-        static private Tuple<int, int, double> selectNextClusterAndNodeGreedyRandomized(int actualNode, int actualCluster, List<int> clusterToVisit, double[][] nodesMatrixDistance, bool[][] clustersMatrix, int rclsize = 2)
+        static private Tuple<int, int, double> selectNextClusterAndNodeGreedyRandomized(int actualNode, int actualCluster, List<int> clusterToVisit, double[][] nodesMatrixDistance, bool[][] clustersMatrix, int rclsize = 3)
         {
             Tuple<int, int, double>[] RCL = new Tuple<int, int, double>[rclsize];
             for (int nextCluster = 0; nextCluster < clustersMatrix.Length; nextCluster++)
@@ -335,7 +416,7 @@ namespace CluVRP_GRASP
         {
             return calculateIntraClusterTravelGreedyRandomized(actualNode, actualCluster, nodesOnCluster, nodesMatrixDistance);
         }
-        static private Tuple<List<int>, double> calculateIntraClusterTravelGreedyRandomized(int actualNode, int actualCluster, int[] nodesOnCluster, double[][] nodesMatrixDistance, int rclsize = 2)
+        static private Tuple<List<int>, double> calculateIntraClusterTravelGreedyRandomized(int actualNode, int actualCluster, int[] nodesOnCluster, double[][] nodesMatrixDistance, int rclsize = 1)
         {
             double totalDistance = 0;
             List<int> intraClusterTravel = new List<int>();
@@ -408,6 +489,7 @@ namespace CluVRP_GRASP
         // Distance function
         static public double distance(double x1, double y1, double x2, double y2)
         {
+            //return 1;
             return Math.Sqrt(Math.Pow(x1-x2, 2) + Math.Pow(y1-y2, 2));
         }
 
@@ -472,6 +554,14 @@ namespace CluVRP_GRASP
             }
             return ret;
         }
-               
+
+        // Swap
+        public static void Swap<T>(IList<T> list, int indexA, int indexB)
+        {
+            T tmp = list[indexA];
+            list[indexA] = list[indexB];
+            list[indexB] = tmp;
+        }
+
     }
 }
