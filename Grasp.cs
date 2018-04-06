@@ -91,9 +91,9 @@ namespace CluVRP_GRASP
 
         static public void localSearchs(CluVRPSolution solution, CluVRPInstance instance, double[][] nodesMatrixDistance, int[] vehiculeFreeSpace)
         {
-            swapIntraCluster(solution, nodesMatrixDistance);
             swapInterCluster(solution, instance, nodesMatrixDistance, vehiculeFreeSpace);
-        }
+            swapIntraCluster(solution, nodesMatrixDistance);
+         }
 
         static public int[] calculateFreeSpace(List<int>[] vechiculeRoute, int capacity, int[] clusterDemand)
         {
@@ -122,8 +122,10 @@ namespace CluVRP_GRASP
                     {
                         Swap(solution.clustersRoute[vehiculeIndex], clusterIt1, clusterIt2);
                         double newDistance = calculateRouteDistance(solution.nodesRoute, solution.clustersRoute, nodesMatrixDistance);
+
                         if (newDistance > solution.totalDistance || 
-                            solution.clustersRoute[vehiculeIndex][clusterIt1] == solution.clustersRoute[vehiculeIndex][clusterIt2] )
+                            solution.clustersRoute[vehiculeIndex][clusterIt1] == 0 || 
+                            solution.clustersRoute[vehiculeIndex][clusterIt2] == 0)
                         {
                             Swap(solution.clustersRoute[vehiculeIndex], clusterIt2, clusterIt1);
                         }
@@ -139,17 +141,17 @@ namespace CluVRP_GRASP
 
         static public void swapInterCluster(CluVRPSolution solution, CluVRPInstance instance, double[][] nodesMatrixDistance, int[] vehiculeFreeSpace)
         {            
-            for(int vechiculeIt1 = 0; vechiculeIt1 < solution.clustersRoute[vechiculeIt1].Count; vechiculeIt1++)
+            for(int vechiculeIt1 = 0; vechiculeIt1 < solution.clustersRoute.Length; vechiculeIt1++)
             {
                 int clusterSize1 = solution.clustersRoute[vechiculeIt1].Count;
 
-                for (int vechiculeIt2 = vechiculeIt1 + 1; vechiculeIt2 < solution.clustersRoute[vechiculeIt2].Count; vechiculeIt2++)
+                for (int vechiculeIt2 = vechiculeIt1 + 1; vechiculeIt2 < solution.clustersRoute.Length; vechiculeIt2++)
                 {
-                    int clusterSize2 = solution.clustersRoute[vechiculeIt1].Count;
+                    int clusterSize2 = solution.clustersRoute[vechiculeIt2].Count;
 
                     for (int clusterIt1 = 1; clusterIt1 < clusterSize2; clusterIt1++)
                     {
-                        for (int clusterIt2 = clusterIt1 + 1; clusterIt2 < clusterSize2; clusterIt2++)
+                        for (int clusterIt2 = clusterIt1 + 1; clusterIt2  < clusterSize2; clusterIt2++)
                         {
                             if(swapCluster(solution.clustersRoute, vechiculeIt1, vechiculeIt2, clusterIt1, clusterIt2, instance, vehiculeFreeSpace))
                             {
@@ -178,17 +180,18 @@ namespace CluVRP_GRASP
             int clu1Demand = instance.clusters_demand()[cluster1];
             int clu2Demand = instance.clusters_demand()[cluster2];
             
-            if( vehiculeFreeSpace[vehiculeIdx1] - clu1Demand + clu2Demand > 0 &&
-                vehiculeFreeSpace[vehiculeIdx2] - clu2Demand + clu1Demand > 0 
+            if( vehiculeFreeSpace[vehiculeIdx1] + clu1Demand - clu2Demand > 0 &&
+                vehiculeFreeSpace[vehiculeIdx2] + clu2Demand - clu1Demand > 0 
               )
             {
                 clustersRoute[vehiculeIdx1][clusterIdx1] = cluster2;
                 clustersRoute[vehiculeIdx2][clusterIdx2] = cluster1;
+                vehiculeFreeSpace[vehiculeIdx1] = vehiculeFreeSpace[vehiculeIdx1] + clu1Demand - clu2Demand;
+                vehiculeFreeSpace[vehiculeIdx2] = vehiculeFreeSpace[vehiculeIdx2] + clu2Demand - clu1Demand;
                 return true;
             }
             return false;
         }
-
 
         static public double calculateRouteDistance(List<int>[] nodesRoute, List<int>[] clustersRoute, double[][] nodesMatrixDistance)
         {
@@ -325,7 +328,7 @@ namespace CluVRP_GRASP
             
             return clusterRouteForVehicule;
         }
-        static private List<int>[] assignVehiculesBestFitRandomizedAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode, int rclsize = 1)
+        static private List<int>[] assignVehiculesBestFitRandomizedAlgorithm(int[] clusterDemand, int vehiculesNumber, int capacity, int baseNode, int rclsize = 2)
         {
             List<int>[] clusterRouteForVehicule = new List<int>[vehiculesNumber];
             bool[] visitedCluster = new bool[clusterDemand.Length];
@@ -389,7 +392,7 @@ namespace CluVRP_GRASP
         {
             return selectNextClusterAndNodeGreedyRandomized(actualNode, actualCluster, clusterToVisit, nodesMatrixDistance, clusterMatrix);
         }
-        static private Tuple<int, int, double> selectNextClusterAndNodeGreedyRandomized(int actualNode, int actualCluster, List<int> clusterToVisit, double[][] nodesMatrixDistance, bool[][] clustersMatrix, int rclsize = 3)
+        static private Tuple<int, int, double> selectNextClusterAndNodeGreedyRandomized(int actualNode, int actualCluster, List<int> clusterToVisit, double[][] nodesMatrixDistance, bool[][] clustersMatrix, int rclsize = 2)
         {
             Tuple<int, int, double>[] RCL = new Tuple<int, int, double>[rclsize];
             for (int nextCluster = 0; nextCluster < clustersMatrix.Length; nextCluster++)
@@ -416,7 +419,7 @@ namespace CluVRP_GRASP
         {
             return calculateIntraClusterTravelGreedyRandomized(actualNode, actualCluster, nodesOnCluster, nodesMatrixDistance);
         }
-        static private Tuple<List<int>, double> calculateIntraClusterTravelGreedyRandomized(int actualNode, int actualCluster, int[] nodesOnCluster, double[][] nodesMatrixDistance, int rclsize = 1)
+        static private Tuple<List<int>, double> calculateIntraClusterTravelGreedyRandomized(int actualNode, int actualCluster, int[] nodesOnCluster, double[][] nodesMatrixDistance, int rclsize = 2)
         {
             double totalDistance = 0;
             List<int> intraClusterTravel = new List<int>();

@@ -18,7 +18,7 @@ namespace CluVRP_GRASP
             CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(instanceSetPath);
             foreach(CluVRPInstance instance in instancias)
             {
-                double bestDistance = Grasp.ConstructGreedySolution(instance, 20000);
+                double bestDistance = Grasp.ConstructGreedySolution(instance, 40000);
                 string result = String.Format("{0}\t{1}", instance.file_name(), bestDistance.ToString());
                 Logger.GetInstance().logLine(result);
             }
