@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CluVRP_GRASP
+namespace cluvrp_grasp
 {
     class Program
     {
@@ -13,16 +13,15 @@ namespace CluVRP_GRASP
        
         static void Main(string[] args)
         {
-
             Logger logger = Logger.GetInstance();
             CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(instanceSetPath);
+
             foreach(CluVRPInstance instance in instancias)
             {
-                double bestDistance = Grasp.ConstructGreedySolution(instance, 40000);
-                string result = String.Format("{0}\t{1}", instance.file_name(), bestDistance.ToString());
-                Logger.GetInstance().logLine(result);
+                ClusterLevelSolution clusterSolution = new ClusterLevelSolution(instance);
+                clusterSolution.Grasp();
             }
-            
+
         }
     }
         

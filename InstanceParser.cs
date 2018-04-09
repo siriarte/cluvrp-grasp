@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CluVRP_GRASP
+namespace cluvrp_grasp
 {
     static class InstanceParser
     {

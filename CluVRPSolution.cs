@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CluVRP_GRASP
+namespace cluvrp_grasp
 {
     class CluVRPSolution
     {
