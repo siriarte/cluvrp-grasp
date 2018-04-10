@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace cluvrp_grasp
 {
-    static class functions
+    static class Functions
     {
         // Return a customers distance matrix
         static public double[][] customersDistanceMatrix(CluVRPInstance instance)

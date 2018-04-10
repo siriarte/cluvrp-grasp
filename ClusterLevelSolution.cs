@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -138,7 +139,7 @@ namespace cluvrp_grasp
         {
             
             // Calculate customers distance matrix 
-            this.customersDistanceMatrix = functions.customersDistanceMatrix(instance);
+            this.customersDistanceMatrix = Functions.customersDistanceMatrix(instance);
 
             // Calculate cluster distance matrix 
             this.calculateClusterDistanceMatrix();
@@ -151,6 +152,8 @@ namespace cluvrp_grasp
             {
                 // Construct a Greedy Randomized Solution for alpha parameter
                 ClusterSolution solution = constructGreedyRandomizedSolution(alphaCapacity, alphaDistance);
+
+                iterator++;
             }
 
             return;
@@ -176,17 +179,19 @@ namespace cluvrp_grasp
             int[][] clusters = instance.clusters();
             int numbersOfClusters = clusters.Length;
             int[] clustersDemand = instance.clusters_demand();
-            int[] vechiculeRemSpace = new int[numberOfVehicules];
+            int[] vehiculeRemSpace = new int[numberOfVehicules];
             List<int> clustersToVisit = new List<int>();
 
             // Default solution
             ClusterSolution solution = new ClusterSolution(new List<int>[numberOfVehicules], double.MaxValue);
             
             // Create route list and add depot cluster (0) to vehicules route
+            // Set vehicule remaning capacity
             for (int i = 0; i < numberOfVehicules; i++)
             {
                 solution.Item1[i] = new List<int>();
                 solution.Item1[i].Add(0);
+                vehiculeRemSpace[i] = vehiculeCapacity;
             }
 
             // Set clusters to visit (all except depot, cluster 0)
@@ -194,17 +199,53 @@ namespace cluvrp_grasp
             {
                 clustersToVisit.Add(i);
             }
-            
+
+            // Set solution route for vehicule
+            IList[] clusterRouteForVehicule = solution.Item1; 
+
             // Main Cycle 
             // While exists clusters to visit 
-            for(int i = 0; i < numbersOfClusters; i++)
+            for(int i = 0; i + 1 < numbersOfClusters; i++)
             {
+                // Create RCL for clusters by demand
                 List<int> clusterByDemandRCL = buildClusterByDemandRCL(clustersToVisit, clustersDemand, alphaDemand);
+
+                // Select cluster for RCL
                 int clusterSelected = selectFromRCL(clusterByDemandRCL);
-                List<int> vehiculeBydistanceRCL = buildVehiculeByDistanceRCL(vechiculeRemSpace, clusterSelected, alphaDistance);
-                int vehiculeSelected = selectFromRCL(vehiculeBydistanceRCL);
+
+                // Create RCL for vehicule of clusterSeleted by distance (and bestFit capacity)
+                List<int> vehiculeBydistanceRCL = buildVehiculeByDistanceRCL(clusterRouteForVehicule, vehiculeCapacity, vehiculeRemSpace, clusterSelected, clustersDemand[clusterSelected], alphaDistance);
+
+                // Only add the cluster to the route of vehicule if were possible fit it
+                if (vehiculeBydistanceRCL.Count > 0)
+                {
+                    // Select vehicule from RCL 
+                    int vehiculeSelected = selectFromRCL(vehiculeBydistanceRCL);
+
+                    // Add cluster to vehicule route
+                    clusterRouteForVehicule[vehiculeSelected].Add(clusterSelected);
+
+                    // Update vehicule remmaing space
+                    vehiculeRemSpace[vehiculeSelected] -= clustersDemand[clusterSelected];
+
+                    // Remove cluster of the list to visit
+                    clustersToVisit.Remove(clusterSelected);
+                }
+                else
+                {
+                    List<int> vehiculeBydistanceRCL_ = buildVehiculeByDistanceRCL(clusterRouteForVehicule, vehiculeCapacity, vehiculeRemSpace, clusterSelected, clustersDemand[clusterSelected], alphaDistance);
+                }
             }
 
+            // If there are clusters without vehicule
+            if(clustersToVisit.Count != 0)
+            {
+                return solution;
+            }
+
+            // Calculte total inter-cluster distance
+
+            // Return solution
             return solution;
         }
 
@@ -218,8 +259,12 @@ namespace cluvrp_grasp
             // Init variables
             List<int> RCL = new List<int>();
             List<int> clustersSortedByDemand = sortClustersByDemand(clustersToVisit, clustersDemand);
-            int maxDemand = clustersDemand.Max();
-            int minDemand = clustersDemand.Min();
+
+            // Set min and max demand with the sorted list
+            int firstCluster = clustersSortedByDemand[0];
+            int lastCluster = clustersSortedByDemand[clustersSortedByDemand.Count - 1];
+            int minDemand = clustersDemand[firstCluster];
+            int maxDemand = clustersDemand[lastCluster];
 
             // Define the RCL demand condition
             double rclCondition = minDemand + alphaDemand * (maxDemand - minDemand);
@@ -259,7 +304,7 @@ namespace cluvrp_grasp
                 {
                     if(clustersDemand[sortedList[i]] > clustersDemand[sortedList[j]])
                     {
-                        functions.Swap(sortedList, i, j);
+                        Functions.Swap(sortedList, i, j);
                     }
                 }
             }
@@ -268,9 +313,92 @@ namespace cluvrp_grasp
             return sortedList;
         }
 
-        private List<int> buildVehiculeByDistanceRCL(int[] vechiculeRemSpace, int clusterSelected, double alphaDistance)
+        private List<int> buildVehiculeByDistanceRCL(IList[] clusterRouteForVehicule, int vehiculeCapacity, int[] vechiculeRemSpace, int clusterSelected, int clusterDemand, double alphaDistance)
         {
-            throw new NotImplementedException();
+            // Set variables
+            List<int> RCL = new List<int>();
+            int numberOfVehicules = vechiculeRemSpace.Length;
+            int minCapacity = vehiculeCapacity + 1;
+            int bestIndex = 0;
+
+            // Calculate max and min distance for RCL condition
+            double minDistance = minClusterDistance(clusterRouteForVehicule, clusterSelected);
+            double maxDistance = maxClusterDistance(clusterRouteForVehicule, clusterSelected);
+
+            // Set RCL condition criteria
+            double RCLCondition = minDistance + alphaDistance * (maxDistance - minDistance);
+            
+            // For each vehicule
+            for (int j = 0; j < numberOfVehicules; j++)
+            {
+
+                // Calculate the efective distance beetwen the last cluster visited 
+                // by vehicule j and clusterSelected
+                int lastClusterVisited = (int)clusterRouteForVehicule[j][clusterRouteForVehicule[j].Count-1];
+                double distanceBetweenClusters = this.clustersDistanceMatrix[lastClusterVisited][clusterSelected];
+
+                // If there is space on vehicule j AND
+                // The remaning space is less than minCapacity AND
+                // the distance es acceptable for RCL condition
+                if (vechiculeRemSpace[j] >= clusterDemand &&
+                    vechiculeRemSpace[j] - clusterDemand < minCapacity)
+                {
+                    // Add the vehicule to RCL if is possible
+                    if (distanceBetweenClusters <= RCLCondition)
+                    {
+                        RCL.Add(j);
+                    }
+
+                    // Update min capacity
+                    minCapacity = vechiculeRemSpace[j] - clusterDemand;
+                    bestIndex = j;
+                }
+                
+             }
+            // If RCL is empty insert the vehicule that not has the distante condition
+            if (RCL.Count == 0)
+            {
+               RCL.Add(bestIndex);
+            }
+            
+            // return rcl
+            return RCL;
+        }
+
+        /*
+         * 
+         * Calculte the max distance between the last cluster 
+         * visited (of all vehicules) and toCluster
+         * 
+         */
+        private double maxClusterDistance(IList[] clusterRouteForVehicule, int toCluster)
+        {
+            double ret = double.MinValue;
+            for(int i = 0; i < clusterRouteForVehicule.Length; i++)
+            {
+                int lastClusterIndex = clusterRouteForVehicule[i].Count - 1;
+                int lastCluster = (int)clusterRouteForVehicule[i][lastClusterIndex];
+                ret = Math.Max(ret, this.clustersDistanceMatrix[lastCluster][toCluster]);
+            }
+            return ret;
+        }
+
+        /*
+         * 
+         * Calculte the min distance between the last cluster 
+         * visited (of all vehicules) and toCluster
+         * 
+         */
+        private double minClusterDistance(IList[] clusterRouteForVehicule, int toCluster)
+        {
+            double ret = double.MaxValue;
+            for (int i = 0; i < clusterRouteForVehicule.Length; i++)
+            {
+                int lastClusterIndex = clusterRouteForVehicule[i].Count - 1;
+                int lastCluster = (int)clusterRouteForVehicule[i][lastClusterIndex];
+                ret = Math.Min(ret, this.clustersDistanceMatrix[lastCluster][toCluster]);
+            }
+            return ret;
         }
 
         /*
