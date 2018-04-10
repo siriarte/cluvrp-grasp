@@ -19,7 +19,8 @@ namespace cluvrp_grasp
             foreach(CluVRPInstance instance in instancias)
             {
                 ClusterLevelSolution clusterSolution = new ClusterLevelSolution(instance);
-                clusterSolution.Grasp();
+                clusterSolution.Grasp(3000, 0.8 , 0.8);
+                logger.logLine(clusterSolution.bestSolution.Item2.ToString());
             }
 
         }
