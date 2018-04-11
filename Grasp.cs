@@ -29,7 +29,7 @@ namespace cluvrp_grasp
 
                 totalDistance = 0;
                 List<int>[] nodesRoute = new List<int>[instance.clusters().Length];
-                List<int>[] clustersRoute = new List<int>[instance.vehicules()];
+                List<int>[] clustersRoute = new List<int>[instance.vehicles()];
 
                 List<int>[] vehiculeAssignation = assignVehicules(instance);
                 int[] vehiculeFreeSpace = calculateFreeSpace(vehiculeAssignation, instance.capacity(), instance.clusters_demand());
@@ -235,7 +235,7 @@ namespace cluvrp_grasp
         static private List<int>[] assignVehicules(CluVRPInstance instance, int baseNode = 0)
         {
             int[] clusterDemand = instance.clusters_demand();
-            int vehiculesNumber = instance.vehicules();
+            int vehiculesNumber = instance.vehicles();
             int capacity = instance.capacity();
             return assignVehiculesBestFitAlgorithm(clusterDemand, vehiculesNumber, capacity, baseNode);
         }
@@ -485,7 +485,7 @@ namespace cluvrp_grasp
         // Verify if the clusters can be served by the sum of the vechicules capacity
         static private bool verifyClustersDemand(CluVRPInstance instance)
         {
-            int availableCapacity = instance.vehicules() * instance.capacity();
+            int availableCapacity = instance.vehicles() * instance.capacity();
             int[] clusterDemand = instance.clusters_demand();
             return availableCapacity >= clusterDemand.Sum();
         }

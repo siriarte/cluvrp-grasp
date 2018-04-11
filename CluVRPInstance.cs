@@ -29,7 +29,7 @@ namespace cluvrp_grasp
         private string _name;
         private string _comment;
         private int _dimension;
-        private int _vehicules;
+        private int _vehicles;
         private int _gvrp_sets;
         private int _capacity;
         private string _edge_weight_type;
@@ -49,7 +49,7 @@ namespace cluvrp_grasp
             this._name = name;
             this._comment = comment;
             this._dimension = dimension;
-            this._vehicules = vehicules;
+            this._vehicles = vehicules;
             this._gvrp_sets = gvrp_sets;
             this._capacity = capacity;
             this._edge_weight_type = edge_weight_type;
@@ -62,7 +62,7 @@ namespace cluvrp_grasp
         public string name() { return this._name; }
         public string comment() { return this._comment; }
         public int dimension() { return this._dimension; }
-        public int vehicules() { return this._vehicules; }
+        public int vehicles() { return this._vehicles; }
         public int gvrp_sets() { return this._gvrp_sets; }
         public int capacity() { return this._capacity; }
         public string edge_weight_type() { return this._edge_weight_type; }
