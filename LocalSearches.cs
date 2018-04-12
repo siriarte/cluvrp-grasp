@@ -11,19 +11,20 @@ namespace cluvrp_grasp
     {
         public int _maxIterationsWithoutImprovementTwoOpt { get; set; }
         public int _maxIterationsWithoutImprovementRelocate { get; set; }
+        public int _maxIterationsWithoutImprovementExchange { get; set; }
         public ClusterSolution _clusterSolution { get; set; }
         public double[][] _clusterMatrixDistance { get; set; }
-
-  
-
+        
         public LocalSearches(ClusterSolution clusterSolution, double[][] clusterMatrixDistance, 
             int maxIterationsWithoutImprovement = 100,
-            int maxIterationsWithoutImprovementRelocate = 100)
+            int maxIterationsWithoutImprovementRelocate = 100,
+            int maxIterationsWithoutImprovementExchange =100)
         {
             _maxIterationsWithoutImprovementTwoOpt = maxIterationsWithoutImprovement;
             _clusterSolution = clusterSolution;
             _clusterMatrixDistance = clusterMatrixDistance;
             _maxIterationsWithoutImprovementRelocate = maxIterationsWithoutImprovementRelocate;
+            _maxIterationsWithoutImprovementExchange = maxIterationsWithoutImprovementExchange;
         }
 
         public void twoOpt()
@@ -162,6 +163,108 @@ namespace cluvrp_grasp
 
             // Return total distance
             return totalDistance;
+        }
+
+        public void exchange()
+        {
+            int numberOfVehicles = _clusterSolution.clusterRouteForVehicule.Length;
+
+            for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
+            {
+                List<int> route = _clusterSolution.clusterRouteForVehicule[vehicle];
+                int iteration = 0;
+                while (iteration < _maxIterationsWithoutImprovementExchange)
+                {
+
+                    for (int i = 0; i < route.Count; i++)
+                    {
+                        for (int j = 0; j < route.Count; j++)
+                        {
+                            if ((i == j) || ((i == 0 && j == route.Count - 1) ||
+                                (i == route.Count - 1 && j == 0)))
+                                continue;
+
+                            if (exchange(route, vehicle, i, j))
+                            {
+                                iteration = 0;
+                            }
+                        }
+                    }
+                    iteration++;
+                }
+            }
+        }
+
+        bool exchange(List<int> route, int vehicle, int i, int j)
+        {
+     
+            // Para no irnos del camino
+            var celda_anterior_i = i - 1 == -1 ? route.Count - 1 : i - 1;
+            var celda_anterior_j = j - 1 == -1 ? route.Count - 1 : j - 1;
+
+            var celda_siguiente_i = i + 1 == route.Count ? 0 : i + 1;
+            var celda_siguiente_j = j + 1 == route.Count ? 0 : j + 1;
+
+            // Calculamos el nuevo costo, a ver si es mejor cambiar o no de posición 
+            // Costos viejos
+            var _distancia_i_izquierda = _clusterMatrixDistance[route[celda_anterior_i]][route[i]];
+            var _distancia_i_derecha = _clusterMatrixDistance[route[i]][route[celda_siguiente_i]];
+
+            var _distancia_j_izquierda = _clusterMatrixDistance[route[celda_anterior_j]][route[j]];
+            var _distancia_j_derecha = _clusterMatrixDistance[route[j]][route[celda_siguiente_j]];
+
+            double nuevo_costo = 0;
+            // Costos nuevos
+            double _distancia_nueva_i_izquierda, _distancia_nueva_i_derecha, _distancia_nueva_j_izquierda, _distancia_nueva_j_derecha;
+
+            if (i == celda_siguiente_j)
+            {
+                _distancia_nueva_i_izquierda = _clusterMatrixDistance[route[celda_anterior_j]][route[i]];
+                _distancia_nueva_i_derecha = _clusterMatrixDistance[route[i]][route[j]];
+
+                _distancia_nueva_j_derecha = _clusterMatrixDistance[route[j]][route[celda_siguiente_i]];
+                _distancia_nueva_j_izquierda = _clusterMatrixDistance[route[j]][route[i]];
+
+                //_distancia_nueva_i_derecha = _distancia_nueva_j_izquierda 
+                //    = _clusterMatrixDistance[solucion.camino[i], solucion.camino[j]).distancia;
+            }
+            else if (j == celda_siguiente_i)
+            {
+                _distancia_nueva_i_derecha = _clusterMatrixDistance[route[i]][route[celda_siguiente_j]];
+                _distancia_nueva_i_izquierda = _clusterMatrixDistance[route[j]][route[i]];
+
+                _distancia_nueva_j_izquierda = _clusterMatrixDistance[route[celda_anterior_i]][route[j]];
+                _distancia_nueva_j_derecha = _clusterMatrixDistance[route[i]][route[j]];
+
+                //_distancia_nueva_i_izquierda = _distancia_nueva_j_derecha = 
+                //    _clusterMatrixDistance[solucion.camino[j], solucion.camino[i]).distancia;
+            }
+            else
+            {
+                _distancia_nueva_i_izquierda = _clusterMatrixDistance[route[celda_anterior_j]][route[i]];
+                _distancia_nueva_i_derecha = _clusterMatrixDistance[route[i]][route[celda_siguiente_j]];
+
+                _distancia_nueva_j_izquierda = _clusterMatrixDistance[route[celda_anterior_i]][route[j]];
+                _distancia_nueva_j_derecha = _clusterMatrixDistance[route[j]][route[celda_siguiente_i]];
+            }
+
+            nuevo_costo = this._clusterSolution.totalRouteDistance - _distancia_i_izquierda - _distancia_i_derecha - _distancia_j_izquierda - _distancia_j_derecha +
+            _distancia_nueva_i_izquierda + _distancia_nueva_i_derecha + _distancia_nueva_j_izquierda + _distancia_nueva_j_derecha;
+
+            if (nuevo_costo < this._clusterSolution.totalRouteDistance)
+            {
+                var valor = route[i];
+                route[i] = route[j];
+                route[j] = valor;
+
+                if (isValidRoute(route))
+                {
+                    _clusterSolution.totalRouteDistance = nuevo_costo;
+                    _clusterSolution.clusterRouteForVehicule[vehicle] = route;
+                    return true;
+                }
+            }
+            return false;
         }
 
         public bool isValidRoute(List<int> route)

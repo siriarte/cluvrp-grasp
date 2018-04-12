@@ -465,12 +465,15 @@ using System.Collections.Generic;
             // Create a local search handler for cluster-level problem
             LocalSearches localSearchsCluster = new LocalSearches(solution, this.clustersDistanceMatrix, 200, 200);
 
-            // Performance TwoOpt
+            // Perform TwoOpt
             localSearchsCluster.twoOpt();
 
-            // Performance Relocate
+            // Perform Relocate
             localSearchsCluster.relocate();
-            
+
+            // Perform Exchange
+            localSearchsCluster.exchange();                     
+
             // Set the solution
             solution = localSearchsCluster._clusterSolution;
         }
