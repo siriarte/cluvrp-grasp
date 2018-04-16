@@ -63,5 +63,17 @@ namespace cluvrp_grasp
             list[indexA] = list[indexB];
             list[indexB] = tmp;
         }
+
+        /*
+         * 
+         * Select a element from a RCL list with random criteria
+         * 
+         */
+        public static int selectRandomElement(List<int> list)
+        {
+            Random rnd = new Random();
+            int rndIndex = rnd.Next(0, list.Count);
+            return list[rndIndex];
+        }
     }
 }

@@ -19,8 +19,10 @@ namespace cluvrp_grasp
             foreach(CluVRPInstance instance in instancias)
             {
                 ClusterGRASP clusterSolution = new ClusterGRASP(instance);
-                clusterSolution.Grasp(3000, 0.8 , 0.8);
-                logger.logLine(clusterSolution.bestSolution.totalRouteDistance.ToString());
+                clusterSolution.Grasp(300, 0.8 , 0.8);
+                CustomerGRASP customerSolution = new CustomerGRASP(instance, clusterSolution.bestSolution);
+                customerSolution.Grasp();
+    //            logger.logLine(clusterSolution.bestSolution.totalRouteDistance.ToString());
             }
 
         }

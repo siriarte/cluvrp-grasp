@@ -122,16 +122,16 @@ namespace cluvrp_grasp
                 celda_siguiente_j--;
 
             // Calculamos el nuevo costo, a ver si es mejor cambiar o no de posición 
-            var _a = _clusterMatrixDistance[route[celda_anterior_i]][route[i]];
-            var _b = _clusterMatrixDistance[route[i]][route[celda_siguiente_i]];
-            var _C = _clusterMatrixDistance[route[celda_anterior_i]][route[celda_siguiente_i]];
+            double _a = _clusterMatrixDistance[route[celda_anterior_i]][route[i]];
+            double _b = _clusterMatrixDistance[route[i]][route[celda_siguiente_i]];
+            double _C = _clusterMatrixDistance[route[celda_anterior_i]][route[celda_siguiente_i]];
 
-            var _A = _clusterMatrixDistance[route[celda_anterior_j]][route[i]];
-            var _B = _clusterMatrixDistance[route[i]][route[celda_siguiente_j]];
-            var _c = _clusterMatrixDistance[route[celda_anterior_j]][route[celda_siguiente_j]];
+            double _A = _clusterMatrixDistance[route[celda_anterior_j]][route[i]];
+            double _B = _clusterMatrixDistance[route[i]][route[celda_siguiente_j]];
+            double _c = _clusterMatrixDistance[route[celda_anterior_j]][route[celda_siguiente_j]];
 
-            var nuevo_costo = _clusterSolution.totalRouteDistance - _a - _b + _C + _A + _B - _c;
-            if (nuevo_costo < _clusterSolution.totalRouteDistance)
+            double nuevo_costo = _clusterSolution.totalRouteDistance - _a - _b + _C + _A + _B - _c;
+            if (nuevo_costo + 0.005 < _clusterSolution.totalRouteDistance)
             {
                 var valor = route[i];
                 route.RemoveAt(i);
@@ -251,7 +251,7 @@ namespace cluvrp_grasp
             nuevo_costo = this._clusterSolution.totalRouteDistance - _distancia_i_izquierda - _distancia_i_derecha - _distancia_j_izquierda - _distancia_j_derecha +
             _distancia_nueva_i_izquierda + _distancia_nueva_i_derecha + _distancia_nueva_j_izquierda + _distancia_nueva_j_derecha;
 
-            if (nuevo_costo < this._clusterSolution.totalRouteDistance)
+            if (nuevo_costo + 000.5 < this._clusterSolution.totalRouteDistance)
             {
                 var valor = route[i];
                 route[i] = route[j];

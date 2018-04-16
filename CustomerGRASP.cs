@@ -10,14 +10,17 @@ namespace cluvrp_grasp
     {
         // Public variables
         public CluVRPInstance instance;
-        public double[][] clustersDistanceMatrix;
+        public double[][] customersDistanceMatrix;
         public CustomerSolution bestSolution;
-        
-        public CustomerGRASP(CluVRPInstance instance)
+        public ClusterSolution clusterSolution;
+
+        public CustomerGRASP(CluVRPInstance instance, ClusterSolution clusterSolution)
         {
             // Set variables
             this.instance = instance;
-            this.bestSolution = new CustomerSolution(null, double.MaxValue);            
+            this.clusterSolution = clusterSolution;
+            this.bestSolution = new CustomerSolution(null, double.MaxValue);
+            this.customersDistanceMatrix = Functions.customersDistanceMatrix(instance);
         }
 
         /*
@@ -36,7 +39,7 @@ namespace cluvrp_grasp
         public void Grasp(int totalIterations = 100, double alpha = 0.8)
         {
             int iterator = 0;
-            while(iterator < totalIterations)
+            while (iterator < totalIterations)
             {
                 CustomerSolution solution = constructGreedyRandomizedSolution(alpha);
 
@@ -66,65 +69,198 @@ namespace cluvrp_grasp
             // Init variables
             int[][] clusters = instance.clusters();
             int numbersOfClusters = clusters.Length;
+            List<int>[] customersCircuit = new List<int>[numbersOfClusters];
+            Tuple<int, int> customersConnectClusters = new Tuple<int, int>(0, 0);
+            int startingNode = 0;
 
             // Main Cycle 
             // Visitir all cluster and create TSP of customers for each one
-            for (int i = 0; i + 1 < numbersOfClusters; i++)
+            for (int i = 0; i < numbersOfClusters; i++)
             {
+                // Add actual (initial of cluster) customer
+                customersCircuit[i] = new List<int>();
+                customersCircuit[i].Add(startingNode);
+
+                // For know best customer to conect actual cluster to the next
+                if (i + 1 < numbersOfClusters && clusters[i].Length > 1)
+                {
+                    customersConnectClusters = bestCustomersBetween2Clusters(clusters[i], clusters[i + 1], startingNode);
+                }else if(i + 1 < numbersOfClusters && clusters[i].Length == 1)
+                {
+                    int nextCustomer = bestNextCustomer(startingNode, clusters[i + 1]);
+                    customersConnectClusters = new Tuple<int, int>(0, nextCustomer);
+                }
 
                 // Convert array to list
-                List<int> customers = clusters[i].OfType<int>().ToList();
+                List<int> customersToVisit = clusters[i].OfType<int>().ToList();
 
-                while()
-
-                // Create RCL for clusters by demand
-                List<int> clusterByDemandRCL = buildClusterByDemandRCL(clustersToVisit, clustersDemand, alphaDemand);
-
-                // Select cluster for RCL
-                int clusterSelected = selectFromRCL(clusterByDemandRCL);
-
-                // Create RCL for vehicle of clusterSeleted by distance (and bestFit capacity)
-                List<int> vehicleBydistanceRCL = buildVehicleByDistanceRCL(clusterRouteForVehicle, vehicleCapacity, vehicleRemSpace, clusterSelected, clustersDemand[clusterSelected], alphaDistance);
-
-                // Only add the cluster to the route of vehicle if were possible fit it
-                if (vehicleBydistanceRCL.Count > 0)
+                // Remove initial and final customers
+                customersToVisit.Remove(startingNode);
+                customersToVisit.Remove(customersConnectClusters.Item1);
+                
+                // While exists customers to visit
+                while (customersToVisit.Count > 0)
                 {
-                    // Select vehicle from RCL 
-                    int vehicleSelected = selectFromRCL(vehicleBydistanceRCL);
+                    // Create RCL for customer 
+                    List<int> customerRCL = buildCustomerRCL(startingNode, customersToVisit, alpha);
 
-                    // Add cluster to vehicle route
-                    clusterRouteForVehicle[vehicleSelected].Add(clusterSelected);
+                    // Select customer for RCL
+                    int customerSelected = Functions.selectRandomElement(customerRCL);
 
-                    // Update vehicle remmaing space
-                    vehicleRemSpace[vehicleSelected] -= clustersDemand[clusterSelected];
+                    // Add customer to the path
+                    customersCircuit[i].Add(customerSelected);
 
-                    // Remove cluster of the list to visit
-                    clustersToVisit.Remove(clusterSelected);
+                    // Quit visited customer
+                    customersToVisit.Remove(customerSelected);
                 }
-            }
 
-            // If there are clusters without vehicle
-            if (clustersToVisit.Count != 0)
-            {
-                return new ClusterSolution(new List<int>[0], 0);
-            }
+                // Add final customer that connect to i+1 cluster
+                // In the final cluster the next customer is 0 
+                // the it has not be added
+                if (clusters[i].Length > 1 && i + 1 < numbersOfClusters)
+                {
+                    customersCircuit[i].Add(customersConnectClusters.Item1);
+                }
 
-            // Add depot as final cluster for all travels
-            for (int i = 0; i < numberOfVehicles; i++)
-            {
-                clusterRouteForVehicle[i].Add(0);
+                // Next customer of next cluster 
+                startingNode = customersConnectClusters.Item2;
             }
 
             // Calculte total inter-cluster distance
-            double travelTotalDistance = calculateClusterTravelDistance(clusterRouteForVehicle, this.clustersDistanceMatrix);
+            //double travelTotalDistance = calculateClusterTravelDistance(clusterRouteForVehicle, this.clustersDistanceMatrix);
 
             // Set solution
-            ClusterSolution solution = new ClusterSolution(clusterRouteForVehicle, travelTotalDistance);
+            CustomerSolution solution = new CustomerSolution(customersCircuit, 0);
 
             // Return solution
             return solution;
         }
-    }
 
-    
+        private int bestNextCustomer(int startingNode, int[] cluster)
+        {
+            // Define min distance and tuple
+            double minDistance = double.MaxValue;
+            int ret = 0;
+
+            // For each customer in cluster 1
+            for (int i = 0; i < cluster.Length; i++)
+            {
+                // Customer 1
+                int customer1 = cluster[i];
+
+                // Get distance between customer 1 and customer 2
+                double distance = this.customersDistanceMatrix[startingNode][customer1];
+
+                // Update min distance
+                if (distance < minDistance && customer1 != startingNode)
+                {
+                    minDistance = distance;
+                    ret = customer1;
+                }
+
+            }
+
+            // Return min distance
+            return ret;
+        }
+
+        private List<int> buildCustomerRCL(int actualCustomer, List<int> customersToVisit, double alpha)
+        {
+            // Set variables
+            List<int> RCL = new List<int>();
+
+            // Calculate max and min distance for RCL condition
+            double minDistance = minCustomerDistance(customersToVisit, actualCustomer);
+            double maxDistance = maxCustomerDistance(customersToVisit, actualCustomer);
+
+            // Set RCL condition criteria
+            double RCLCondition = minDistance + alpha * (maxDistance - minDistance);
+
+            // For each vehicle
+            for (int j = 0; j < customersToVisit.Count; j++)
+            {
+
+                // Calculate customers distance
+                double distanceBetweenCustomers = this.customersDistanceMatrix[actualCustomer][customersToVisit[j]];
+
+                // Add the vehicle to RCL if is possible
+                if (distanceBetweenCustomers <= RCLCondition)
+                {
+                    RCL.Add(customersToVisit[j]);
+                }
+            }
+
+            // return rcl
+            return RCL;
+        }
+
+        private Tuple<int, int> bestCustomersBetween2Clusters(int[] cluster1, int[] cluster2, int startingNode)
+        {
+
+            // Define min distance and tuple
+            double minDistance = double.MaxValue;
+            Tuple<int, int> ret = new Tuple<int, int>(0, 0);
+
+            // For each customer in cluster 1
+            for (int i = 0; i < cluster1.Length; i++)
+            {
+                // Customer 1
+                int customer1 = cluster1[i];
+
+                // For each customer in cluster 2
+                for (int j = 0; j < cluster2.Length; j++)
+                {
+                    // Customer 2
+                    int customer2 = cluster2[j];
+
+                    // Get distance between customer 1 and customer 2
+                    double distance = this.customersDistanceMatrix[customer1][customer2];
+
+                    // Update min distance
+                    if (distance < minDistance && customer1 != startingNode)
+                    {
+                        minDistance = distance;
+                        ret = new Tuple<int, int>(cluster1[i], cluster2[j]);
+                    }
+                }
+            }
+
+            // Return min distance
+            return ret;
+        }
+
+        /*
+        * 
+        * Calculte the max distance between the last cluster 
+        * visited (of all vehicles) and toCluster
+        * 
+        */
+        private double maxCustomerDistance(List<int> customers, int toCustomer)
+        {
+            double ret = double.MinValue;
+            for (int i = 0; i < customers.Count; i++)
+            {
+               ret = Math.Max(ret, this.customersDistanceMatrix[customers[i]][toCustomer]);
+
+            }
+            return ret;
+        }
+
+        /*
+         * 
+         * Calculte the min distance between the last cluster 
+         * visited (of all vehicles) and toCluster
+         * 
+         */
+        private double minCustomerDistance(List<int> customers, int toCustomer)
+        {
+            double ret = double.MaxValue;
+            for (int i = 0; i < customers.Count; i++)
+            {
+                ret = Math.Min(ret, this.customersDistanceMatrix[customers[i]][toCustomer]);
+            }
+            return ret;
+        }
+
+    }
 }

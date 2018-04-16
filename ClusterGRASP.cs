@@ -215,7 +215,7 @@ using System.Collections.Generic;
                 List<int> clusterByDemandRCL = buildClusterByDemandRCL(clustersToVisit, clustersDemand, alphaDemand);
 
                 // Select cluster for RCL
-                int clusterSelected = selectFromRCL(clusterByDemandRCL);
+                int clusterSelected = Functions.selectRandomElement(clusterByDemandRCL);
 
                 // Create RCL for vehicle of clusterSeleted by distance (and bestFit capacity)
                 List<int> vehicleBydistanceRCL = buildVehicleByDistanceRCL(clusterRouteForVehicle, vehicleCapacity, vehicleRemSpace, clusterSelected, clustersDemand[clusterSelected], alphaDistance);
@@ -224,7 +224,7 @@ using System.Collections.Generic;
                 if (vehicleBydistanceRCL.Count > 0)
                 {
                     // Select vehicle from RCL 
-                    int vehicleSelected = selectFromRCL(vehicleBydistanceRCL);
+                    int vehicleSelected = Functions.selectRandomElement(vehicleBydistanceRCL);
 
                     // Add cluster to vehicle route
                     clusterRouteForVehicle[vehicleSelected].Add(clusterSelected);
@@ -416,19 +416,7 @@ using System.Collections.Generic;
             }
             return ret;
         }
-
-        /*
-         * 
-         * Select a element from a RCL list with random criteria
-         * 
-         */
-        private int selectFromRCL(List<int> list)
-        {
-            Random rnd = new Random();
-            int rndIndex = rnd.Next(0, list.Count);
-            return list[rndIndex];
-        }
-        
+       
         /*
          *
          * Calculate the total distance of the cluster travel
