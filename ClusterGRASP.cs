@@ -463,7 +463,7 @@ using System.Collections.Generic;
         private void localSearch(ref ClusterSolution solution)
         {
             // Create a local search handler for cluster-level problem
-            LocalSearches localSearchsCluster = new LocalSearches(solution, this.clustersDistanceMatrix, 200, 200);
+            ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(solution, this.clustersDistanceMatrix, 200, 200);
 
             // Perform TwoOpt
             localSearchsCluster.twoOpt();
