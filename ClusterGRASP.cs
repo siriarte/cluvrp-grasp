@@ -132,7 +132,7 @@ using System.Collections.Generic;
 	     * return BestSolution
          *
          */
-        public void Grasp(int totalIterations = 100, double alphaCapacity = 0.8, double alphaDistance = 0.8)
+        public void Grasp(int totalIterations = 100, double alphaCapacity = 0.8, double alphaDistance = 1)
         {
             
             // Calculate customers distance matrix 
@@ -237,10 +237,10 @@ using System.Collections.Generic;
                 }
             }
 
-            // If there are clusters without vehicle
+            // If there are clusters without vehicle throw exception
             if(clustersToVisit.Count != 0)
             {
-                return new ClusterSolution(new List<int>[0], 0);
+                throw new Exception("Greedy at Cluster-Level Error - ClusterToVisit list is not empty!");
             }
 
             // Add depot as final cluster for all travels
@@ -329,7 +329,7 @@ using System.Collections.Generic;
          *  and last cluster on each vehicle      
          * 
          */
-        private List<int> buildVehicleByDistanceRCL(IList[] clusterRouteForVehicle, int vehicleCapacity, int[] vechiculeRemSpace, int clusterSelected, int clusterDemand, double alphaDistance)
+        private List<int> buildVehicleByDistanceRCLBestFit(IList[] clusterRouteForVehicle, int vehicleCapacity, int[] vechiculeRemSpace, int clusterSelected, int clusterDemand, double alphaDistance)
         {
             // Set variables
             List<int> RCL = new List<int>();
@@ -380,6 +380,62 @@ using System.Collections.Generic;
             // return rcl
             return RCL;
         }
+
+        /*
+      * 
+      *  Build RCL with the criteria of minimal distance bewteen next cluster 
+      *  and last cluster on each vehicle      
+      * 
+      */
+        private List<int> buildVehicleByDistanceRCL(IList[] clusterRouteForVehicle, int vehicleCapacity, int[] vechiculeRemSpace, int clusterSelected, int clusterDemand, double alphaDistance)
+        {
+            // Set variables
+            List<int> RCL = new List<int>();
+            int numberOfVehicles = vechiculeRemSpace.Length;
+            int minCapacity = vehicleCapacity + 1;
+
+            // Calculate max and min distance for RCL condition
+            double minDistance = minClusterDistance(clusterRouteForVehicle, clusterSelected);
+            double maxDistance = maxClusterDistance(clusterRouteForVehicle, clusterSelected);
+
+            // Set RCL condition criteria
+            double RCLCondition = minDistance + alphaDistance * (maxDistance - minDistance);
+
+            // For each vehicle
+            for (int j = 0; j < numberOfVehicles; j++)
+            {
+                // Calculate the efective distance beetwen the last cluster visited 
+                // by vehicle j and clusterSelected
+                int lastClusterVisited = (int)clusterRouteForVehicle[j][clusterRouteForVehicle[j].Count - 1];
+                double distanceBetweenClusters = this.clustersDistanceMatrix[lastClusterVisited][clusterSelected];
+
+                // If there is space on vehicle j AND
+                // The remaning space is less than minCapacity AND
+                // the distance es acceptable for RCL condition
+                if (vechiculeRemSpace[j] >= clusterDemand && distanceBetweenClusters <= RCLCondition)
+                {
+                    RCL.Add(j);
+                }
+
+            }
+
+            // If RCL is empty insert the vehicle that fit
+            if (RCL.Count == 0)
+            {
+                for(int j = 0; j< numberOfVehicles; j++)
+                {
+                    if(vechiculeRemSpace[j] >= clusterDemand)
+                    {
+                        RCL.Add(j);
+                    }
+                }
+
+            }
+
+            // return rcl
+            return RCL;
+        }
+
 
         /*
          * 

@@ -44,7 +44,7 @@ namespace cluvrp_grasp
                 CustomerSolution solution = constructGreedyRandomizedSolution(alpha);
 
                 // Local search 
-                this.localSearch(ref solution);
+                //this.localSearch(ref solution);
 
                 // Update Best solution
                 if (solution.totalRouteDistance < bestSolution.totalRouteDistance)
@@ -67,73 +67,104 @@ namespace cluvrp_grasp
         private CustomerSolution constructGreedyRandomizedSolution(double alpha)
         {
             // Init variables
-            int[][] clusters = instance.clusters();
-            int numbersOfClusters = clusters.Length;
-            List<int>[] customersCircuit = new List<int>[numbersOfClusters];
-            Tuple<int, int> customersConnectClusters = new Tuple<int, int>(0, 0);
-            int startingNode = 0;
+            int[][] notSortedClusters = instance.clusters();
+            List<int>[] clusterRoute = this.clusterSolution.clusterRouteForVehicule;
+            List<int>[][] customersCircuit = new List<int>[clusterRoute.Length][];
+            Tuple<int, int> customersConnectClusters = new Tuple<int, int>(0, 0); 
 
-            // Main Cycle 
-            // Visitir all cluster and create TSP of customers for each one
-            for (int i = 0; i < numbersOfClusters; i++)
+            // Start from depot
+            int startingCustomer = 0;
+
+            int[][][] customerByClusterOrderRoute = sortClustersByRoute(notSortedClusters, clusterRoute);
+
+            // For each vehicule cluster-route
+            for (int vehicle = 0; vehicle < clusterRoute.Length; vehicle++)
             {
-                // Add actual (initial of cluster) customer
-                customersCircuit[i] = new List<int>();
-                customersCircuit[i].Add(startingNode);
 
-                // For know best customer to conect actual cluster to the next
-                if (i + 1 < numbersOfClusters && clusters[i].Length > 1)
+                // For each cluster in the i-vehicle route
+                int numbersOfClusters = clusterRoute[vehicle].Count;
+                int[][] clusters = customerByClusterOrderRoute[vehicle];
+                customersCircuit[vehicle] = new List<int>[numbersOfClusters];
+
+                // Visit all cluster for the i-vehicle
+                for (int i = 0; i < numbersOfClusters; i++)
                 {
-                    customersConnectClusters = bestCustomersBetween2Clusters(clusters[i], clusters[i + 1], startingNode);
-                }else if(i + 1 < numbersOfClusters && clusters[i].Length == 1)
-                {
-                    int nextCustomer = bestNextCustomer(startingNode, clusters[i + 1]);
-                    customersConnectClusters = new Tuple<int, int>(0, nextCustomer);
+                    // Add actual (initial of cluster) customer
+                    customersCircuit[vehicle][i] = new List<int>();
+                    customersCircuit[vehicle][i].Add(startingCustomer);
+
+                    // For best customer to conect actual cluster to the next
+                    // If the cluster only has 1 customer, you only have to know the 
+                    // customer for the next cluster
+                    if (i + 1 < numbersOfClusters && clusters[i].Length > 1)
+                    {
+                        customersConnectClusters = bestCustomersBetween2Clusters(clusters[i], clusters[i + 1], startingCustomer);
+                    }
+                    else if (i + 1 < numbersOfClusters && clusters[i].Length == 1)
+                    {
+                        int nextCustomer = bestNextCustomer(startingCustomer, clusters[i + 1]);
+                        customersConnectClusters = new Tuple<int, int>(startingCustomer, nextCustomer);
+                    }
+
+                    // Convert array to list
+                    List<int> customersToVisit = clusters[i].OfType<int>().ToList();
+
+                    // Remove initial and final customers
+                    customersToVisit.Remove(startingCustomer);
+                    customersToVisit.Remove(customersConnectClusters.Item1);
+
+                    // While exists customers to visit
+                    while (customersToVisit.Count > 0)
+                    {
+                        // Create RCL for customer 
+                        List<int> customerRCL = buildCustomerRCL(startingCustomer, customersToVisit, alpha);
+
+                        // Select customer for RCL
+                        int customerSelected = Functions.selectRandomElement(customerRCL);
+
+                        // Add customer to the path
+                        customersCircuit[vehicle][i].Add(customerSelected);
+
+                        // Quit visited customer
+                        customersToVisit.Remove(customerSelected);
+                    }
+
+                    // Add final customer that connect to i+1 cluster
+                    // In the final cluster the next customer is 0 
+                    // the it has not be added
+                    if (clusters[i].Length > 1 && i + 1 < numbersOfClusters)
+                    {
+                        customersCircuit[vehicle][i].Add(customersConnectClusters.Item1);
+                    }
+
+                    // Next customer of next cluster 
+                    startingCustomer = customersConnectClusters.Item2;
                 }
-
-                // Convert array to list
-                List<int> customersToVisit = clusters[i].OfType<int>().ToList();
-
-                // Remove initial and final customers
-                customersToVisit.Remove(startingNode);
-                customersToVisit.Remove(customersConnectClusters.Item1);
-                
-                // While exists customers to visit
-                while (customersToVisit.Count > 0)
-                {
-                    // Create RCL for customer 
-                    List<int> customerRCL = buildCustomerRCL(startingNode, customersToVisit, alpha);
-
-                    // Select customer for RCL
-                    int customerSelected = Functions.selectRandomElement(customerRCL);
-
-                    // Add customer to the path
-                    customersCircuit[i].Add(customerSelected);
-
-                    // Quit visited customer
-                    customersToVisit.Remove(customerSelected);
-                }
-
-                // Add final customer that connect to i+1 cluster
-                // In the final cluster the next customer is 0 
-                // the it has not be added
-                if (clusters[i].Length > 1 && i + 1 < numbersOfClusters)
-                {
-                    customersCircuit[i].Add(customersConnectClusters.Item1);
-                }
-
-                // Next customer of next cluster 
-                startingNode = customersConnectClusters.Item2;
             }
-
             // Calculte total inter-cluster distance
-            //double travelTotalDistance = calculateClusterTravelDistance(clusterRouteForVehicle, this.clustersDistanceMatrix);
+            double travelTotalDistance = Functions.calculateTotalTravelDistance(customersCircuit, this.customersDistanceMatrix);
 
             // Set solution
-            CustomerSolution solution = new CustomerSolution(customersCircuit, 0);
+            CustomerSolution solution = new CustomerSolution(customersCircuit, travelTotalDistance);
 
             // Return solution
             return solution;
+        }
+
+        private int[][][] sortClustersByRoute(int[][] notSortedclusters, List<int>[] clusterRoute)
+        {
+            int[][][] sortedClusterRoute = new int[clusterRoute.Length][][];
+            
+            for(int vehicle = 0; vehicle < clusterRoute.Length; vehicle++)
+            {
+                sortedClusterRoute[vehicle] = new int[clusterRoute[vehicle].Count][];
+                for (int i = 0; i < clusterRoute[vehicle].Count; i++)
+                {
+                    int actualCluster = clusterRoute[vehicle][i];
+                    sortedClusterRoute[vehicle][i] = notSortedclusters[actualCluster];
+                }
+            }
+            return sortedClusterRoute;
         }
 
         private int bestNextCustomer(int startingNode, int[] cluster)

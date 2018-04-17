@@ -1,24 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace cluvrp_grasp
 {
-          
+
     class CustomerLocalSearch
     {
         public int _maxIterationsWithoutImprovementTwoOpt { get; set; }
         public int _maxIterationsWithoutImprovementRelocate { get; set; }
         public int _maxIterationsWithoutImprovementExchange { get; set; }
-        public ClusterSolution _clusterSolution { get; set; }
+        public CustomerSolution _clusterSolution { get; set; }
         public double[][] _clusterMatrixDistance { get; set; }
-        
-        public CustomerLocalSearch(ClusterSolution clusterSolution, double[][] clusterMatrixDistance, 
+
+        public CustomerLocalSearch(CustomerSolution clusterSolution, double[][] clusterMatrixDistance,
             int maxIterationsWithoutImprovement = 100,
             int maxIterationsWithoutImprovementRelocate = 100,
-            int maxIterationsWithoutImprovementExchange =100)
+            int maxIterationsWithoutImprovementExchange = 100)
         {
             _maxIterationsWithoutImprovementTwoOpt = maxIterationsWithoutImprovement;
             _clusterSolution = clusterSolution;
@@ -29,13 +26,14 @@ namespace cluvrp_grasp
 
         public void twoOpt()
         {
-            List<int>[] routeForVehicule = _clusterSolution.clusterRouteForVehicule;
-            int numberOfVehicles = routeForVehicule.Length;
-            double[] bestDistance = new double[numberOfVehicles];
+            List<int>[] customersPaths = _clusterSolution.clusterRouteForVehicule;
+            int numberOfClusters = customersPaths.Length;
+            double[] bestDistance = new double[numberOfClusters];
 
-            for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++) {
+            for (int vehicle = 0; vehicle < numberOfClusters; vehicle++)
+            {
 
-                List<int> route = routeForVehicule[vehicle];
+                List<int> route = customersPaths[vehicle];
                 int iteration = 0;
                 int max_w = route.Count();
 
@@ -43,16 +41,16 @@ namespace cluvrp_grasp
 
                 while (iteration < _maxIterationsWithoutImprovementTwoOpt)
                 {
-                    for(int i = 1; i < max_w - 1; i++)
+                    for (int i = 1; i < max_w - 1; i++)
                     {
-                        for(int k = i + 1; k < max_w; k++)
+                        for (int k = i + 1; k < max_w; k++)
                         {
                             List<int> newRoute = twoOptSwap(route, i, k);
                             double newDistance = clusterTravelDistance(newRoute, this._clusterMatrixDistance);
                             if (newDistance < bestDistance[vehicle] && isValidRoute(newRoute))
                             {
                                 iteration = 0;
-                                routeForVehicule[vehicle] = newRoute;
+                                customersPaths[vehicle] = newRoute;
                                 bestDistance[vehicle] = newDistance;
                             }
                         }
@@ -61,9 +59,9 @@ namespace cluvrp_grasp
                 }
             }
 
-            this._clusterSolution = new ClusterSolution(routeForVehicule, bestDistance.Sum());
+            this._clusterSolution = new CustomerSolution(customersPaths, bestDistance.Sum());
         }
-
+        /*
         public List<int> twoOptSwap(List<int> route, int i, int k)
         {
             List<int> newRoute = route.GetRange(0, i);
@@ -71,7 +69,7 @@ namespace cluvrp_grasp
             List<int> reverseRoute = route.GetRange(i, reverseSize);
             reverseRoute.Reverse();
             int restSize = route.Count - (k + 1);
-            List<int> endRoute = route.GetRange(k+1, restSize);
+            List<int> endRoute = route.GetRange(k + 1, restSize);
             newRoute.AddRange(reverseRoute);
             newRoute.AddRange(endRoute);
             return newRoute;
@@ -81,7 +79,7 @@ namespace cluvrp_grasp
         {
             int numberOfVehicles = _clusterSolution.clusterRouteForVehicule.Length;
 
-            for(int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
+            for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
                 List<int> route = _clusterSolution.clusterRouteForVehicule[vehicle];
                 int iteration = 0;
@@ -96,7 +94,7 @@ namespace cluvrp_grasp
                                 (i == route.Count - 1 && j == 0)))
                                 continue;
 
-                            if(relocate(route, vehicle, i, j))
+                            if (relocate(route, vehicle, i, j))
                             {
                                 iteration = 0;
                             }
@@ -104,7 +102,7 @@ namespace cluvrp_grasp
                     }
                     iteration++;
                 }
-           }
+            }
         }
 
         public bool relocate(List<int> route, int vehicle, int i, int j)
@@ -143,10 +141,14 @@ namespace cluvrp_grasp
                     _clusterSolution.clusterRouteForVehicule[vehicle] = route;
                     return true;
                 }
+                else
+                {
+                    route.RemoveAt(j);
+                    route.Insert(i, valor);
+                }
             }
             return false;
         }
-
 
         public static double clusterTravelDistance(List<int> travel, double[][] clustersDistanceMatrix)
         {
@@ -197,7 +199,7 @@ namespace cluvrp_grasp
 
         bool exchange(List<int> route, int vehicle, int i, int j)
         {
-     
+
             // Para no irnos del camino
             var celda_anterior_i = i - 1 == -1 ? route.Count - 1 : i - 1;
             var celda_anterior_j = j - 1 == -1 ? route.Count - 1 : j - 1;
@@ -260,7 +262,7 @@ namespace cluvrp_grasp
                 if (isValidRoute(route))
                 {
                     _clusterSolution.totalRouteDistance = nuevo_costo;
-                    _clusterSolution.clusterRouteForVehicule[vehicle] = route;
+                    //_clusterSolution.clusterRouteForVehicule[vehicle] = route;
                     return true;
                 }
             }
@@ -269,10 +271,11 @@ namespace cluvrp_grasp
 
         public bool isValidRoute(List<int> route)
         {
-            if (route.Count > 0) {
+            if (route.Count > 0)
+            {
                 return (route[0] == 0 && route[route.Count - 1] == 0);
             }
             return false;
-        }
+        }*/
     }
 }

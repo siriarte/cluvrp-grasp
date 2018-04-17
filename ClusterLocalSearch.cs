@@ -142,12 +142,15 @@ namespace cluvrp_grasp
                     _clusterSolution.totalRouteDistance = nuevo_costo;
                     _clusterSolution.clusterRouteForVehicule[vehicle] = route;
                     return true;
+                }else
+                {
+                    route.RemoveAt(j);
+                    route.Insert(i, valor);
                 }
             }
             return false;
         }
-
-
+        
         public static double clusterTravelDistance(List<int> travel, double[][] clustersDistanceMatrix)
         {
             // Set variables
