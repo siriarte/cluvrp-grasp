@@ -63,17 +63,79 @@ namespace cluvrp_grasp
             list[indexA] = list[indexB];
             list[indexB] = tmp;
         }
-
-        /*
-         * 
-         * Select a element from a RCL list with random criteria
-         * 
-         */
+         
+        // Select a element from a RCL list with random criteria
         public static int selectRandomElement(List<int> list)
         {
             Random rnd = new Random();
             int rndIndex = rnd.Next(0, list.Count);
             return list[rndIndex];
         }
+
+        // Calculate the total travel (visiting all the custer by each vehicle)
+        static public double calculateTotalTravelDistance(List<int>[][] customersCircuit, double[][] customersDistanceMatrix)
+        {
+            double distance = 0;
+            int customer1 = 0;
+            int customer2 = 0;
+
+            for (int vehicle = 0; vehicle < customersCircuit.Length; vehicle++)
+            {
+                for (int clusterIt = 0; clusterIt < customersCircuit[vehicle].Length; clusterIt++)
+                {
+                    for (int customerIt = 0; customerIt + 1 < customersCircuit[vehicle][clusterIt].Count; customerIt++)
+                    {
+                        customer1 = customersCircuit[vehicle][clusterIt][customerIt];
+                        customer2 = customersCircuit[vehicle][clusterIt][customerIt + 1];
+                        distance += customersDistanceMatrix[customer1][customer2];
+                    }
+
+                    if (clusterIt + 1 < customersCircuit[vehicle].Length)
+                    {
+                        int customerNextCustomer = customersCircuit[vehicle][clusterIt + 1][0];
+                        distance += customersDistanceMatrix[customer2][customerNextCustomer];
+                    }
+
+                }
+            }
+            return distance;
+        }
+
+        // Calculate the total travel visiting all the custer by ONE vehicle)
+        static public double calculateTotalTravelDistance(List<int>[][] customersCircuit, double[][] customersDistanceMatrix, int vehicle)
+        {
+            double distance = 0;
+            int customer1 = 0;
+            int customer2 = 0;
+
+            for (int clusterIt = 0; clusterIt < customersCircuit[vehicle].Length; clusterIt++)
+            {
+                for (int customerIt = 0; customerIt + 1 < customersCircuit[vehicle][clusterIt].Count; customerIt++)
+                {
+                    customer1 = customersCircuit[vehicle][clusterIt][customerIt];
+                    customer2 = customersCircuit[vehicle][clusterIt][customerIt + 1];
+                    distance += customersDistanceMatrix[customer1][customer2];
+                }
+
+                if (clusterIt + 1 < customersCircuit[vehicle].Length)
+                {
+                    int customerNextCustomer = customersCircuit[vehicle][clusterIt + 1][0];
+                    distance += customersDistanceMatrix[customer2][customerNextCustomer];
+                }
+
+            }
+            
+            return distance;
+        }
+                
+        // Populate array
+        public static void Populate<T>(this T[] arr, T value)
+        {
+            for (int i = 0; i < arr.Length; i++)
+            {
+                arr[i] = value;
+            }
+        }
+
     }
 }
