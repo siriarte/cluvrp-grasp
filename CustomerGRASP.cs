@@ -9,18 +9,18 @@ namespace cluvrp_grasp
     class CustomerGRASP
     {
         // Public variables
-        public CluVRPInstance instance;
-        public double[][] customersDistanceMatrix;
-        public CustomerSolution bestSolution;
-        public ClusterSolution clusterSolution;
+        public CluVRPInstance _instance;
+        public double[][] _customersDistanceMatrix;
+        public CustomerSolution _costumerSolution;
+        public ClusterSolution _clusterSolution;
 
         public CustomerGRASP(CluVRPInstance instance, ClusterSolution clusterSolution)
         {
             // Set variables
-            this.instance = instance;
-            this.clusterSolution = clusterSolution;
-            this.bestSolution = new CustomerSolution(null, double.MaxValue);
-            this.customersDistanceMatrix = Functions.customersDistanceMatrix(instance);
+            this._instance = instance;
+            this._clusterSolution = clusterSolution;
+            this._costumerSolution = new CustomerSolution(clusterSolution, instance.vehicles());
+            this._customersDistanceMatrix = Functions.customersDistanceMatrix(instance);
         }
 
         /*
@@ -36,7 +36,7 @@ namespace cluvrp_grasp
           * return BestSolution
           *
           */
-        public void Grasp(int totalIterations = 100, double alpha = 0.8)
+        public void Grasp(int totalIterations = 100, double alpha = 0)
         {
             int iterator = 0;
             while (iterator < totalIterations)
@@ -44,12 +44,12 @@ namespace cluvrp_grasp
                 CustomerSolution solution = constructGreedyRandomizedSolution(alpha);
 
                 // Local search 
-                //this.localSearch(ref solution);
+                this.localSearch(ref solution);
 
                 // Update Best solution
-                if (solution.totalRouteDistance < bestSolution.totalRouteDistance)
+                if (solution._totalRouteDistance < _costumerSolution._totalRouteDistance)
                 {
-                    bestSolution = solution;
+                    _costumerSolution = solution;
                 }
 
                 // Increace iterator
@@ -61,16 +61,30 @@ namespace cluvrp_grasp
 
         private void localSearch(ref CustomerSolution solution)
         {
-            throw new NotImplementedException();
+            // Create a local search handler for cluster-level problem
+            CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(solution, this._customersDistanceMatrix, 200, 200);
+
+            // Perform TwoOpt
+            customerLocalSearch.twoOpt();
+
+            // Perform Relocate
+            customerLocalSearch.relocate();
+
+            // Perform Exchange
+            //localSearchsCluster.exchange();
+
+            // Set the solution
+            solution = customerLocalSearch._customerSolution;
         }
 
         private CustomerSolution constructGreedyRandomizedSolution(double alpha)
         {
             // Init variables
-            int[][] notSortedClusters = instance.clusters();
-            List<int>[] clusterRoute = this.clusterSolution.clusterRouteForVehicule;
+            int[][] notSortedClusters = _instance.clusters();
+            List<int>[] clusterRoute = this._clusterSolution.clusterRouteForVehicule;
             List<int>[][] customersCircuit = new List<int>[clusterRoute.Length][];
-            Tuple<int, int> customersConnectClusters = new Tuple<int, int>(0, 0); 
+            Tuple<int, int> customersConnectClusters = new Tuple<int, int>(0, 0);
+            double[] vehiculeTotalDistance = new double[_instance.vehicles()];
 
             // Start from depot
             int startingCustomer = 0;
@@ -140,15 +154,18 @@ namespace cluvrp_grasp
                     // Next customer of next cluster 
                     startingCustomer = customersConnectClusters.Item2;
                 }
+
+                // Calculte total inter-cluster distance
+                vehiculeTotalDistance[vehicle] = Functions.calculateTotalTravelDistance(customersCircuit, this._customersDistanceMatrix, vehicle);
+
             }
-            // Calculte total inter-cluster distance
-            double travelTotalDistance = Functions.calculateTotalTravelDistance(customersCircuit, this.customersDistanceMatrix);
 
             // Set solution
-            CustomerSolution solution = new CustomerSolution(customersCircuit, travelTotalDistance);
+            this._costumerSolution.vehiculeRouteDistance = vehiculeTotalDistance;
+            this._costumerSolution._customersCircuit = customersCircuit;
 
             // Return solution
-            return solution;
+            return _costumerSolution;
         }
 
         private int[][][] sortClustersByRoute(int[][] notSortedclusters, List<int>[] clusterRoute)
@@ -180,7 +197,7 @@ namespace cluvrp_grasp
                 int customer1 = cluster[i];
 
                 // Get distance between customer 1 and customer 2
-                double distance = this.customersDistanceMatrix[startingNode][customer1];
+                double distance = this._customersDistanceMatrix[startingNode][customer1];
 
                 // Update min distance
                 if (distance < minDistance && customer1 != startingNode)
@@ -212,7 +229,7 @@ namespace cluvrp_grasp
             {
 
                 // Calculate customers distance
-                double distanceBetweenCustomers = this.customersDistanceMatrix[actualCustomer][customersToVisit[j]];
+                double distanceBetweenCustomers = this._customersDistanceMatrix[actualCustomer][customersToVisit[j]];
 
                 // Add the vehicle to RCL if is possible
                 if (distanceBetweenCustomers <= RCLCondition)
@@ -245,7 +262,7 @@ namespace cluvrp_grasp
                     int customer2 = cluster2[j];
 
                     // Get distance between customer 1 and customer 2
-                    double distance = this.customersDistanceMatrix[customer1][customer2];
+                    double distance = this._customersDistanceMatrix[customer1][customer2];
 
                     // Update min distance
                     if (distance < minDistance && customer1 != startingNode)
@@ -271,7 +288,7 @@ namespace cluvrp_grasp
             double ret = double.MinValue;
             for (int i = 0; i < customers.Count; i++)
             {
-               ret = Math.Max(ret, this.customersDistanceMatrix[customers[i]][toCustomer]);
+               ret = Math.Max(ret, this._customersDistanceMatrix[customers[i]][toCustomer]);
 
             }
             return ret;
@@ -288,7 +305,7 @@ namespace cluvrp_grasp
             double ret = double.MaxValue;
             for (int i = 0; i < customers.Count; i++)
             {
-                ret = Math.Min(ret, this.customersDistanceMatrix[customers[i]][toCustomer]);
+                ret = Math.Min(ret, this._customersDistanceMatrix[customers[i]][toCustomer]);
             }
             return ret;
         }

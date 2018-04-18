@@ -9,8 +9,8 @@ namespace cluvrp_grasp
         public int _maxIterationsWithoutImprovementTwoOpt { get; set; }
         public int _maxIterationsWithoutImprovementRelocate { get; set; }
         public int _maxIterationsWithoutImprovementExchange { get; set; }
-        public CustomerSolution _clusterSolution { get; set; }
-        public double[][] _clusterMatrixDistance { get; set; }
+        public CustomerSolution _customerSolution { get; set; }
+        public double[][] _customersMatrixDistance { get; set; }
 
         public CustomerLocalSearch(CustomerSolution clusterSolution, double[][] clusterMatrixDistance,
             int maxIterationsWithoutImprovement = 100,
@@ -18,50 +18,60 @@ namespace cluvrp_grasp
             int maxIterationsWithoutImprovementExchange = 100)
         {
             _maxIterationsWithoutImprovementTwoOpt = maxIterationsWithoutImprovement;
-            _clusterSolution = clusterSolution;
-            _clusterMatrixDistance = clusterMatrixDistance;
+            _customerSolution = clusterSolution;
+            _customersMatrixDistance = clusterMatrixDistance;
             _maxIterationsWithoutImprovementRelocate = maxIterationsWithoutImprovementRelocate;
             _maxIterationsWithoutImprovementExchange = maxIterationsWithoutImprovementExchange;
         }
 
         public void twoOpt()
         {
-            List<int>[] customersPaths = _clusterSolution.clusterRouteForVehicule;
-            int numberOfClusters = customersPaths.Length;
-            double[] bestDistance = new double[numberOfClusters];
+            List<int>[][] customersCircuit = _customerSolution._customersCircuit;
+            int numberOfVehicles = customersCircuit.Length;
+            double[] bestDistance = new double[numberOfVehicles];
 
-            for (int vehicle = 0; vehicle < numberOfClusters; vehicle++)
+            for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
 
-                List<int> route = customersPaths[vehicle];
-                int iteration = 0;
-                int max_w = route.Count();
-
-                bestDistance[vehicle] = clusterTravelDistance(route, this._clusterMatrixDistance);
+                List<int>[] clusterRoute = customersCircuit[vehicle];
+                int iteration = 0;             
+                bestDistance[vehicle] = Functions.calculateTotalTravelDistance(customersCircuit, this._customersMatrixDistance, vehicle);
 
                 while (iteration < _maxIterationsWithoutImprovementTwoOpt)
                 {
-                    for (int i = 1; i < max_w - 1; i++)
+                    for (int clusterIt = 0; clusterIt < clusterRoute.Length; clusterIt++)
                     {
-                        for (int k = i + 1; k < max_w; k++)
+                        List<int> route = clusterRoute[clusterIt];
+                        int max_w = route.Count();
+
+                        for (int i = 1; i < max_w - 1; i++)
                         {
-                            List<int> newRoute = twoOptSwap(route, i, k);
-                            double newDistance = clusterTravelDistance(newRoute, this._clusterMatrixDistance);
-                            if (newDistance < bestDistance[vehicle] && isValidRoute(newRoute))
+                            for (int k = i + 1; k < max_w; k++)
                             {
-                                iteration = 0;
-                                customersPaths[vehicle] = newRoute;
-                                bestDistance[vehicle] = newDistance;
+                                List<int> oldRoute = customersCircuit[vehicle][clusterIt];
+                                List<int> newRoute = twoOptSwap(customersCircuit[vehicle][clusterIt], i, k);
+                                customersCircuit[vehicle][clusterIt] = newRoute;
+                                double newDistance = Functions.calculateTotalTravelDistance(customersCircuit, this._customersMatrixDistance, vehicle);
+                                if (newDistance < bestDistance[vehicle])
+                                {
+                                    iteration = 0;
+                                    customersCircuit[vehicle][clusterIt] = newRoute;
+                                    bestDistance[vehicle] = newDistance;
+                                }else
+                                {
+                                    customersCircuit[vehicle][clusterIt] = oldRoute;
+                                }
                             }
                         }
+                        iteration++;
                     }
-                    iteration++;
                 }
             }
 
-            this._clusterSolution = new CustomerSolution(customersPaths, bestDistance.Sum());
+            this._customerSolution._customersCircuit = customersCircuit;
+            this._customerSolution.vehiculeRouteDistance = bestDistance;
         }
-        /*
+        
         public List<int> twoOptSwap(List<int> route, int i, int k)
         {
             List<int> newRoute = route.GetRange(0, i);
@@ -74,39 +84,45 @@ namespace cluvrp_grasp
             newRoute.AddRange(endRoute);
             return newRoute;
         }
-
+        
         public void relocate()
         {
-            int numberOfVehicles = _clusterSolution.clusterRouteForVehicule.Length;
+            int numberOfVehicles = _customerSolution._customersCircuit.Length;
 
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
-                List<int> route = _clusterSolution.clusterRouteForVehicule[vehicle];
-                int iteration = 0;
-                while (iteration < _maxIterationsWithoutImprovementRelocate)
+                int numberOfClusters = _customerSolution._customersCircuit[vehicle].Length;
+
+                for (int clusterIt = 0; clusterIt < numberOfClusters; clusterIt++)
                 {
-
-                    for (int i = 0; i < route.Count; i++)
+                    int iteration = 0;
+                    List<int> route = _customerSolution._customersCircuit[vehicle][clusterIt];
+                    while (iteration < _maxIterationsWithoutImprovementRelocate)
                     {
-                        for (int j = 0; j < route.Count; j++)
+                        for (int i = 0; i < route.Count; i++)
                         {
-                            if ((i == j) || ((i == 0 && j == route.Count - 1) ||
-                                (i == route.Count - 1 && j == 0)))
-                                continue;
-
-                            if (relocate(route, vehicle, i, j))
+                            for (int j = 0; j < route.Count; j++)
                             {
-                                iteration = 0;
+                                if ((i == j) || ((i == 0 && j == route.Count - 1) ||
+                                    (i == route.Count - 1 && j == 0)))
+                                    continue;
+
+                                if (relocate(vehicle, clusterIt, i, j))
+                                {
+                                    iteration = 0;
+                                }
                             }
                         }
+                        iteration++;
                     }
-                    iteration++;
                 }
             }
         }
 
-        public bool relocate(List<int> route, int vehicle, int i, int j)
+        public bool relocate(int vehicle, int cluster, int i, int j)
         {
+            List<int> route = _customerSolution._customersCircuit[vehicle][cluster];
+
             // Para no irnos del camino
             var celda_anterior_i = i - 1 == -1 ? route.Count - 1 : i - 1;
             var celda_anterior_j = j - 1 == -1 ? route.Count - 1 : j - 1;
@@ -120,60 +136,30 @@ namespace cluvrp_grasp
                 celda_siguiente_j--;
 
             // Calculamos el nuevo costo, a ver si es mejor cambiar o no de posición 
-            var _a = _clusterMatrixDistance[route[celda_anterior_i]][route[i]];
-            var _b = _clusterMatrixDistance[route[i]][route[celda_siguiente_i]];
-            var _C = _clusterMatrixDistance[route[celda_anterior_i]][route[celda_siguiente_i]];
+            List<int> oldRoute = new List<int>(route);
+            var valor = route[i];
+            route.RemoveAt(i);
+            route.Insert(j, valor);
+            _customerSolution._customersCircuit[vehicle][cluster] = route;
 
-            var _A = _clusterMatrixDistance[route[celda_anterior_j]][route[i]];
-            var _B = _clusterMatrixDistance[route[i]][route[celda_siguiente_j]];
-            var _c = _clusterMatrixDistance[route[celda_anterior_j]][route[celda_siguiente_j]];
-
-            var nuevo_costo = _clusterSolution.totalRouteDistance - _a - _b + _C + _A + _B - _c;
-            if (nuevo_costo < _clusterSolution.totalRouteDistance)
+            var nuevo_costo = Functions.calculateTotalTravelDistance(_customerSolution._customersCircuit, _customersMatrixDistance, vehicle);
+            if (nuevo_costo < _customerSolution.vehiculeRouteDistance[vehicle])
             {
-                var valor = route[i];
-                route.RemoveAt(i);
-                route.Insert(j, valor);
-
-                if (isValidRoute(route))
-                {
-                    _clusterSolution.totalRouteDistance = nuevo_costo;
-                    _clusterSolution.clusterRouteForVehicule[vehicle] = route;
-                    return true;
-                }
-                else
-                {
-                    route.RemoveAt(j);
-                    route.Insert(i, valor);
-                }
+                _customerSolution.vehiculeRouteDistance[vehicle] = nuevo_costo;
+                return true;
             }
-            return false;
+             
+             _customerSolution._customersCircuit[vehicle][cluster] = oldRoute;
+             return false;
         }
-
-        public static double clusterTravelDistance(List<int> travel, double[][] clustersDistanceMatrix)
-        {
-            // Set variables
-            double totalDistance = 0;
-
-            // Iterate each cluster on vehicle route
-            for (int clusterIt = 0; clusterIt + 1 < travel.Count; clusterIt++)
-            {
-                int fromCluster = travel[clusterIt];
-                int ToCluster = travel[clusterIt + 1];
-                totalDistance += clustersDistanceMatrix[fromCluster][ToCluster];
-            }
-
-            // Return total distance
-            return totalDistance;
-        }
-
+/*
         public void exchange()
         {
-            int numberOfVehicles = _clusterSolution.clusterRouteForVehicule.Length;
+            int numberOfVehicles = _customerSolution.clusterRouteForVehicule.Length;
 
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
-                List<int> route = _clusterSolution.clusterRouteForVehicule[vehicle];
+                List<int> route = _customerSolution.clusterRouteForVehicule[vehicle];
                 int iteration = 0;
                 while (iteration < _maxIterationsWithoutImprovementExchange)
                 {
@@ -209,11 +195,11 @@ namespace cluvrp_grasp
 
             // Calculamos el nuevo costo, a ver si es mejor cambiar o no de posición 
             // Costos viejos
-            var _distancia_i_izquierda = _clusterMatrixDistance[route[celda_anterior_i]][route[i]];
-            var _distancia_i_derecha = _clusterMatrixDistance[route[i]][route[celda_siguiente_i]];
+            var _distancia_i_izquierda = _customersMatrixDistance[route[celda_anterior_i]][route[i]];
+            var _distancia_i_derecha = _customersMatrixDistance[route[i]][route[celda_siguiente_i]];
 
-            var _distancia_j_izquierda = _clusterMatrixDistance[route[celda_anterior_j]][route[j]];
-            var _distancia_j_derecha = _clusterMatrixDistance[route[j]][route[celda_siguiente_j]];
+            var _distancia_j_izquierda = _customersMatrixDistance[route[celda_anterior_j]][route[j]];
+            var _distancia_j_derecha = _customersMatrixDistance[route[j]][route[celda_siguiente_j]];
 
             double nuevo_costo = 0;
             // Costos nuevos
@@ -221,39 +207,39 @@ namespace cluvrp_grasp
 
             if (i == celda_siguiente_j)
             {
-                _distancia_nueva_i_izquierda = _clusterMatrixDistance[route[celda_anterior_j]][route[i]];
-                _distancia_nueva_i_derecha = _clusterMatrixDistance[route[i]][route[j]];
+                _distancia_nueva_i_izquierda = _customersMatrixDistance[route[celda_anterior_j]][route[i]];
+                _distancia_nueva_i_derecha = _customersMatrixDistance[route[i]][route[j]];
 
-                _distancia_nueva_j_derecha = _clusterMatrixDistance[route[j]][route[celda_siguiente_i]];
-                _distancia_nueva_j_izquierda = _clusterMatrixDistance[route[j]][route[i]];
+                _distancia_nueva_j_derecha = _customersMatrixDistance[route[j]][route[celda_siguiente_i]];
+                _distancia_nueva_j_izquierda = _customersMatrixDistance[route[j]][route[i]];
 
                 //_distancia_nueva_i_derecha = _distancia_nueva_j_izquierda 
                 //    = _clusterMatrixDistance[solucion.camino[i], solucion.camino[j]).distancia;
             }
             else if (j == celda_siguiente_i)
             {
-                _distancia_nueva_i_derecha = _clusterMatrixDistance[route[i]][route[celda_siguiente_j]];
-                _distancia_nueva_i_izquierda = _clusterMatrixDistance[route[j]][route[i]];
+                _distancia_nueva_i_derecha = _customersMatrixDistance[route[i]][route[celda_siguiente_j]];
+                _distancia_nueva_i_izquierda = _customersMatrixDistance[route[j]][route[i]];
 
-                _distancia_nueva_j_izquierda = _clusterMatrixDistance[route[celda_anterior_i]][route[j]];
-                _distancia_nueva_j_derecha = _clusterMatrixDistance[route[i]][route[j]];
+                _distancia_nueva_j_izquierda = _customersMatrixDistance[route[celda_anterior_i]][route[j]];
+                _distancia_nueva_j_derecha = _customersMatrixDistance[route[i]][route[j]];
 
                 //_distancia_nueva_i_izquierda = _distancia_nueva_j_derecha = 
                 //    _clusterMatrixDistance[solucion.camino[j], solucion.camino[i]).distancia;
             }
             else
             {
-                _distancia_nueva_i_izquierda = _clusterMatrixDistance[route[celda_anterior_j]][route[i]];
-                _distancia_nueva_i_derecha = _clusterMatrixDistance[route[i]][route[celda_siguiente_j]];
+                _distancia_nueva_i_izquierda = _customersMatrixDistance[route[celda_anterior_j]][route[i]];
+                _distancia_nueva_i_derecha = _customersMatrixDistance[route[i]][route[celda_siguiente_j]];
 
-                _distancia_nueva_j_izquierda = _clusterMatrixDistance[route[celda_anterior_i]][route[j]];
-                _distancia_nueva_j_derecha = _clusterMatrixDistance[route[j]][route[celda_siguiente_i]];
+                _distancia_nueva_j_izquierda = _customersMatrixDistance[route[celda_anterior_i]][route[j]];
+                _distancia_nueva_j_derecha = _customersMatrixDistance[route[j]][route[celda_siguiente_i]];
             }
 
-            nuevo_costo = this._clusterSolution.totalRouteDistance - _distancia_i_izquierda - _distancia_i_derecha - _distancia_j_izquierda - _distancia_j_derecha +
+            nuevo_costo = this._customerSolution.totalRouteDistance - _distancia_i_izquierda - _distancia_i_derecha - _distancia_j_izquierda - _distancia_j_derecha +
             _distancia_nueva_i_izquierda + _distancia_nueva_i_derecha + _distancia_nueva_j_izquierda + _distancia_nueva_j_derecha;
 
-            if (nuevo_costo < this._clusterSolution.totalRouteDistance)
+            if (nuevo_costo < this._customerSolution.totalRouteDistance)
             {
                 var valor = route[i];
                 route[i] = route[j];
@@ -261,13 +247,13 @@ namespace cluvrp_grasp
 
                 if (isValidRoute(route))
                 {
-                    _clusterSolution.totalRouteDistance = nuevo_costo;
+                    _customerSolution.totalRouteDistance = nuevo_costo;
                     //_clusterSolution.clusterRouteForVehicule[vehicle] = route;
                     return true;
                 }
             }
             return false;
-        }
+        }*/
 
         public bool isValidRoute(List<int> route)
         {
@@ -276,6 +262,6 @@ namespace cluvrp_grasp
                 return (route[0] == 0 && route[route.Count - 1] == 0);
             }
             return false;
-        }*/
+        }
     }
 }
