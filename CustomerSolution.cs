@@ -88,7 +88,7 @@ namespace cluvrp_grasp
                     customersCounter += _customersCircuit[i][j].Count;
                 }
             }
-            Debug.Assert(numberOfCustomers == customersCounter - (numberOfVehicles * 2));
+            Debug.Assert(numberOfCustomers == customersCounter - (numberOfVehicles * 2) + 1);
 
             // All clusters are correct
 

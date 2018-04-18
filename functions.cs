@@ -11,15 +11,15 @@ namespace cluvrp_grasp
         // Return a customers distance matrix
         static public double[][] customersDistanceMatrix(CluVRPInstance instance)
         {
-            double[][] nodesDistanceMatrix = new double[instance.dimension()][];
+            double[][] nodesDistanceMatrix = new double[instance.dimension()+1][];
             NodePoint[] nodesPosition = instance.nodes();
 
             for (int i = 0; i < instance.dimension(); i++)
             {
-                nodesDistanceMatrix[i] = new double[instance.dimension()];
+                nodesDistanceMatrix[i+1] = new double[instance.dimension()+1];
                 for (int j = 0; j < instance.dimension(); j++)
                 {
-                    nodesDistanceMatrix[i][j] = distance(nodesPosition[i].getX(), nodesPosition[i].getY(), nodesPosition[j].getX(), nodesPosition[j].getY());
+                    nodesDistanceMatrix[i+1][j+1] = distance(nodesPosition[i].getX(), nodesPosition[i].getY(), nodesPosition[j].getX(), nodesPosition[j].getY());
                 }
             }
             return nodesDistanceMatrix;
@@ -101,12 +101,12 @@ namespace cluvrp_grasp
             return distance;
         }
 
-        // Calculate the total travel visiting all the custer by ONE vehicle)
+        // Calculate the total travel visiting all the custer by ONE vehicle
         static public double calculateTotalTravelDistance(List<int>[][] customersCircuit, double[][] customersDistanceMatrix, int vehicle)
         {
             double distance = 0;
-            int customer1 = 0;
-            int customer2 = 0;
+            int customer1 = 1;
+            int customer2 = 1;
 
             for (int clusterIt = 0; clusterIt < customersCircuit[vehicle].Length; clusterIt++)
             {

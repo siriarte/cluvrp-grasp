@@ -49,7 +49,7 @@ namespace cluvrp_grasp
                         {
                             List<int> newRoute = twoOptSwap(route, i, k);
                             double newDistance = clusterTravelDistance(newRoute, this._clusterMatrixDistance);
-                            if (newDistance < bestDistance[vehicle] && isValidRoute(newRoute))
+                            if (newDistance + 0.5 < bestDistance[vehicle] && isValidRoute(newRoute))
                             {
                                 iteration = 0;
                                 routeForVehicule[vehicle] = newRoute;
@@ -254,7 +254,7 @@ namespace cluvrp_grasp
             nuevo_costo = this._clusterSolution.totalRouteDistance - _distancia_i_izquierda - _distancia_i_derecha - _distancia_j_izquierda - _distancia_j_derecha +
             _distancia_nueva_i_izquierda + _distancia_nueva_i_derecha + _distancia_nueva_j_izquierda + _distancia_nueva_j_derecha;
 
-            if (nuevo_costo < this._clusterSolution.totalRouteDistance)
+            if (nuevo_costo + 0.5 < this._clusterSolution.totalRouteDistance)
             {
                 var valor = route[i];
                 route[i] = route[j];

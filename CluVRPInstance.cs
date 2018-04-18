@@ -36,6 +36,7 @@ namespace cluvrp_grasp
         private NodePoint[] _nodes;
         private int[][] _clusters;
         private int[] _clusters_demand;
+        private int _depot;
 
         public CluVRPInstance()
         {
@@ -43,7 +44,7 @@ namespace cluvrp_grasp
         }
 
         public CluVRPInstance(string file_name, string name, string comment, int dimension, int vehicules, int gvrp_sets, 
-            int capacity, string edge_weight_type, NodePoint[] nodes, int[][] clusters, int[] clusters_demand)
+            int capacity, string edge_weight_type, NodePoint[] nodes, int[][] clusters, int[] clusters_demand, int depot)
         {
             this._file_name = file_name;
             this._name = name;
@@ -56,6 +57,7 @@ namespace cluvrp_grasp
             this._nodes = nodes;
             this._clusters = clusters;
             this._clusters_demand = clusters_demand;
+            this._depot = depot;
         }
 
         public string file_name() { return this._file_name; }
@@ -69,6 +71,7 @@ namespace cluvrp_grasp
         public NodePoint[] nodes() { return this._nodes; }
         public int[][] clusters() { return this._clusters; }
         public int[] clusters_demand() { return this._clusters_demand; }
+        public int depot() { return this._depot; }
 
     }
 

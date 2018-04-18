@@ -62,9 +62,10 @@ namespace cluvrp_grasp
             int gvrp_sets = Int32.Parse(instanceText[4].Substring(12));
             int capacity = Int32.Parse(instanceText[5].Substring(11));
             string edge_weight_type = instanceText[6].Substring(19);
+            int depot = 1;
 
             // Set dynamic parameters
-            NodePoint[] nodes = new NodePoint[dimension + 1]; //sum 1 for the start node 
+            NodePoint[] nodes = new NodePoint[dimension]; //sum 1 for the start node 
             int[][] clusters = new int[gvrp_sets + 1][];
             int[] clusters_demand = new int[gvrp_sets + 1];
             int GVRP_SET_SECTION_IDX = GVRP_NODE_COORD_SECTION_IDX + dimension + 1;
@@ -74,10 +75,10 @@ namespace cluvrp_grasp
             Char[] separator = new Char[] {' '};
 
             // Build Nodes Array
-            nodes[0] = new NodePoint(0, 0); // For the depot
-            for (int i = 1; i < nodes.Length; i++)
+            //nodes[0] = new NodePoint(0, 0); // For the depot
+            for (int i = 0; i < nodes.Length; i++)
             {
-                string[] nodeParsed = instanceText[GVRP_NODE_COORD_SECTION_IDX + i - 1].Split(separator);
+                string[] nodeParsed = instanceText[GVRP_NODE_COORD_SECTION_IDX + i].Split(separator);
                 int x = Int32.Parse(nodeParsed[1]);
                 int y = Int32.Parse(nodeParsed[2]);
                 NodePoint node = new NodePoint(x, y);
@@ -86,7 +87,7 @@ namespace cluvrp_grasp
 
             // Build Clusters Array
             clusters[0] = new int[1];
-            clusters[0][0] = 0;
+            clusters[0][0] = depot;
             for (int i = 0; i < gvrp_sets; i++)
             {
                 string[] setParsed = instanceText[GVRP_SET_SECTION_IDX + i].Split(separator);
@@ -108,8 +109,8 @@ namespace cluvrp_grasp
              }
 
             // Return parsed instance
-            return new CluVRPInstance(file_name, name, comment, dimension + 1, vehicules, gvrp_sets, capacity, edge_weight_type,
-                nodes, clusters, clusters_demand);
+            return new CluVRPInstance(file_name, name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
+                nodes, clusters, clusters_demand, depot);
         }
         
     }

@@ -87,7 +87,7 @@ namespace cluvrp_grasp
             double[] vehiculeTotalDistance = new double[_instance.vehicles()];
 
             // Start from depot
-            int startingCustomer = 0;
+            int startingCustomer = 1;
 
             int[][][] customerByClusterOrderRoute = sortClustersByRoute(notSortedClusters, clusterRoute);
 
