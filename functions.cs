@@ -76,11 +76,12 @@ namespace cluvrp_grasp
         static public double calculateTotalTravelDistance(List<int>[][] customersCircuit, double[][] customersDistanceMatrix)
         {
             double distance = 0;
-            int customer1 = 0;
-            int customer2 = 0;
 
             for (int vehicle = 0; vehicle < customersCircuit.Length; vehicle++)
             {
+                int customer1 = 1;
+                int customer2 = 1;
+
                 for (int clusterIt = 0; clusterIt < customersCircuit[vehicle].Length; clusterIt++)
                 {
                     for (int customerIt = 0; customerIt + 1 < customersCircuit[vehicle][clusterIt].Count; customerIt++)
@@ -135,6 +136,12 @@ namespace cluvrp_grasp
             {
                 arr[i] = value;
             }
+        }
+
+        // Verify that list a contains all item of list b   
+        public static bool ContainsAllItems(List<int> a, List<int> b)
+        {
+            return !b.Except(a).Any();
         }
 
     }

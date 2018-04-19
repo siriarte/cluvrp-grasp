@@ -218,7 +218,7 @@ using System.Collections.Generic;
                 int clusterSelected = Functions.selectRandomElement(clusterByDemandRCL);
 
                 // Create RCL for vehicle of clusterSeleted by distance (and bestFit capacity)
-                List<int> vehicleBydistanceRCL = buildVehicleByDistanceRCLBestFit(clusterRouteForVehicle, vehicleCapacity, vehicleRemSpace, clusterSelected, clustersDemand[clusterSelected], alphaDistance);
+                List<int> vehicleBydistanceRCL = buildVehicleByDistanceRCL(clusterRouteForVehicle, vehicleCapacity, vehicleRemSpace, clusterSelected, clustersDemand[clusterSelected], alphaDistance);
 
                 // Only add the cluster to the route of vehicle if were possible fit it
                 if (vehicleBydistanceRCL.Count > 0)

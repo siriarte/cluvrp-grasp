@@ -40,10 +40,12 @@ namespace cluvrp_grasp
         public void printSolution()
         {
            string tittle = "RESULT:";
+           string clusterDistance = _clusterSolution.totalRouteDistance.ToString();
            string totalDistance = _totalRouteDistance.ToString();
            string vehiculeDistance = string.Join(" -- ", _vehiculeRouteDistance);
            
            Logger.GetInstance().logLine(tittle);
+           Logger.GetInstance().logLine(clusterDistance);
            Logger.GetInstance().logLine(totalDistance);
            Logger.GetInstance().logLine(vehiculeDistance);
                         
@@ -62,7 +64,7 @@ namespace cluvrp_grasp
         }
 
         // Verify the solution is correct respect to the instance
-        public void verifySolution(CluVRPInstance instance)
+        public void verifySolution(CluVRPInstance instance, double[][] customersDistanceMatrix)
         {
             // Verify number of vehicles
             int numberOfVehicles = instance.vehicles();
@@ -91,7 +93,22 @@ namespace cluvrp_grasp
             Debug.Assert(numberOfCustomers == customersCounter - (numberOfVehicles * 2) + 1);
 
             // All clusters are correct
+            List<int>[] vehicleRoute = _clusterSolution.clusterRouteForVehicule;
+            for(int vehicle = 0; vehicle < vehicleRoute.Length; vehicle++)
+            {
+                List<int> clusterList = vehicleRoute[vehicle];
+                for(int clusterIt = 0; clusterIt < clusterList.Count; clusterIt++)
+                {
+                    int clusterNumber = clusterList[clusterIt];
+                    List<int> cluster = _customersCircuit[vehicle][clusterIt].ToList<int>();
+                    List<int> clusterInstance = instance.clusters()[clusterNumber].ToList<int>();
+                    bool containsAll = Functions.ContainsAllItems(cluster, clusterInstance);
+                    Debug.Assert(containsAll && cluster.Count == clusterInstance.Count);
+                }
+            }
 
+            // Total distance is correct
+            Debug.Assert(_totalRouteDistance == Functions.calculateTotalTravelDistance(_customersCircuit, customersDistanceMatrix));
 
         }
 

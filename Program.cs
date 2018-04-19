@@ -19,12 +19,11 @@ namespace cluvrp_grasp
             foreach(CluVRPInstance instance in instancias)
             {
                 ClusterGRASP clusterSolution = new ClusterGRASP(instance);
-                clusterSolution.Grasp(1000, 0.2 , 0.8);
-                logger.logLine(clusterSolution.bestSolution.totalRouteDistance.ToString());
+                clusterSolution.Grasp(1000, 0.8 , 0.8);
                 CustomerGRASP customerSolution = new CustomerGRASP(instance, clusterSolution.bestSolution);
-                customerSolution.Grasp(1000, 0.1);
+                customerSolution.Grasp(1000, 0.8);
+                customerSolution._costumerSolution.verifySolution(instance, customerSolution._customersDistanceMatrix);
                 customerSolution._costumerSolution.printSolution();
-                customerSolution._costumerSolution.verifySolution(instance);
             }
 
         }
