@@ -20,6 +20,7 @@ namespace cluvrp_grasp
             {
                 ClusterGRASP clusterSolution = new ClusterGRASP(instance);
                 clusterSolution.Grasp(1000, 0.8 , 0.8);
+                clusterSolution.bestSolution.verifySolution(instance);
                 CustomerGRASP customerSolution = new CustomerGRASP(instance, clusterSolution.bestSolution);
                 customerSolution.Grasp(1000, 0.8);
                 customerSolution._costumerSolution.verifySolution(instance, customerSolution._customersDistanceMatrix);

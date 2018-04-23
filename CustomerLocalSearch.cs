@@ -146,6 +146,7 @@ namespace cluvrp_grasp
             if (nuevo_costo < _customerSolution.vehiculeRouteDistance[vehicle])
             {
                 _customerSolution.vehiculeRouteDistance[vehicle] = nuevo_costo;
+                _customerSolution._totalRouteDistance = _customerSolution.vehiculeRouteDistance.Sum();
                 return true;
             }
              
