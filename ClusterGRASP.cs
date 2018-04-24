@@ -253,7 +253,7 @@ using System.Collections.Generic;
             double travelTotalDistance = calculateClusterTravelDistance(clusterRouteForVehicle, this.clustersDistanceMatrix);
 
             // Set solution
-            ClusterSolution solution = new ClusterSolution(clusterRouteForVehicle, travelTotalDistance);
+            ClusterSolution solution = new ClusterSolution(clusterRouteForVehicle, travelTotalDistance, vehicleRemSpace);
 
             // Return solution
             return solution;
@@ -435,8 +435,7 @@ using System.Collections.Generic;
             // return rcl
             return RCL;
         }
-
-
+        
         /*
          * 
          * Calculte the max distance between the last cluster 
@@ -508,6 +507,12 @@ using System.Collections.Generic;
         {
             // Create a local search handler for cluster-level problem
             ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(solution, this.clustersDistanceMatrix, 200, 200);
+
+            // Perform interVehicle Swap
+            localSearchsCluster.interVehicleRandomSwap();
+
+            // Perform interVehicle Insert
+            localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand(), solution.vehicleRemSpace);
 
             // Perform TwoOpt
             localSearchsCluster.twoOpt();

@@ -277,5 +277,84 @@ namespace cluvrp_grasp
             }
             return false;
         }
+
+        public void interVehicleRandomSwap()
+        {
+            int iterator = 0;
+            while (iterator < _maxIterationsWithoutImprovementExchange)
+            {
+                Random rnd = new Random();
+                int numberOfVehicles = _clusterSolution.clusterRouteForVehicule.Length;
+                int vehicle1 = rnd.Next(0, numberOfVehicles);
+                int vehicle2 = rnd.Next(0, numberOfVehicles);
+                int clusterV1 = Functions.selectRandomElement(_clusterSolution.clusterRouteForVehicule[vehicle1]);
+                int clusterV2 = Functions.selectRandomElement(_clusterSolution.clusterRouteForVehicule[vehicle2]);
+                if (clusterV1 != 0 && clusterV2 != 0 && vehicle1 != vehicle2)
+                {
+                    int idxClusterV1 = _clusterSolution.clusterRouteForVehicule[vehicle1].IndexOf(clusterV1);
+                    int idxClusterV2 = _clusterSolution.clusterRouteForVehicule[vehicle2].IndexOf(clusterV2);
+                    _clusterSolution.clusterRouteForVehicule[vehicle1][idxClusterV1] = clusterV2;
+                    _clusterSolution.clusterRouteForVehicule[vehicle2][idxClusterV2] = clusterV1;
+                    double newDistance = ClusterGRASP.calculateClusterTravelDistance(_clusterSolution.clusterRouteForVehicule, _clusterMatrixDistance);
+                    if (newDistance < _clusterSolution.totalRouteDistance)
+                    {
+                        _clusterSolution.totalRouteDistance = newDistance;
+                        iterator = 0;
+                    }
+                    else
+                    {
+                        _clusterSolution.clusterRouteForVehicule[vehicle1][idxClusterV1] = clusterV1;
+                        _clusterSolution.clusterRouteForVehicule[vehicle2][idxClusterV2] = clusterV2;
+                        iterator++;
+                    }
+                }
+            }
+            return;
+        }
+
+        public void interVehicleRandomInsert(int[] clusterDemand, int[] vehicleSpace)
+        {
+            int iterator = 0;
+            while (iterator < _maxIterationsWithoutImprovementExchange)
+            {
+                Random rnd = new Random();
+                int numberOfVehicles = _clusterSolution.clusterRouteForVehicule.Length;
+                int vehicle1 = rnd.Next(0, numberOfVehicles);
+                int vehicle2 = rnd.Next(0, numberOfVehicles);
+                int clusterV1 = Functions.selectRandomElement(_clusterSolution.clusterRouteForVehicule[vehicle1]);
+                bool improve = false;
+                if (clusterV1 !=0 && vehicle1 != vehicle2 && vehicleSpace[vehicle2] - clusterDemand[clusterV1] >= 0)
+                {
+                    int idxClusterV1 = _clusterSolution.clusterRouteForVehicule[vehicle1].IndexOf(clusterV1);
+                    _clusterSolution.clusterRouteForVehicule[vehicle1].Remove(clusterV1);
+                    for (int i = 0; i < _clusterSolution.clusterRouteForVehicule[vehicle2].Count; i++)
+                    {
+                        _clusterSolution.clusterRouteForVehicule[vehicle2].Insert(i + 1, clusterV1);
+                        double newDistance = ClusterGRASP.calculateClusterTravelDistance(_clusterSolution.clusterRouteForVehicule, _clusterMatrixDistance);
+                        if (newDistance < _clusterSolution.totalRouteDistance)
+                        {
+                            _clusterSolution.totalRouteDistance = newDistance;
+                            vehicleSpace[vehicle1] -= clusterDemand[clusterV1];
+                            vehicleSpace[vehicle2] += clusterDemand[clusterV1];
+                            iterator = 0;
+                            improve = true;
+                            break;
+                        }
+                        else
+                        {
+                            _clusterSolution.clusterRouteForVehicule[vehicle2].Remove(clusterV1);
+                        }
+                    }
+                    if (!improve)
+                    {
+                        _clusterSolution.clusterRouteForVehicule[vehicle1].Insert(idxClusterV1, clusterV1);
+                        improve = false;
+                    }                    
+                }
+                iterator++;
+            }
+            return;
+        }
+
     }
 }

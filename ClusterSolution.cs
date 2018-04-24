@@ -9,6 +9,14 @@ namespace cluvrp_grasp
     {
         public List<int>[] clusterRouteForVehicule { set; get; }
         public double totalRouteDistance { set; get; }
+        public int[] vehicleRemSpace { set; get; }
+
+        public ClusterSolution(List<int>[] clusterRouteForVehicule, double totalRouteDistance, int[] vehicleRemSpace)
+        {
+            this.clusterRouteForVehicule = clusterRouteForVehicule;
+            this.totalRouteDistance = totalRouteDistance;
+            this.vehicleRemSpace = vehicleRemSpace;
+        }
 
         public ClusterSolution(List<int>[] clusterRouteForVehicule, double totalRouteDistance)
         {
