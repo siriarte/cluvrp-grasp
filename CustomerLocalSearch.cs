@@ -6,27 +6,29 @@ namespace cluvrp_grasp
 
     class CustomerLocalSearch
     {
-        public int _maxIterationsWithoutImprovementTwoOpt { get; set; }
-        public int _maxIterationsWithoutImprovementRelocate { get; set; }
-        public int _maxIterationsWithoutImprovementExchange { get; set; }
-        public CustomerSolution _customerSolution { get; set; }
-        public double[][] _customersMatrixDistance { get; set; }
+        public int maxIterationsWithoutImprovementTwoOpt { get; set; }
+        public int maxIterationsWithoutImprovementRelocate { get; set; }
+        public int maxIterationsWithoutImprovementExchange { get; set; }
+        public CluVRPSolution solution { get; set; }
+        public CluVRPInstance instance { get; set; }
 
-        public CustomerLocalSearch(CustomerSolution clusterSolution, double[][] clusterMatrixDistance,
-            int maxIterationsWithoutImprovement = 100,
+        public CustomerLocalSearch(CluVRPSolution solution, 
+            CluVRPInstance instance,
+            int maxIterationsWithoutImprovementTwoOpt = 100,
             int maxIterationsWithoutImprovementRelocate = 100,
-            int maxIterationsWithoutImprovementExchange = 100)
+            int maxIterationsWithoutImprovementExchange = 100
+            )
         {
-            _maxIterationsWithoutImprovementTwoOpt = maxIterationsWithoutImprovement;
-            _customerSolution = clusterSolution;
-            _customersMatrixDistance = clusterMatrixDistance;
-            _maxIterationsWithoutImprovementRelocate = maxIterationsWithoutImprovementRelocate;
-            _maxIterationsWithoutImprovementExchange = maxIterationsWithoutImprovementExchange;
+            this.solution = solution;
+            this.instance = instance;
+            this.maxIterationsWithoutImprovementTwoOpt = maxIterationsWithoutImprovementTwoOpt;
+            this.maxIterationsWithoutImprovementRelocate = maxIterationsWithoutImprovementRelocate;
+            this.maxIterationsWithoutImprovementExchange = maxIterationsWithoutImprovementExchange;
         }
 
         public void twoOpt()
         {
-            List<int>[][] customersCircuit = _customerSolution._customersCircuit;
+            List<int>[][] customersCircuit = solution.customersPaths;
             int numberOfVehicles = customersCircuit.Length;
             double[] bestDistance = new double[numberOfVehicles];
 
@@ -35,9 +37,9 @@ namespace cluvrp_grasp
 
                 List<int>[] clusterRoute = customersCircuit[vehicle];
                 int iteration = 0;             
-                bestDistance[vehicle] = Functions.calculateTotalTravelDistance(customersCircuit, this._customersMatrixDistance, vehicle);
+                bestDistance[vehicle] = Functions.calculateTotalTravelDistance(customersCircuit, instance.customersDistanceMatrix, vehicle);
 
-                while (iteration < _maxIterationsWithoutImprovementTwoOpt)
+                while (iteration < maxIterationsWithoutImprovementTwoOpt)
                 {
                     for (int clusterIt = 0; clusterIt < clusterRoute.Length; clusterIt++)
                     {
@@ -51,7 +53,7 @@ namespace cluvrp_grasp
                                 List<int> oldRoute = customersCircuit[vehicle][clusterIt];
                                 List<int> newRoute = twoOptSwap(customersCircuit[vehicle][clusterIt], i, k);
                                 customersCircuit[vehicle][clusterIt] = newRoute;
-                                double newDistance = Functions.calculateTotalTravelDistance(customersCircuit, this._customersMatrixDistance, vehicle);
+                                double newDistance = Functions.calculateTotalTravelDistance(customersCircuit, instance.customersDistanceMatrix, vehicle);
                                 if (newDistance < bestDistance[vehicle])
                                 {
                                     iteration = 0;
@@ -68,8 +70,8 @@ namespace cluvrp_grasp
                 }
             }
 
-            this._customerSolution._customersCircuit = customersCircuit;
-            this._customerSolution.vehiculeRouteDistance = bestDistance;
+            this.solution.customersPaths = customersCircuit;
+            this.solution.vehiculeRouteDistance = bestDistance;
         }
         
         public List<int> twoOptSwap(List<int> route, int i, int k)
@@ -87,17 +89,17 @@ namespace cluvrp_grasp
         
         public void relocate()
         {
-            int numberOfVehicles = _customerSolution._customersCircuit.Length;
+            int numberOfVehicles = solution.customersPaths.Length;
 
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
-                int numberOfClusters = _customerSolution._customersCircuit[vehicle].Length;
+                int numberOfClusters = solution.customersPaths[vehicle].Length;
 
                 for (int clusterIt = 0; clusterIt < numberOfClusters; clusterIt++)
                 {
                     int iteration = 0;
-                    List<int> route = _customerSolution._customersCircuit[vehicle][clusterIt];
-                    while (iteration < _maxIterationsWithoutImprovementRelocate)
+                    List<int> route = solution.customersPaths[vehicle][clusterIt];
+                    while (iteration < maxIterationsWithoutImprovementRelocate)
                     {
                         for (int i = 0; i < route.Count; i++)
                         {
@@ -121,7 +123,7 @@ namespace cluvrp_grasp
 
         public bool relocate(int vehicle, int cluster, int i, int j)
         {
-            List<int> route = _customerSolution._customersCircuit[vehicle][cluster];
+            List<int> route = solution.customersPaths[vehicle][cluster];
 
             // Para no irnos del camino
             var celda_anterior_i = i - 1 == -1 ? route.Count - 1 : i - 1;
@@ -140,17 +142,17 @@ namespace cluvrp_grasp
             var valor = route[i];
             route.RemoveAt(i);
             route.Insert(j, valor);
-            _customerSolution._customersCircuit[vehicle][cluster] = route;
+            solution.customersPaths[vehicle][cluster] = route;
 
-            var nuevo_costo = Functions.calculateTotalTravelDistance(_customerSolution._customersCircuit, _customersMatrixDistance, vehicle);
-            if (nuevo_costo < _customerSolution.vehiculeRouteDistance[vehicle])
+            var nuevo_costo = Functions.calculateTotalTravelDistance(solution.customersPaths, instance.customersDistanceMatrix, vehicle);
+            if (nuevo_costo < solution.vehiculeRouteDistance[vehicle])
             {
-                _customerSolution.vehiculeRouteDistance[vehicle] = nuevo_costo;
-                _customerSolution._totalRouteDistance = _customerSolution.vehiculeRouteDistance.Sum();
+                solution.vehiculeRouteDistance[vehicle] = nuevo_costo;
+                solution.totalCustomerRouteDistance = solution.vehiculeRouteDistance.Sum();
                 return true;
             }
              
-             _customerSolution._customersCircuit[vehicle][cluster] = oldRoute;
+             solution.customersPaths[vehicle][cluster] = oldRoute;
              return false;
         }
 /*
@@ -255,7 +257,6 @@ namespace cluvrp_grasp
             }
             return false;
         }*/
-
         public bool isValidRoute(List<int> route)
         {
             if (route.Count > 0)

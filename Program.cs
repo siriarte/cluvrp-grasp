@@ -18,15 +18,33 @@ namespace cluvrp_grasp
 
             foreach(CluVRPInstance instance in instancias)
             {
-                ClusterGRASP clusterSolution = new ClusterGRASP(instance);
-                clusterSolution.Grasp(1000, 0.8 , 0.8);
-                clusterSolution.bestSolution.verifySolution(instance);
-                CustomerGRASP customerSolution = new CustomerGRASP(instance, clusterSolution.bestSolution);
-                customerSolution.Grasp(1000, 0.8);
-                customerSolution._costumerSolution.verifySolution(instance, customerSolution._customersDistanceMatrix);
-                customerSolution._costumerSolution.printSolution();
-            }
+                for (int i = 0; i <= 10; i = i + 2)
+                {
+                    double alpha1 = i * 1.0 / 10;
 
+                    for (int j = 0; j <= 10; j = j + 2)
+                    {
+                        CluVRPSolution cluVRPSolution = new CluVRPSolution();
+                        double alpha2 = j * 1.0 / 10;
+
+                        ClusterGRASP clusterGrasp = new ClusterGRASP(instance, cluVRPSolution);
+                        clusterGrasp.Grasp(100, 0.8, 0.8);
+                        cluVRPSolution.verifyClusterSolution(instance);
+
+                        CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution);
+                        customerGrasp.Grasp(100, 0.8);
+                        cluVRPSolution.verifyCustomerSolution(instance);
+                        
+                        cluVRPSolution.printSolution();
+
+                        string s = "Solution: " + cluVRPSolution.totalCustomerRouteDistance + "     alpha1 = " + alpha1 + "    alpha2 = " + alpha2;
+                        System.Console.WriteLine(s);
+                        logger.logLine(s);
+
+                    }
+                }
+            }
+            System.Console.ReadLine();
         }
     }
         

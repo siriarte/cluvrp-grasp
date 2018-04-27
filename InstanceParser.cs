@@ -4,7 +4,6 @@ namespace cluvrp_grasp
 {
     static class InstanceParser
     {
-
         static int GVRP_NODE_COORD_SECTION_IDX = 8; 
 
         static public CluVRPInstance[] loadGVRPSetOfInstances(string InstanceSetName)

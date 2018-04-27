@@ -22,101 +22,19 @@ using System.Collections.Generic;
     {
 
         // Public variables
-        public CluVRPInstance instance;
-        public double[][] customersDistanceMatrix;
-        public double[][] clustersDistanceMatrix;
-        public ClusterSolution bestSolution;
-        
+        public CluVRPInstance instance { get; set; }
+        public CluVRPSolution solution { get; set; }
+
         /* 
          * 
          * Constructor
          * 
          */
-        public ClusterGRASP(CluVRPInstance instance)
+        public ClusterGRASP(CluVRPInstance cluVRPinstance, CluVRPSolution cluVRPSolution)
         {
             // Set instance 
-            this.instance = instance;
-
-            // Init best solution
-            this.bestSolution = new ClusterSolution(new List<int>[0], double.MaxValue);
-
-        }
-
-        /*
-         * Calculate the intercluster distances 
-         * Use the shortest edge between two clusters as an approximation for the inter-cluster distance
-         *           
-         */
-        public void calculateClusterDistanceMatrix()
-        {
-            // Variables from instances 
-            int[][] clusters = this.instance.clusters();
-            int numberOfClusters = clusters.Length;
-
-            // Matrix to return
-            double[][] clustersDistanceMatrix = new double[numberOfClusters][];
-
-            for (int clusterIt1 = 0; clusterIt1 < numberOfClusters; clusterIt1++)
-            {
-                // Create double[]
-                clustersDistanceMatrix[clusterIt1] = new double[numberOfClusters];
-
-                // First cluster to iterate
-                int[] cluster1 = clusters[clusterIt1];
-
-                for (int clusterIt2 = 0; clusterIt2 < numberOfClusters; clusterIt2++)
-                {
-                    // Second cluster to iterate
-                    int[] cluster2 = clusters[clusterIt2];
-
-                    // Calculate best distance between 2 cluster
-                    double distance = bestDistanceBetween2Clusters(cluster1, cluster2);
-
-                    // Update matrix value
-                    clustersDistanceMatrix[clusterIt1][clusterIt2] = distance;
-                }
-            }
-            this.clustersDistanceMatrix = clustersDistanceMatrix;
-        }
-
-        /*
-         * 
-         * Calculte min distance between two clusters
-         * We use the shortest edge between two clusters as an approximation 
-         * for the inter-cluster distance
-         *
-         */
-        private double bestDistanceBetween2Clusters(int[] cluster1, int[] cluster2)
-        {
-
-            // Define min distance
-            double minDistance = double.MaxValue;
-
-            // For each customer in cluster 1
-            for (int i = 0; i < cluster1.Length; i++)
-            {
-                // Customer 1
-                int customer1 = cluster1[i];
-
-                // For each customer in cluster 2
-                for(int j = 0; j < cluster2.Length; j++)
-                {
-                    // Customer 2
-                    int customer2 = cluster2[j];
-
-                    // Get distance between customer 1 and customer 2
-                    double distance = this.customersDistanceMatrix[customer1][customer2];
-
-                    // Update min distance
-                    if(distance < minDistance)
-                    {
-                        minDistance = distance;
-                    }
-                }
-            }
-
-            // Return min distance
-            return minDistance;
+            instance = cluVRPinstance;
+            solution = cluVRPSolution;            
         }
 
         /*
@@ -134,13 +52,6 @@ using System.Collections.Generic;
          */
         public void Grasp(int totalIterations = 100, double alphaCapacity = 0.8, double alphaDistance = 1)
         {
-            
-            // Calculate customers distance matrix 
-            this.customersDistanceMatrix = Functions.customersDistanceMatrix(instance);
-
-            // Calculate cluster distance matrix 
-            this.calculateClusterDistanceMatrix();
-            
             // Set iterator 
             int iterator = 0;
             
@@ -148,15 +59,15 @@ using System.Collections.Generic;
             while(iterator < totalIterations)
             {
                 // Construct a Greedy Randomized Solution for alpha parameter
-                ClusterSolution solution = constructGreedyRandomizedSolution(alphaCapacity, alphaDistance);
+                CluVRPSolution newSolution = constructGreedyRandomizedSolution(alphaCapacity, alphaDistance);
 
                 // Local search 
-                this.localSearch(ref solution);
+                localSearch(ref newSolution);
 
                 // Update Best solution
-                if(solution.totalRouteDistance < bestSolution.totalRouteDistance)
+                if(newSolution.totalClusterRouteDistance < solution.totalClusterRouteDistance)
                 {
-                    bestSolution = solution;
+                    solution = newSolution;
                 }
 
                 // Increace iterator
@@ -178,14 +89,14 @@ using System.Collections.Generic;
          *      AdaptGreedySolution(s)
          * 
          */
-        private ClusterSolution constructGreedyRandomizedSolution(double alphaDemand, double alphaDistance)
+        private CluVRPSolution constructGreedyRandomizedSolution(double alphaDemand, double alphaDistance)
         {
             // Init variables
-            int numberOfVehicles = instance.vehicles();
-            int vehicleCapacity = instance.capacity();
-            int[][] clusters = instance.clusters();
+            int numberOfVehicles = instance.vehicles;
+            int vehicleCapacity = instance.capacity;
+            int[][] clusters = instance.clusters;
             int numbersOfClusters = clusters.Length;
-            int[] clustersDemand = instance.clusters_demand();
+            int[] clustersDemand = instance.clusters_demand;
             int[] vehicleRemSpace = new int[numberOfVehicles];
             List<int> clustersToVisit = new List<int>();
             
@@ -250,13 +161,14 @@ using System.Collections.Generic;
             }
 
             // Calculte total inter-cluster distance
-            double travelTotalDistance = calculateClusterTravelDistance(clusterRouteForVehicle, this.clustersDistanceMatrix);
+            double travelTotalDistance = calculateClusterTravelDistance(clusterRouteForVehicle, instance.clustersDistanceMatrix);
 
             // Set solution
-            ClusterSolution solution = new ClusterSolution(clusterRouteForVehicle, travelTotalDistance, vehicleRemSpace);
+            CluVRPSolution newSolution = new CluVRPSolution();
+            newSolution.setClusterSolution(clusterRouteForVehicle, vehicleRemSpace, travelTotalDistance);
 
             // Return solution
-            return solution;
+            return newSolution;
         }
 
         /*
@@ -351,7 +263,7 @@ using System.Collections.Generic;
                 // Calculate the efective distance beetwen the last cluster visited 
                 // by vehicle j and clusterSelected
                 int lastClusterVisited = (int)clusterRouteForVehicle[j][clusterRouteForVehicle[j].Count-1];
-                double distanceBetweenClusters = this.clustersDistanceMatrix[lastClusterVisited][clusterSelected];
+                double distanceBetweenClusters = instance.clustersDistanceMatrix[lastClusterVisited][clusterSelected];
 
                 // If there is space on vehicle j AND
                 // The remaning space is less than minCapacity AND
@@ -407,7 +319,7 @@ using System.Collections.Generic;
                 // Calculate the efective distance beetwen the last cluster visited 
                 // by vehicle j and clusterSelected
                 int lastClusterVisited = (int)clusterRouteForVehicle[j][clusterRouteForVehicle[j].Count - 1];
-                double distanceBetweenClusters = this.clustersDistanceMatrix[lastClusterVisited][clusterSelected];
+                double distanceBetweenClusters = instance.clustersDistanceMatrix[lastClusterVisited][clusterSelected];
 
                 // If there is space on vehicle j AND
                 // The remaning space is less than minCapacity AND
@@ -449,7 +361,7 @@ using System.Collections.Generic;
             {
                 int lastClusterIndex = clusterRouteForVehicle[i].Count - 1;
                 int lastCluster = (int)clusterRouteForVehicle[i][lastClusterIndex];
-                ret = Math.Max(ret, this.clustersDistanceMatrix[lastCluster][toCluster]);
+                ret = Math.Max(ret, instance.clustersDistanceMatrix[lastCluster][toCluster]);
             }
             return ret;
         }
@@ -467,7 +379,7 @@ using System.Collections.Generic;
             {
                 int lastClusterIndex = clusterRouteForVehicle[i].Count - 1;
                 int lastCluster = (int)clusterRouteForVehicle[i][lastClusterIndex];
-                ret = Math.Min(ret, this.clustersDistanceMatrix[lastCluster][toCluster]);
+                ret = Math.Min(ret, instance.clustersDistanceMatrix[lastCluster][toCluster]);
             }
             return ret;
         }
@@ -498,21 +410,39 @@ using System.Collections.Generic;
             return totalDistance;
         }
 
+        public static double estimateClusterTravelDistance(List<int> travel, double[][] clustersDistanceMatrix, double[] suffleAverageClusterDistance)
+        {
+            // Set variables
+            double totalDistance = 0;
+
+            // Iterate each cluster on vehicle route
+            for (int clusterIt = 0; clusterIt + 1 < travel.Count; clusterIt++)
+            {
+                int fromCluster = travel[clusterIt];
+                int ToCluster = travel[clusterIt + 1];
+                totalDistance += clustersDistanceMatrix[fromCluster][ToCluster];
+                totalDistance += suffleAverageClusterDistance[fromCluster];
+            }
+
+            // Return total distance
+            return totalDistance;
+        }
+
         /*
          * 
          * Performance a set of local search techniques
          * 
          */
-        private void localSearch(ref ClusterSolution solution)
+        private void localSearch(ref CluVRPSolution newSolution)
         {
             // Create a local search handler for cluster-level problem
-            ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(solution, this.clustersDistanceMatrix, 200, 200);
+            ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(newSolution, instance, 200, 200);
 
             // Perform interVehicle Swap
             localSearchsCluster.interVehicleRandomSwap();
 
             // Perform interVehicle Insert
-            localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand(), solution.vehicleRemSpace);
+            localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand, solution.vehicleRemSpace);
 
             // Perform TwoOpt
             localSearchsCluster.twoOpt();
@@ -524,7 +454,7 @@ using System.Collections.Generic;
             localSearchsCluster.exchange();                     
 
             // Set the solution
-            solution = localSearchsCluster._clusterSolution;
+            solution = localSearchsCluster.solution;
         }
 
     }

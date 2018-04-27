@@ -8,29 +8,7 @@ namespace cluvrp_grasp
 {
     static class Functions
     {
-        // Return a customers distance matrix
-        static public double[][] customersDistanceMatrix(CluVRPInstance instance)
-        {
-            double[][] nodesDistanceMatrix = new double[instance.dimension()+1][];
-            NodePoint[] nodesPosition = instance.nodes();
 
-            for (int i = 0; i < instance.dimension(); i++)
-            {
-                nodesDistanceMatrix[i+1] = new double[instance.dimension()+1];
-                for (int j = 0; j < instance.dimension(); j++)
-                {
-                    nodesDistanceMatrix[i+1][j+1] = distance(nodesPosition[i].getX(), nodesPosition[i].getY(), nodesPosition[j].getX(), nodesPosition[j].getY());
-                }
-            }
-            return nodesDistanceMatrix;
-        }
-        
-        // Distance function
-        static public double distance(double x1, double y1, double x2, double y2)
-        {
-            //return 1;
-            return Math.Round(Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
-        }
 
         // Return an array with the index of the input array sorted
         static private int[] arraySortedByIndex(int[] arr)
@@ -142,6 +120,26 @@ namespace cluvrp_grasp
         public static bool ContainsAllItems(List<int> a, List<int> b)
         {
             return !b.Except(a).Any();
+        }
+
+        // Suffle array
+        public static void Shuffle<T>(Random rng, List<T> array)
+        {
+            int n = array.Count;
+            while (n > 1)
+            {
+                int k = rng.Next(n--);
+                T temp = array[n];
+                array[n] = array[k];
+                array[k] = temp;
+            }
+        }
+
+        // Distance function
+        public static double distance(double x1, double y1, double x2, double y2)
+        {
+            //return 1;
+            return (Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
         }
 
     }
