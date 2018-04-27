@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 /*
  * Grasp for CluVRP at cluster-level. 
@@ -24,17 +25,18 @@ using System.Collections.Generic;
         // Public variables
         public CluVRPInstance instance { get; set; }
         public CluVRPSolution solution { get; set; }
+        private double bestEstimatedDistance = double.MaxValue;
 
         /* 
          * 
          * Constructor
          * 
          */
-        public ClusterGRASP(CluVRPInstance cluVRPinstance, CluVRPSolution cluVRPSolution)
+        public ClusterGRASP(CluVRPInstance cluVRPinstance)
         {
             // Set instance 
             instance = cluVRPinstance;
-            solution = cluVRPSolution;            
+            solution = new CluVRPSolution();            
         }
 
         /*
@@ -50,7 +52,7 @@ using System.Collections.Generic;
 	     * return BestSolution
          *
          */
-        public void Grasp(int totalIterations = 100, double alphaCapacity = 0.8, double alphaDistance = 1)
+        public CluVRPSolution Grasp(int totalIterations = 100, double alphaCapacity = 0.8, double alphaDistance = 1)
         {
             // Set iterator 
             int iterator = 0;
@@ -62,19 +64,28 @@ using System.Collections.Generic;
                 CluVRPSolution newSolution = constructGreedyRandomizedSolution(alphaCapacity, alphaDistance);
 
                 // Local search 
-                localSearch(ref newSolution);
+                localSearch(newSolution);
 
-                // Update Best solution
-                if(newSolution.totalClusterRouteDistance < solution.totalClusterRouteDistance)
+                double newEstimatedDistance = estimateClusterTravelDistance(newSolution.clusterRouteForVehicule, instance.clustersDistanceMatrix, instance.suffleRandomAverageClusterDistance);
+    
+                if (newEstimatedDistance < bestEstimatedDistance)
                 {
                     solution = newSolution;
+                    bestEstimatedDistance = newEstimatedDistance;
                 }
 
-                // Increace iterator
-                iterator++;
+               /*
+               // Update Best solution
+               if(newSolution.totalClusterRouteDistance < solution.totalClusterRouteDistance)
+               {
+                   solution = newSolution;
+               }*/
+
+               // Increace iterator
+               iterator++;
             }
 
-            return;
+            return this.solution;
         }
         
         /*
@@ -397,19 +408,50 @@ using System.Collections.Generic;
             // Iterate each vehicle
             for (int vehicleNumber = 0; vehicleNumber < travel.Length; vehicleNumber++)
             {
-                // Iterate each cluster on vehicle route
-                for (int clusterIt = 0; clusterIt + 1 < travel[vehicleNumber].Count; clusterIt++)
-                {
-                    int fromCluster = travel[vehicleNumber][clusterIt];
-                    int ToCluster = travel[vehicleNumber][clusterIt + 1];
-                    totalDistance += clustersDistanceMatrix[fromCluster][ToCluster];
-                }
+                totalDistance += calculateClusterTravelDistance(travel[vehicleNumber], clustersDistanceMatrix);
             }
 
             // Return total distance
             return totalDistance;
         }
 
+        /*
+        *
+        * Calculate the total distance of the cluster travel
+        *
+        */
+        public static double calculateClusterTravelDistance(List<int> travel, double[][] clustersDistanceMatrix)
+        {
+            // Set variables
+            double totalDistance = 0;
+
+            // Iterate each cluster on vehicle route
+            for (int clusterIt = 0; clusterIt + 1 < travel.Count; clusterIt++)
+            {
+                int fromCluster = travel[clusterIt];
+                int ToCluster = travel[clusterIt + 1];
+                totalDistance += clustersDistanceMatrix[fromCluster][ToCluster];
+            }
+
+            // Return total distance
+            return totalDistance;
+        }
+
+        public static double estimateClusterTravelDistance(List<int>[] travel, double[][] clustersDistanceMatrix, double[] suffleAverageClusterDistance)
+        {
+            // Init distance
+            double totalDistance = 0;
+
+            // Iterate each cluster on vehicle route
+            for (int vehicle = 0; vehicle < travel.Length; vehicle++)
+            {
+                totalDistance += estimateClusterTravelDistance(travel[vehicle], clustersDistanceMatrix, suffleAverageClusterDistance);
+            }
+
+            // Return total distance
+            return totalDistance;
+        }
+        
         public static double estimateClusterTravelDistance(List<int> travel, double[][] clustersDistanceMatrix, double[] suffleAverageClusterDistance)
         {
             // Set variables
@@ -433,7 +475,7 @@ using System.Collections.Generic;
          * Performance a set of local search techniques
          * 
          */
-        private void localSearch(ref CluVRPSolution newSolution)
+        private void localSearch(CluVRPSolution newSolution)
         {
             // Create a local search handler for cluster-level problem
             ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(newSolution, instance, 200, 200);
@@ -442,7 +484,7 @@ using System.Collections.Generic;
             localSearchsCluster.interVehicleRandomSwap();
 
             // Perform interVehicle Insert
-            localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand, solution.vehicleRemSpace);
+            localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand);
 
             // Perform TwoOpt
             localSearchsCluster.twoOpt();
@@ -452,9 +494,6 @@ using System.Collections.Generic;
 
             // Perform Exchange
             localSearchsCluster.exchange();                     
-
-            // Set the solution
-            solution = localSearchsCluster.solution;
         }
 
     }

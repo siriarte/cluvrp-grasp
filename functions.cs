@@ -8,8 +8,6 @@ namespace cluvrp_grasp
 {
     static class Functions
     {
-
-
         // Return an array with the index of the input array sorted
         static private int[] arraySortedByIndex(int[] arr)
         {
@@ -138,8 +136,8 @@ namespace cluvrp_grasp
         // Distance function
         public static double distance(double x1, double y1, double x2, double y2)
         {
-            //return 1;
-            return (Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
+            return 1;
+            //return (Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
         }
 
     }

@@ -24,11 +24,10 @@ namespace cluvrp_grasp
 
                     for (int j = 0; j <= 10; j = j + 2)
                     {
-                        CluVRPSolution cluVRPSolution = new CluVRPSolution();
                         double alpha2 = j * 1.0 / 10;
 
-                        ClusterGRASP clusterGrasp = new ClusterGRASP(instance, cluVRPSolution);
-                        clusterGrasp.Grasp(100, 0.8, 0.8);
+                        ClusterGRASP clusterGrasp = new ClusterGRASP(instance);
+                        CluVRPSolution cluVRPSolution = clusterGrasp.Grasp(100, 0.8, 0.8);
                         cluVRPSolution.verifyClusterSolution(instance);
 
                         CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution);
@@ -37,7 +36,7 @@ namespace cluvrp_grasp
                         
                         cluVRPSolution.printSolution();
 
-                        string s = "Solution: " + cluVRPSolution.totalCustomerRouteDistance + "     alpha1 = " + alpha1 + "    alpha2 = " + alpha2;
+                        string s = "Solution: " + customerGrasp.solution.totalCustomerRouteDistance + "     alpha1 = " + alpha1 + "    alpha2 = " + alpha2;
                         System.Console.WriteLine(s);
                         logger.logLine(s);
 

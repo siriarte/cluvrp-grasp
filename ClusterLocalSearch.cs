@@ -41,7 +41,7 @@ namespace cluvrp_grasp
                 int iteration = 0;
                 int max_w = route.Count();
 
-                bestDistance[vehicle] = ClusterGRASP.estimateClusterTravelDistance(route, instance.clustersDistanceMatrix, instance.suffleRandomAverageClusterDistance);
+                bestDistance[vehicle] = ClusterGRASP.calculateClusterTravelDistance(route, instance.clustersDistanceMatrix);
 
                 while (iteration < maxIterationsWithoutImprovementTwoOpt)
                 {
@@ -50,7 +50,7 @@ namespace cluvrp_grasp
                         for(int k = i + 1; k < max_w; k++)
                         {
                             List<int> newRoute = twoOptSwap(route, i, k);
-                            double newDistance = ClusterGRASP.estimateClusterTravelDistance(newRoute, instance.clustersDistanceMatrix, instance.suffleRandomAverageClusterDistance);
+                            double newDistance = ClusterGRASP.calculateClusterTravelDistance(newRoute, instance.clustersDistanceMatrix);
                             if (newDistance + 0.5 < bestDistance[vehicle] && isValidRoute(newRoute))
                             {
                                 iteration = 0;
@@ -298,7 +298,7 @@ namespace cluvrp_grasp
             return;
         }
 
-        public void interVehicleRandomInsert(int[] clusterDemand, int[] vehicleSpace)
+        public void interVehicleRandomInsert(int[] clusterDemand)
         {
             int iterator = 0;
             while (iterator < maxIterationsWithoutImprovementExchange)
@@ -309,7 +309,7 @@ namespace cluvrp_grasp
                 int vehicle2 = rnd.Next(0, numberOfVehicles);
                 int clusterV1 = Functions.selectRandomElement(solution.clusterRouteForVehicule[vehicle1]);
                 bool improve = false;
-                if (clusterV1 !=0 && vehicle1 != vehicle2 && vehicleSpace[vehicle2] - clusterDemand[clusterV1] >= 0)
+                if (clusterV1 !=0 && vehicle1 != vehicle2 && solution.vehicleRemSpace[vehicle2] - clusterDemand[clusterV1] >= 0)
                 {
                     int idxClusterV1 = solution.clusterRouteForVehicule[vehicle1].IndexOf(clusterV1);
                     solution.clusterRouteForVehicule[vehicle1].Remove(clusterV1);
@@ -320,8 +320,8 @@ namespace cluvrp_grasp
                         if (newDistance < solution.totalClusterRouteDistance)
                         {
                             solution.totalClusterRouteDistance = newDistance;
-                            vehicleSpace[vehicle1] += clusterDemand[clusterV1];
-                            vehicleSpace[vehicle2] -= clusterDemand[clusterV1];
+                            solution.vehicleRemSpace[vehicle1] += clusterDemand[clusterV1];
+                            solution.vehicleRemSpace[vehicle2] -= clusterDemand[clusterV1];
                             iterator = 0;
                             improve = true;
                             break;
