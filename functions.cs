@@ -69,8 +69,10 @@ namespace cluvrp_grasp
 
                     if (clusterIt + 1 < customersCircuit[vehicle].Length)
                     {
+                        int finalCustomerIdx = customersCircuit[vehicle][clusterIt].Count - 1;
+                        int finalCustomer = customersCircuit[vehicle][clusterIt][finalCustomerIdx];
                         int customerNextCustomer = customersCircuit[vehicle][clusterIt + 1][0];
-                        distance += customersDistanceMatrix[customer2][customerNextCustomer];
+                        distance += customersDistanceMatrix[finalCustomer][customerNextCustomer];
                     }
 
                 }
@@ -96,8 +98,11 @@ namespace cluvrp_grasp
 
                 if (clusterIt + 1 < customersCircuit[vehicle].Length)
                 {
+                    int finalCustomerIdx = customersCircuit[vehicle][clusterIt].Count - 1;
+                    int finalCustomer = customersCircuit[vehicle][clusterIt][finalCustomerIdx];
                     int customerNextCustomer = customersCircuit[vehicle][clusterIt + 1][0];
-                    distance += customersDistanceMatrix[customer2][customerNextCustomer];
+                    distance += customersDistanceMatrix[finalCustomer][customerNextCustomer];
+
                 }
 
             }
@@ -136,8 +141,7 @@ namespace cluvrp_grasp
         // Distance function
         public static double distance(double x1, double y1, double x2, double y2)
         {
-            return 1;
-            //return (Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
+            return (Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
         }
 
     }

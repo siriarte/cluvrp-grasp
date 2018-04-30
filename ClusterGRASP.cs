@@ -25,8 +25,7 @@ using System.Linq;
         // Public variables
         public CluVRPInstance instance { get; set; }
         public CluVRPSolution solution { get; set; }
-        private double bestEstimatedDistance = double.MaxValue;
-
+        
         /* 
          * 
          * Constructor
@@ -66,20 +65,15 @@ using System.Linq;
                 // Local search 
                 localSearch(newSolution);
 
-                double newEstimatedDistance = estimateClusterTravelDistance(newSolution.clusterRouteForVehicule, instance.clustersDistanceMatrix, instance.suffleRandomAverageClusterDistance);
-    
-                if (newEstimatedDistance < bestEstimatedDistance)
-                {
-                    solution = newSolution;
-                    bestEstimatedDistance = newEstimatedDistance;
-                }
-
-               /*
                // Update Best solution
                if(newSolution.totalClusterRouteDistance < solution.totalClusterRouteDistance)
                {
-                   solution = newSolution;
-               }*/
+                   solution.setClusterSolution(
+                       newSolution.clusterRouteForVehicule,
+                       newSolution.vehicleRemSpace, 
+                       newSolution.totalClusterRouteDistance
+                       );
+               }
 
                // Increace iterator
                iterator++;
@@ -481,7 +475,11 @@ using System.Linq;
             ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(newSolution, instance, 200, 200);
 
             // Perform interVehicle Swap
+            localSearchsCluster.swapVehicle(instance.clusters_demand);
             localSearchsCluster.interVehicleRandomSwap();
+            
+            localSearchsCluster.insertVehicle(instance.clusters_demand);
+
 
             // Perform interVehicle Insert
             localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand);

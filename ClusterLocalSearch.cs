@@ -134,7 +134,7 @@ namespace cluvrp_grasp
             var _c = instance.clustersDistanceMatrix[route[celda_anterior_j]][route[celda_siguiente_j]];
 
             var nuevo_costo = solution.totalClusterRouteDistance - _a - _b + _C + _A + _B - _c;
-            if (nuevo_costo < solution.totalClusterRouteDistance)
+            if (nuevo_costo + 0.5 < solution.totalClusterRouteDistance)
             {
                 var valor = route[i];
                 route.RemoveAt(i);
@@ -267,7 +267,7 @@ namespace cluvrp_grasp
         public void interVehicleRandomSwap()
         {
             int iterator = 0;
-            while (iterator < maxIterationsWithoutImprovementExchange)
+            while (iterator < maxIterationsWithoutImprovementTwoOpt)
             {
                 Random rnd = new Random();
                 int numberOfVehicles = solution.clusterRouteForVehicule.Length;
@@ -342,5 +342,98 @@ namespace cluvrp_grasp
             return;
         }
 
+        public void swapVehicle(int[] clusterDemand)
+        {
+            for (int vehicle1 = 0; vehicle1 < solution.clusterRouteForVehicule.Length; vehicle1++)
+            {
+                for (int vehicle2 = 0; vehicle2 < solution.clusterRouteForVehicule.Length; vehicle2++)
+                {
+                    for (int cluster1 = 0; cluster1 < solution.clusterRouteForVehicule[vehicle1].Count; cluster1++)
+                    {
+                        for (int cluster2 = 0; cluster2 < solution.clusterRouteForVehicule[vehicle2].Count; cluster2++)
+                        {
+                            int clusterSwappedV1 = solution.clusterRouteForVehicule[vehicle1][cluster1];
+                            int clusterSwappedV2 = solution.clusterRouteForVehicule[vehicle2][cluster2];
+
+                            if (solution.vehicleRemSpace[vehicle1] - clusterDemand[clusterSwappedV2] > 0 &&
+                               solution.vehicleRemSpace[vehicle2] - clusterDemand[clusterSwappedV1] > 0 &&
+                               clusterSwappedV1 != 0 && clusterSwappedV2 != 0 && clusterSwappedV1 != clusterSwappedV2)
+                            {
+                                solution.clusterRouteForVehicule[vehicle1][cluster1] = clusterSwappedV2;
+                                solution.clusterRouteForVehicule[vehicle2][cluster2] = clusterSwappedV1;
+
+                                double newDistance = ClusterGRASP.calculateClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
+
+                                if (newDistance < solution.totalClusterRouteDistance)
+                                {
+                                        solution.totalClusterRouteDistance = newDistance;
+                                }
+                                else
+                                {
+                                    solution.clusterRouteForVehicule[vehicle1][cluster1] = clusterSwappedV1;
+                                    solution.clusterRouteForVehicule[vehicle2][cluster2] = clusterSwappedV2;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public void insertVehicle(int[] clusterDemand)
+        {
+            for (int vehicle1 = 0; vehicle1 < solution.clusterRouteForVehicule.Length; vehicle1++)
+            {
+                for (int vehicle2 = 0; vehicle2 < solution.clusterRouteForVehicule.Length; vehicle2++)
+                {
+                    if (vehicle1 != vehicle2)
+                    {
+                        for (int cluster1Idx = 1; cluster1Idx + 1 < solution.clusterRouteForVehicule[vehicle1].Count; cluster1Idx++)
+                        {
+                            int clusterToInsert = solution.clusterRouteForVehicule[vehicle1][cluster1Idx];
+
+                            if (solution.vehicleRemSpace[vehicle2] - clusterDemand[clusterToInsert] > 0)
+                            {
+                                solution.clusterRouteForVehicule[vehicle1].Remove(clusterToInsert);
+                                int bestIndex = bestIndexToInsertCluster(vehicle2, clusterToInsert);
+                                if (bestIndex != -1)
+                                {
+                                    solution.clusterRouteForVehicule[vehicle2].Insert(bestIndex, clusterToInsert);
+                                    solution.vehicleRemSpace[vehicle1] += clusterDemand[clusterToInsert];
+                                    solution.vehicleRemSpace[vehicle2] -= clusterDemand[clusterToInsert];
+
+                                }
+                                else
+                                {
+                                    solution.clusterRouteForVehicule[vehicle2].Remove(clusterToInsert);
+                                    solution.clusterRouteForVehicule[vehicle1].Insert(cluster1Idx, clusterToInsert);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private int bestIndexToInsertCluster(int vehicle, int clusterToInsert)
+        {
+            int bestIndex = -1;
+            int pathSize = solution.clusterRouteForVehicule[vehicle].Count;
+            for (int clusterIdx = 1; clusterIdx + 1 < pathSize; clusterIdx++)
+            {
+                solution.clusterRouteForVehicule[vehicle].Insert(clusterIdx, clusterToInsert);
+                double newDistance = ClusterGRASP.calculateClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
+
+                if(newDistance < solution.totalClusterRouteDistance)
+                {
+                    bestIndex = clusterIdx;
+                    solution.totalClusterRouteDistance = newDistance;
+                }
+                solution.clusterRouteForVehicule[vehicle].Remove(clusterToInsert);
+            }
+          
+
+            return bestIndex;
+        }
     }
 }
