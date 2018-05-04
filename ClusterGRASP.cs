@@ -60,20 +60,27 @@ using System.Linq;
             while(iterator < totalIterations)
             {
                 // Construct a Greedy Randomized Solution for alpha parameter
-                CluVRPSolution newSolution = constructGreedyRandomizedSolution(alphaCapacity, alphaDistance);
+                try
+                {
+                    CluVRPSolution newSolution = constructGreedyRandomizedSolution(alphaCapacity, alphaDistance);
+                    
+                    // Local search 
+                    localSearch(newSolution);
 
-                // Local search 
-                localSearch(newSolution);
-
-               // Update Best solution
-               if(newSolution.totalClusterRouteDistance < solution.totalClusterRouteDistance)
-               {
-                   solution.setClusterSolution(
-                       newSolution.clusterRouteForVehicule,
-                       newSolution.vehicleRemSpace, 
-                       newSolution.totalClusterRouteDistance
-                       );
-               }
+                    // Update Best solution
+                    if (newSolution.totalClusterRouteDistance < solution.totalClusterRouteDistance)
+                    {
+                        solution.setClusterSolution(
+                            newSolution.clusterRouteForVehicule,
+                            newSolution.vehicleRemSpace,
+                            newSolution.totalClusterRouteDistance
+                            );
+                    }
+                }
+                catch(Exception e)
+                {
+                    //Logger.GetInstance().logLine(e.Message);
+                }
 
                // Increace iterator
                iterator++;
@@ -156,7 +163,12 @@ using System.Linq;
             // If there are clusters without vehicle throw exception
             if(clustersToVisit.Count != 0)
             {
-                throw new Exception("Greedy at Cluster-Level Error - ClusterToVisit list is not empty!");
+                forceSwapFitCluster(clusterRouteForVehicle, vehicleRemSpace, clustersToVisit);
+                if(clustersToVisit.Count != 0)
+                {
+                    //forceInsertFitCluster(clusterRouteForVehicle, vehicleRemSpace, clustersToVisit);
+                    throw new Exception("Greedy at Cluster-Level Error - ClusterToVisit list is not empty!");
+                }
             }
 
             // Add depot as final cluster for all travels
@@ -174,6 +186,96 @@ using System.Linq;
 
             // Return solution
             return newSolution;
+        }
+
+        private void forceInsertFitCluster(List<int>[] clusterRouteForVehicle, int[] vehicleRemSpace, List<int> clustersToVisit)
+        {
+            foreach (int cluster in clustersToVisit)
+            {
+                int spaceNeed = instance.clusters_demand[cluster];
+
+                for(int vehicle = 0; vehicle < clusterRouteForVehicle.Length; vehicle++)
+                {
+
+                }
+            }
+
+        }
+
+        private void forceSwapFitCluster(List<int>[] clusterRouteForVehicle, int[] vehicleRemSpace, List<int> clustersToVisit)
+        {
+            int numberOfClusterToFit = clustersToVisit.Count;
+            for (int clusterIt = 0; clusterIt< numberOfClusterToFit; clusterIt++) {
+
+                int clusterToInsert = clustersToVisit[clusterIt];
+                int neededSpace = instance.clusters_demand[clusterToInsert];
+                bool wasFit = false;
+
+                for (int vehicle1 = 0; vehicle1 < clusterRouteForVehicle.Length; vehicle1++)
+                {
+                    if (wasFit) break;
+                    for (int vehicle2 = 0; vehicle2 < clusterRouteForVehicle.Length; vehicle2++)
+                    {
+                        if (wasFit) break;
+                        if (vehicle1 != vehicle2)
+                        {
+                            for (int clusterItV1 = 0; clusterItV1 < clusterRouteForVehicle[vehicle1].Count; clusterItV1++)
+                            {
+                                if (wasFit) break;
+                                int clusterV1 = clusterRouteForVehicle[vehicle1][clusterItV1];
+                                int clusterV1Demand = instance.clusters_demand[clusterV1];
+
+                                for (int clusterItV2 = 0; clusterItV2 < clusterRouteForVehicle[vehicle2].Count; clusterItV2++)
+                                {
+                                    if (clusterV1 != 0 && clusterItV2 != 0)
+                                    {
+                                        int clusterV2 = clusterRouteForVehicle[vehicle2][clusterItV2];
+                                        int clusterV2Demand = instance.clusters_demand[clusterV2];
+
+                                        int remSpaceV1 = vehicleRemSpace[vehicle1] + clusterV1Demand - clusterV2Demand;
+                                        int remSpaceV2 = vehicleRemSpace[vehicle2] + clusterV2Demand - clusterV1Demand;
+
+                                        if(remSpaceV1 < 0 || remSpaceV2 < 0)
+                                        {
+                                            continue;
+                                        }
+
+                                        if (remSpaceV1 - neededSpace >= 0 || remSpaceV2 - neededSpace >= 0)
+                                        {
+                                            clusterRouteForVehicle[vehicle1][clusterItV1] = clusterV2;
+                                            clusterRouteForVehicle[vehicle2][clusterItV2] = clusterV1;
+                                            vehicleRemSpace[vehicle1] += clusterV1Demand - clusterV2Demand;
+                                            vehicleRemSpace[vehicle2] += clusterV2Demand - clusterV1Demand;
+                                            clustersToVisit.Remove(clusterToInsert);
+                                            wasFit = true;
+                                        }
+                                        if (remSpaceV1 - neededSpace >= 0)
+                                        {
+                
+                                            clusterRouteForVehicle[vehicle1].Insert(clusterItV1, clusterToInsert);
+                                            CluVRPSolution.checkDemand(instance, clusterRouteForVehicle);
+                                            vehicleRemSpace[vehicle1] -= neededSpace;
+
+
+
+                                        }
+                                        else if (remSpaceV2 - neededSpace >= 0)
+                                        {
+
+                                            clusterRouteForVehicle[vehicle2].Insert(clusterItV2, clusterToInsert);
+                                            CluVRPSolution.checkDemand(instance, clusterRouteForVehicle);
+                                            vehicleRemSpace[vehicle2] -= neededSpace;
+
+
+                                        }
+                                        if (wasFit) break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         /*
@@ -476,13 +578,13 @@ using System.Linq;
 
             // Perform interVehicle Swap
             localSearchsCluster.swapVehicle(instance.clusters_demand);
-            localSearchsCluster.interVehicleRandomSwap();
-            
-            localSearchsCluster.insertVehicle(instance.clusters_demand);
-
 
             // Perform interVehicle Insert
-            localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand);
+            localSearchsCluster.insertVehicle(instance.clusters_demand);
+
+            // Random versions
+            //localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand);
+           //localSearchsCluster.interVehicleRandomSwap();
 
             // Perform TwoOpt
             localSearchsCluster.twoOpt();

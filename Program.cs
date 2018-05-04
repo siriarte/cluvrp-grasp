@@ -14,34 +14,41 @@ namespace cluvrp_grasp
         static void Main(string[] args)
         {
             Logger logger = Logger.GetInstance();
+            logger.setVerbose(true);
+
             CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(instanceSetPath);
 
             foreach(CluVRPInstance instance in instancias)
             {
-                for (int i = 0; i <= 10; i = i + 2)
+                double bestDistance = double.MaxValue;
+                for (int i = 0; i <= 10; i = i + 5)
                 {
-                    double alpha1 = i * 1.0 / 10;
+                    double alphaCapacity = i * 1.0 / 10;
 
-                    for (int j = 0; j <= 10; j = j + 2)
+                    for (int j = 0; j <= 10; j = j + 5)
                     {
-                        double alpha2 = j * 1.0 / 10;
+                        double alphaDistance = j * 1.0 / 10;
 
                         ClusterGRASP clusterGrasp = new ClusterGRASP(instance);
-                        CluVRPSolution cluVRPSolution = clusterGrasp.Grasp(100, 0.8, 0.8);
+                        CluVRPSolution cluVRPSolution = clusterGrasp.Grasp(100, alphaCapacity, alphaDistance);
                         cluVRPSolution.verifyClusterSolution(instance);
 
                         CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution);
-                        customerGrasp.Grasp(100, 0.8);
+                        customerGrasp.Grasp(100, alphaDistance);
                         cluVRPSolution.verifyCustomerSolution(instance);
                         
-                        cluVRPSolution.printSolution();
+                        //string s1 = instance.file_name + '\t' + customerGrasp.solution.totalCustomerRouteDistance + '\t' + alphaCapacity + '\t' + alphaDistance;
+                        //Console.WriteLine(s1);
 
-                        string s = "Solution: " + customerGrasp.solution.totalCustomerRouteDistance + "     alpha1 = " + alpha1 + "    alpha2 = " + alpha2;
-                        System.Console.WriteLine(s);
-                        logger.logLine(s);
-
+                        if (customerGrasp.solution.totalCustomerRouteDistance < bestDistance)
+                        {
+                            bestDistance = customerGrasp.solution.totalCustomerRouteDistance;
+                        }
+                       
                     }
                 }
+                string s = instance.file_name + '\t' + bestDistance;
+                logger.logLine(s);
             }
             System.Console.ReadLine();
         }

@@ -275,15 +275,22 @@ namespace cluvrp_grasp
                 int vehicle2 = rnd.Next(0, numberOfVehicles);
                 int clusterV1 = Functions.selectRandomElement(solution.clusterRouteForVehicule[vehicle1]);
                 int clusterV2 = Functions.selectRandomElement(solution.clusterRouteForVehicule[vehicle2]);
-                if (clusterV1 != 0 && clusterV2 != 0 && vehicle1 != vehicle2)
+                int remSpaceV1 = solution.vehicleRemSpace[vehicle1] + instance.clusters_demand[clusterV1] - instance.clusters_demand[clusterV2];
+                int remSpaceV2 = solution.vehicleRemSpace[vehicle2] + instance.clusters_demand[clusterV2] - instance.clusters_demand[clusterV1];
+
+                if (clusterV1 != 0 && clusterV2 != 0 && vehicle1 != vehicle2 && remSpaceV1 > 0 && remSpaceV2 > 0)
                 {
                     int idxClusterV1 = solution.clusterRouteForVehicule[vehicle1].IndexOf(clusterV1);
                     int idxClusterV2 = solution.clusterRouteForVehicule[vehicle2].IndexOf(clusterV2);
                     solution.clusterRouteForVehicule[vehicle1][idxClusterV1] = clusterV2;
                     solution.clusterRouteForVehicule[vehicle2][idxClusterV2] = clusterV1;
                     double newDistance = ClusterGRASP.calculateClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
-                    if (newDistance < solution.totalClusterRouteDistance)
+                    if (newDistance + 0.5 < solution.totalClusterRouteDistance)
                     {
+                        solution.vehicleRemSpace[vehicle1] += instance.clusters_demand[clusterV1];
+                        solution.vehicleRemSpace[vehicle1] -= instance.clusters_demand[clusterV2];
+                        solution.vehicleRemSpace[vehicle2] += instance.clusters_demand[clusterV2];
+                        solution.vehicleRemSpace[vehicle2] -= instance.clusters_demand[clusterV1];
                         solution.totalClusterRouteDistance = newDistance;
                         iterator = 0;
                     }
@@ -293,6 +300,10 @@ namespace cluvrp_grasp
                         solution.clusterRouteForVehicule[vehicle2][idxClusterV2] = clusterV2;
                         iterator++;
                     }
+                }
+                else
+                {
+                    iterator++;
                 }
             }
             return;
