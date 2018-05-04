@@ -51,14 +51,14 @@ namespace cluvrp_grasp
                 // Increace iterator
                 iterator++;
             }
-
+            
             return;
         }
 
         private void localSearch(ref CluVRPSolution solution)
         {
             // Create a local search handler for cluster-level problem
-            CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(solution, instance, 200, 200);
+            CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(solution, instance, 100, 100, 100);
 
             // Perform TwoOpt
             customerLocalSearch.twoOpt();

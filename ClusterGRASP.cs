@@ -84,8 +84,9 @@ using System.Linq;
 
                // Increace iterator
                iterator++;
+               
             }
-
+            
             return this.solution;
         }
         
@@ -185,6 +186,10 @@ using System.Linq;
             newSolution.setClusterSolution(clusterRouteForVehicle, vehicleRemSpace, travelTotalDistance);
 
             // Return solution
+            /*
+            if(clusterRouteForVehicle[2][7] == 0 && clusterRouteForVehicle[2][8]==0 ){
+                return newSolution;
+            }*/
             return newSolution;
         }
 
@@ -574,7 +579,7 @@ using System.Linq;
         private void localSearch(CluVRPSolution newSolution)
         {
             // Create a local search handler for cluster-level problem
-            ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(newSolution, instance, 200, 200);
+            ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(newSolution, instance, 100, 100, 100);
 
             // Perform interVehicle Swap
             localSearchsCluster.swapVehicle(instance.clusters_demand);
@@ -583,8 +588,10 @@ using System.Linq;
             localSearchsCluster.insertVehicle(instance.clusters_demand);
 
             // Random versions
-            //localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand);
-           //localSearchsCluster.interVehicleRandomSwap();
+            /*
+            localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand);
+            localSearchsCluster.interVehicleRandomSwap();
+            */
 
             // Perform TwoOpt
             localSearchsCluster.twoOpt();
@@ -593,7 +600,7 @@ using System.Linq;
             localSearchsCluster.relocate();
 
             // Perform Exchange
-            localSearchsCluster.exchange();                     
+            localSearchsCluster.exchange();   
         }
 
     }
