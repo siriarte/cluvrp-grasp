@@ -9,7 +9,7 @@ namespace cluvrp_grasp
     static class Functions
     {
         // Return an array with the index of the input array sorted
-        static private int[] arraySortedByIndex(int[] arr)
+        static public int[] arraySortedByIndex(int[] arr)
         {
             int[] ret = new int[arr.Length];
             for (int i = 0; i < arr.Length; i++)
@@ -21,7 +21,7 @@ namespace cluvrp_grasp
             {
                 for (int j = i + 1; j < arr.Length; j++)
                 {
-                    if (arr[ret[j]] >= arr[ret[i]])
+                    if (arr[ret[j]] <= arr[ret[i]])
                     {
                         int temp = ret[i];
                         ret[i] = ret[j];
@@ -31,6 +31,22 @@ namespace cluvrp_grasp
             }
             return ret;
         }
+
+        // Return an array with the index of the input array sorted
+        static public void sortClusterByDemand(List<int> clusters, int[] demand)
+        {
+            for (int i = 0; i < clusters.Count; i++)
+            {
+                for (int j = i + 1; j < clusters.Count; j++)
+                {
+                    if (demand[clusters[i]] >= demand[clusters[j]])
+                    {
+                        Functions.Swap(clusters, i, j);
+                    }
+                }
+            }
+        }
+
 
         // Swap
         public static void Swap<T>(IList<T> list, int indexA, int indexB)

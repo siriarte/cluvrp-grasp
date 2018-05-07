@@ -11,6 +11,8 @@ namespace cluvrp_grasp
         public List<int>[] clusterRouteForVehicule { set; get; }
         public double totalClusterRouteDistance { set; get; }
         public int[] vehicleRemSpace { set; get; }
+        public int[] fitAlgorithmCounter { set; get; }
+        public FitAlgorithm fitUsed { set; get; }
 
         // For customer problem
         public List<int>[][] customersPaths { set; get; }
@@ -192,8 +194,28 @@ namespace cluvrp_grasp
                     return;
                 }
             }
-            //Debug.Assert(totalDemand == clusterDemand.Sum());
+            Debug.Assert(totalDemand == clusterDemand.Sum());
         }
- 
+
+        public static void checkCorrectRemSpace(CluVRPInstance instance, List<int>[] clusterRouteForVehicule, int[] vehicleRemSpace)
+        {    // Vehicle remmaining capacity is correct respect to cluster demand
+            int[] clusterDemand = instance.clusters_demand;
+            int totalDemand = 0;
+            for (int vehicle = 0; vehicle < clusterRouteForVehicule.Length; vehicle++)
+            {
+                int totalDemandOnVehicle = 0;
+                for (int clusterIt = 0; clusterIt < clusterRouteForVehicule[vehicle].Count; clusterIt++)
+                {
+                    int cluster = clusterRouteForVehicule[vehicle][clusterIt];
+                    totalDemandOnVehicle += clusterDemand[cluster];
+                }
+                totalDemand += totalDemandOnVehicle;
+                if (instance.capacity - totalDemandOnVehicle != vehicleRemSpace[vehicle] || vehicleRemSpace[vehicle] < 0)
+                {
+                    Console.WriteLine("ERRRRRRRRRRRRRRRRRROR");
+                }
+            }
+        }
+
     }
 }
