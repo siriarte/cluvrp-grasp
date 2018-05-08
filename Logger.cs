@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace cluvrp_grasp
 {
@@ -31,11 +27,13 @@ namespace cluvrp_grasp
             this.verbose = verbose;
         }
 
+        // Set log file path
         public void setLogFilePath(string filePath)
         {
             this.logFilePath = filePath;
         }
 
+        // Set Verbose
         public void setVerbose(bool verbose)
         {
             this.verbose = verbose;
@@ -84,7 +82,6 @@ namespace cluvrp_grasp
                 Console.WriteLine(e.ToString());
             }
         }
-
 
     }
 }

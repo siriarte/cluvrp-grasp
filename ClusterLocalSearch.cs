@@ -1,26 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace cluvrp_grasp
 {
           
     class ClusterLocalSearch
     {
+        // Attributes
         public int maxIterationsWithoutImprovementTwoOpt { get; set; }
         public int maxIterationsWithoutImprovementRelocate { get; set; }
         public int maxIterationsWithoutImprovementExchange { get; set; }
         public CluVRPSolution solution { get; set; }
         public CluVRPInstance instance;
 
+        // Constructor
         public ClusterLocalSearch(CluVRPSolution solution,
             CluVRPInstance instance,
             int maxIterationsWithoutImprovement = 100,
             int maxIterationsWithoutImprovementRelocate = 100,
-            int maxIterationsWithoutImprovementExchange = 100
-            )
+            int maxIterationsWithoutImprovementExchange = 100)
         {
             this.solution = solution;
             this.instance = instance;
@@ -29,44 +29,62 @@ namespace cluvrp_grasp
             this.maxIterationsWithoutImprovementExchange = maxIterationsWithoutImprovementExchange;
         }
 
+        // TwoOpt local-search 
         public void twoOpt()
         {
+            // Init variables
             List<int>[] routeForVehicule = solution.clusterRouteForVehicule;
             int numberOfVehicles = routeForVehicule.Length;
             double[] bestDistance = new double[numberOfVehicles];
 
+            // For each vehicle
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++) {
 
+                // Get the vehicle route
                 List<int> route = routeForVehicule[vehicle];
-                int iteration = 0;
-                int max_w = route.Count();
+                int maxW = route.Count();
+                bestDistance[vehicle] = ClusterGRASP.calculateClusterTravelDistanceForVehicle(route, instance.clustersDistanceMatrix);
 
-                bestDistance[vehicle] = ClusterGRASP.calculateClusterTravelDistance(route, instance.clustersDistanceMatrix);
-
-                while (iteration < maxIterationsWithoutImprovementTwoOpt)
+                // Main cycle
+                int iterator = 0;
+                while (iterator < maxIterationsWithoutImprovementTwoOpt)
                 {
-                    for(int i = 1; i < max_w - 1; i++)
+                    // Starting from second customer (avoid depot)
+                    for (int i = 1; i + 1 < maxW; i++)
                     {
-                        for(int k = i + 1; k < max_w; k++)
+                        // Until the last one on the path
+                        for (int j = i + 1; j < maxW; j++)
                         {
-                            List<int> newRoute = twoOptSwap(route, i, k);
-                            double newDistance = ClusterGRASP.calculateClusterTravelDistance(newRoute, instance.clustersDistanceMatrix);
-                            if (newDistance + 0.5 < bestDistance[vehicle] && isValidRoute(newRoute))
+                            // New route create by two-opt-swap between customer i and j 
+                            List<int> newRoute = twoOptSwap(route, i, j);
+
+                            // Calculate distance of the new route
+                            double newDistance = ClusterGRASP.calculateClusterTravelDistanceForVehicle(newRoute, instance.clustersDistanceMatrix);
+
+                            // If distance if better and route is valid
+                            if (newDistance + 0.5 < bestDistance[vehicle] && isValidClusterRoute(newRoute))
                             {
-                                iteration = 0;
+                                // Update with new route and distance
                                 routeForVehicule[vehicle] = newRoute;
                                 bestDistance[vehicle] = newDistance;
-                            }
-                        }
-                    }
-                    iteration++;
-                }
-            }
 
-            this.solution.clusterRouteForVehicule = routeForVehicule;
+                                // Reset iterator
+                                iterator = 0;
+                            }
+                        } // End for j
+                    } // End for i
+
+                    // Incresase iterator
+                    iterator++;
+
+                } // End While
+            } // End for vehicle
+
+            // Update the total cluster route distance (the sum all vehicle cluster distances)
             this.solution.totalClusterRouteDistance = bestDistance.Sum();
         }
 
+        // TwoOpt-Swap Algorithm
         public List<int> twoOptSwap(List<int> route, int i, int k)
         {
             List<int> newRoute = route.GetRange(0, i);
@@ -80,192 +98,226 @@ namespace cluvrp_grasp
             return newRoute;
         }
 
+        // Relocate local-search
         public void relocate()
         {
+            // Init variables
             int numberOfVehicles = solution.clusterRouteForVehicule.Length;
 
-            for(int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
+            // For each vehicle
+            for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
+                // Get cluster route for vehicle
                 List<int> route = solution.clusterRouteForVehicule[vehicle];
+
+                // Main cycle
                 int iteration = 0;
                 while (iteration < maxIterationsWithoutImprovementRelocate)
                 {
-
+                    // For each i-customer
                     for (int i = 0; i < route.Count; i++)
                     {
+                        // For each j-customer
                         for (int j = 0; j < route.Count; j++)
                         {
+                            // If is the same customer or the depot dont do anything
                             if ((i == j) || ((i == 0 && j == route.Count - 1) ||
                                 (i == route.Count - 1 && j == 0)))
                                 continue;
 
-                            if(relocate(route, vehicle, i, j))
+                            // If perform recolate success 
+                            if (relocate(route, vehicle, i, j))
                             {
+                                // Restart iterator
                                 iteration = 0;
                             }
-                        }
-                    }
+                        } // End for j
+                    } // End for i
+
+                    // Increase iterator
                     iteration++;
-                }
-           }
+
+                } // End for While 
+            } // End for vehicle
         }
 
+        // Relocate Algorithm
         public bool relocate(List<int> route, int vehicle, int i, int j)
         {
-            // Para no irnos del camino
-            var celda_anterior_i = i - 1 == -1 ? route.Count - 1 : i - 1;
-            var celda_anterior_j = j - 1 == -1 ? route.Count - 1 : j - 1;
+            // To be on the way
+            var prev_customer_i = i - 1 == -1 ? route.Count - 1 : i - 1;
+            var prev_customer_j = j - 1 == -1 ? route.Count - 1 : j - 1;
+            var next_customer_i = i + 1 == route.Count ? 0 : i + 1;
+            var next_customer_j = j + 1 == route.Count ? 0 : j + 1;
 
-            var celda_siguiente_i = i + 1 == route.Count ? 0 : i + 1;
-            var celda_siguiente_j = j + 1 == route.Count ? 0 : j + 1;
-
+            // Increase
             if (i < j)
-                celda_anterior_j++;
+                prev_customer_j++;
             else
-                celda_siguiente_j--;
+                next_customer_j--;
 
-            // Calculamos el nuevo costo, a ver si es mejor cambiar o no de posición 
-            var _a = instance.clustersDistanceMatrix[route[celda_anterior_i]][route[i]];
-            var _b = instance.clustersDistanceMatrix[route[i]][route[celda_siguiente_i]];
-            var _C = instance.clustersDistanceMatrix[route[celda_anterior_i]][route[celda_siguiente_i]];
+            // Set variables to calculate new distance
+            double _a = instance.clustersDistanceMatrix[route[prev_customer_i]][route[i]];
+            double _b = instance.clustersDistanceMatrix[route[i]][route[next_customer_i]];
+            double _C = instance.clustersDistanceMatrix[route[prev_customer_i]][route[next_customer_i]];
+            double _A = instance.clustersDistanceMatrix[route[prev_customer_j]][route[i]];
+            double _B = instance.clustersDistanceMatrix[route[i]][route[next_customer_j]];
+            double _c = instance.clustersDistanceMatrix[route[prev_customer_j]][route[next_customer_j]];
 
-            var _A = instance.clustersDistanceMatrix[route[celda_anterior_j]][route[i]];
-            var _B = instance.clustersDistanceMatrix[route[i]][route[celda_siguiente_j]];
-            var _c = instance.clustersDistanceMatrix[route[celda_anterior_j]][route[celda_siguiente_j]];
+            // Calculate new distance
+            var newDistance = solution.totalClusterRouteDistance - _a - _b + _C + _A + _B - _c;
 
-            var nuevo_costo = solution.totalClusterRouteDistance - _a - _b + _C + _A + _B - _c;
-            if (nuevo_costo + 0.5 < solution.totalClusterRouteDistance)
+            // If new distance is better
+            if (newDistance + 0.5 < solution.totalClusterRouteDistance)
             {
-                var valor = route[i];
+                // Perform realocate
+                int customer = route[i];
                 route.RemoveAt(i);
-                route.Insert(j, valor);
+                route.Insert(j, customer);
 
-                if (isValidRoute(route))
+                // If route is valid
+                if (isValidClusterRoute(route))
                 {
-                    solution.totalClusterRouteDistance = nuevo_costo;
-                    solution.clusterRouteForVehicule[vehicle] = route;
+                    // Update new distances
+                    solution.totalClusterRouteDistance = newDistance;
                     return true;
-                }else
-                {
+                }
+                else
+                {   
+                    // Back to the old route
                     route.RemoveAt(j);
-                    route.Insert(i, valor);
+                    route.Insert(i, customer);
                 }
             }
+            
+            // Relocate is not posible
             return false;
         }
-                  
+
+        // Exchange local-search
         public void exchange()
         {
+            // Get number of vehicles
             int numberOfVehicles = solution.clusterRouteForVehicule.Length;
 
+            // For each vehicle
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
+                // Get cluster route for vehicle
                 List<int> route = solution.clusterRouteForVehicule[vehicle];
+
+                // Main cycle
                 int iteration = 0;
                 while (iteration < maxIterationsWithoutImprovementExchange)
                 {
-
+                    // For each i-customer
                     for (int i = 0; i < route.Count; i++)
                     {
+                        // For each j-customer
                         for (int j = 0; j < route.Count; j++)
                         {
+                            // If is the same customer or the depot dont do anything
                             if ((i == j) || ((i == 0 && j == route.Count - 1) ||
                                 (i == route.Count - 1 && j == 0)))
                                 continue;
 
+                            // If perform exchange success 
                             if (exchange(route, vehicle, i, j))
                             {
+                                // Restart iterator
                                 iteration = 0;
                             }
-                        }
-                    }
+                        } // End for j
+                    } // End for i
+
+                    // Increase iterator
                     iteration++;
-                }
-            }
+                    
+                } // End for While 
+            } // End for vehicle
         }
 
+        // Exchange Algorithm
         bool exchange(List<int> route, int vehicle, int i, int j)
-        {
-     
-            // Para no irnos del camino
-            var celda_anterior_i = i - 1 == -1 ? route.Count - 1 : i - 1;
-            var celda_anterior_j = j - 1 == -1 ? route.Count - 1 : j - 1;
+        {     
+            // To be on the way
+            int prev_customer_i = i - 1 == -1 ? route.Count - 1 : i - 1;
+            int prev_customer_j = j - 1 == -1 ? route.Count - 1 : j - 1;
+            int next_customer_i = i + 1 == route.Count ? 0 : i + 1;
+            int next_customer_j = j + 1 == route.Count ? 0 : j + 1;
 
-            var celda_siguiente_i = i + 1 == route.Count ? 0 : i + 1;
-            var celda_siguiente_j = j + 1 == route.Count ? 0 : j + 1;
+            // Old distances
+            var distance_i_left = instance.clustersDistanceMatrix[route[prev_customer_i]][route[i]];
+            var distance_i_right = instance.clustersDistanceMatrix[route[i]][route[next_customer_i]];
+            var distance_j_left = instance.clustersDistanceMatrix[route[prev_customer_j]][route[j]];
+            var distance_j_right = instance.clustersDistanceMatrix[route[j]][route[next_customer_j]];
+            
+            // New distances
+            double new_distance_i_left, new_distance_i_right;
+            double new_distance_j_left, new_distance_j_right;
 
-            // Calculamos el nuevo costo, a ver si es mejor cambiar o no de posición 
-            // Costos viejos
-            var _distancia_i_izquierda = instance.clustersDistanceMatrix[route[celda_anterior_i]][route[i]];
-            var _distancia_i_derecha = instance.clustersDistanceMatrix[route[i]][route[celda_siguiente_i]];
-
-            var _distancia_j_izquierda = instance.clustersDistanceMatrix[route[celda_anterior_j]][route[j]];
-            var _distancia_j_derecha = instance.clustersDistanceMatrix[route[j]][route[celda_siguiente_j]];
-
-            double nuevo_costo = 0;
-            // Costos nuevos
-            double _distancia_nueva_i_izquierda, _distancia_nueva_i_derecha, _distancia_nueva_j_izquierda, _distancia_nueva_j_derecha;
-
-            if (i == celda_siguiente_j)
+            // If i is next customer j
+            if (i == next_customer_j)
             {
-                _distancia_nueva_i_izquierda = instance.clustersDistanceMatrix[route[celda_anterior_j]][route[i]];
-                _distancia_nueva_i_derecha = instance.clustersDistanceMatrix[route[i]][route[j]];
+                // Calculate new distance for i
+                new_distance_i_left = instance.clustersDistanceMatrix[route[prev_customer_j]][route[i]];
+                new_distance_i_right = instance.clustersDistanceMatrix[route[i]][route[j]];
 
-                _distancia_nueva_j_derecha = instance.clustersDistanceMatrix[route[j]][route[celda_siguiente_i]];
-                _distancia_nueva_j_izquierda = instance.clustersDistanceMatrix[route[j]][route[i]];
-
-                //_distancia_nueva_i_derecha = _distancia_nueva_j_izquierda 
-                //    = _clusterMatrixDistance[solucion.camino[i], solucion.camino[j]).distancia;
+                // Calculate new distance for j
+                new_distance_j_right = instance.clustersDistanceMatrix[route[j]][route[next_customer_i]];
+                new_distance_j_left = instance.clustersDistanceMatrix[route[j]][route[i]];
             }
-            else if (j == celda_siguiente_i)
+            else if (j == next_customer_i)
             {
-                _distancia_nueva_i_derecha = instance.clustersDistanceMatrix[route[i]][route[celda_siguiente_j]];
-                _distancia_nueva_i_izquierda = instance.clustersDistanceMatrix[route[j]][route[i]];
+                // Calculate new distance for i
+                new_distance_i_right = instance.clustersDistanceMatrix[route[i]][route[next_customer_j]];
+                new_distance_i_left = instance.clustersDistanceMatrix[route[j]][route[i]];
 
-                _distancia_nueva_j_izquierda = instance.clustersDistanceMatrix[route[celda_anterior_i]][route[j]];
-                _distancia_nueva_j_derecha = instance.clustersDistanceMatrix[route[i]][route[j]];
-
-                //_distancia_nueva_i_izquierda = _distancia_nueva_j_derecha = 
-                //    _clusterMatrixDistance[solucion.camino[j], solucion.camino[i]).distancia;
+                // Calculate new distance for j
+                new_distance_j_left = instance.clustersDistanceMatrix[route[prev_customer_i]][route[j]];
+                new_distance_j_right = instance.clustersDistanceMatrix[route[i]][route[j]];
             }
             else
             {
-                _distancia_nueva_i_izquierda = instance.clustersDistanceMatrix[route[celda_anterior_j]][route[i]];
-                _distancia_nueva_i_derecha = instance.clustersDistanceMatrix[route[i]][route[celda_siguiente_j]];
+                // Calculate new distance for i
+                new_distance_i_left = instance.clustersDistanceMatrix[route[prev_customer_j]][route[i]];
+                new_distance_i_right = instance.clustersDistanceMatrix[route[i]][route[next_customer_j]];
 
-                _distancia_nueva_j_izquierda = instance.clustersDistanceMatrix[route[celda_anterior_i]][route[j]];
-                _distancia_nueva_j_derecha = instance.clustersDistanceMatrix[route[j]][route[celda_siguiente_i]];
+                // Calculate new distance for j
+                new_distance_j_left = instance.clustersDistanceMatrix[route[prev_customer_i]][route[j]];
+                new_distance_j_right = instance.clustersDistanceMatrix[route[j]][route[next_customer_i]];
             }
 
-            nuevo_costo = this.solution.totalClusterRouteDistance - _distancia_i_izquierda - _distancia_i_derecha - _distancia_j_izquierda - _distancia_j_derecha +
-            _distancia_nueva_i_izquierda + _distancia_nueva_i_derecha + _distancia_nueva_j_izquierda + _distancia_nueva_j_derecha;
+            // Calculate new total distance
+            double newDistance = this.solution.totalClusterRouteDistance - distance_i_left - distance_i_right - 
+                distance_j_left - distance_j_right + new_distance_i_left + new_distance_i_right + 
+                new_distance_j_left + new_distance_j_right;
 
-            if (nuevo_costo + 0.5 < this.solution.totalClusterRouteDistance)
+            // If new distance is better
+            if (newDistance + 0.5 < this.solution.totalClusterRouteDistance)
             {
-                var valor = route[i];
+                // Perform exchange
+                int customer = route[i];
                 route[i] = route[j];
-                route[j] = valor;
+                route[j] = customer;
 
-                if (isValidRoute(route))
+                // If route is valid
+                if (isValidClusterRoute(route))
                 {
-                    solution.totalClusterRouteDistance = nuevo_costo;
-                    solution.clusterRouteForVehicule[vehicle] = route;
+                    // Update distance
+                    solution.totalClusterRouteDistance = newDistance;
                     return true;
-                }else
+                }
+                else
                 {
+                    // Back to old route
                     route[j] = route[i];
-                    route[i] = valor;
+                    route[i] = customer;
                     solution.clusterRouteForVehicule[vehicle] = route;
                 }
-            }
-            return false;
-        }
+            } // end if distance is better
 
-        public bool isValidRoute(List<int> route)
-        {
-            if (route.Count > 0) {
-                return (route[0] == 0 && route[route.Count - 1] == 0);
-            }
+            // Perform exchange is not possible
             return false;
         }
 
@@ -289,7 +341,7 @@ namespace cluvrp_grasp
                     int idxClusterV2 = solution.clusterRouteForVehicule[vehicle2].IndexOf(clusterV2);
                     solution.clusterRouteForVehicule[vehicle1][idxClusterV1] = clusterV2;
                     solution.clusterRouteForVehicule[vehicle2][idxClusterV2] = clusterV1;
-                    double newDistance = ClusterGRASP.calculateClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
+                    double newDistance = ClusterGRASP.calculateTotalClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
                     if (newDistance + 0.5 < solution.totalClusterRouteDistance)
                     {
                         solution.vehicleRemSpace[vehicle1] += instance.clusters_demand[clusterV1];
@@ -332,7 +384,7 @@ namespace cluvrp_grasp
                     for (int i = 0; i < solution.clusterRouteForVehicule[vehicle2].Count; i++)
                     {
                         solution.clusterRouteForVehicule[vehicle2].Insert(i + 1, clusterV1);
-                        double newDistance = ClusterGRASP.calculateClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
+                        double newDistance = ClusterGRASP.calculateTotalClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
                         if (newDistance < solution.totalClusterRouteDistance)
                         {
                             solution.totalClusterRouteDistance = newDistance;
@@ -379,7 +431,7 @@ namespace cluvrp_grasp
                                 {
                                     solution.clusterRouteForVehicule[vehicle1][cluster1] = clusterSwappedV2;
                                     solution.clusterRouteForVehicule[vehicle2][cluster2] = clusterSwappedV1;
-                                    double newDistance = ClusterGRASP.calculateClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
+                                    double newDistance = ClusterGRASP.calculateTotalClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
 
                                     if (newDistance < solution.totalClusterRouteDistance)
                                     {
@@ -442,7 +494,7 @@ namespace cluvrp_grasp
             for (int clusterIdx = 1; clusterIdx + 1 < pathSize; clusterIdx++)
             {
                 solution.clusterRouteForVehicule[vehicle].Insert(clusterIdx, clusterToInsert);
-                double newDistance = ClusterGRASP.calculateClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
+                double newDistance = ClusterGRASP.calculateTotalClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
 
                 if(newDistance < solution.totalClusterRouteDistance)
                 {
@@ -454,6 +506,16 @@ namespace cluvrp_grasp
           
 
             return bestIndex;
+        }
+
+        // Verify is cluster route is valid (start and end in depot)
+        public bool isValidClusterRoute(List<int> route)
+        {
+            if (route.Count > 0)
+            {
+                return (route[0] == 0 && route[route.Count - 1] == 0);
+            }
+            return false;
         }
     }
 }

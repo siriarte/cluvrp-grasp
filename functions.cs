@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace cluvrp_grasp
 {
@@ -32,7 +30,7 @@ namespace cluvrp_grasp
             return ret;
         }
 
-        // Return an array with the index of the input array sorted
+        // Return an array with the soreted index of the input array
         static public void sortClusterByDemand(List<int> clusters, int[] demand)
         {
             for (int i = 0; i < clusters.Count; i++)
@@ -47,7 +45,6 @@ namespace cluvrp_grasp
             }
         }
 
-
         // Swap
         public static void Swap<T>(IList<T> list, int indexA, int indexB)
         {
@@ -56,7 +53,7 @@ namespace cluvrp_grasp
             list[indexB] = tmp;
         }
          
-        // Select a element from a RCL list with random criteria
+        // Select a element from a list with random criteria
         public static int selectRandomElement(List<int> list)
         {
             Random rnd = new Random();
@@ -64,7 +61,7 @@ namespace cluvrp_grasp
             return list[rndIndex];
         }
 
-        // Calculate the total travel (visiting all the custer by each vehicle)
+        // Calculate the total travel (visiting all the custer and customers by each vehicle)
         static public double calculateTotalTravelDistance(List<int>[][] customersCircuit, double[][] customersDistanceMatrix)
         {
             double distance = 0;
@@ -87,12 +84,12 @@ namespace cluvrp_grasp
                     {
                         int finalCustomerIdx = customersCircuit[vehicle][clusterIt].Count - 1;
                         int finalCustomer = customersCircuit[vehicle][clusterIt][finalCustomerIdx];
-                        int customerNextCustomer = customersCircuit[vehicle][clusterIt + 1][0];
-                        distance += customersDistanceMatrix[finalCustomer][customerNextCustomer];
+                        int initialCustomer = customersCircuit[vehicle][clusterIt + 1][0];
+                        distance += customersDistanceMatrix[finalCustomer][initialCustomer];
                     }
-
                 }
             }
+
             return distance;
         }
 
@@ -116,17 +113,15 @@ namespace cluvrp_grasp
                 {
                     int finalCustomerIdx = customersCircuit[vehicle][clusterIt].Count - 1;
                     int finalCustomer = customersCircuit[vehicle][clusterIt][finalCustomerIdx];
-                    int customerNextCustomer = customersCircuit[vehicle][clusterIt + 1][0];
-                    distance += customersDistanceMatrix[finalCustomer][customerNextCustomer];
-
+                    int initialCustomer = customersCircuit[vehicle][clusterIt + 1][0];
+                    distance += customersDistanceMatrix[finalCustomer][initialCustomer];
                 }
-
             }
             
             return distance;
         }
                 
-        // Populate array
+        // Populate array with 'value'
         public static void Populate<T>(this T[] arr, T value)
         {
             for (int i = 0; i < arr.Length; i++)

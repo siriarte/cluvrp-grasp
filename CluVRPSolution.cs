@@ -100,7 +100,7 @@ namespace cluvrp_grasp
             Debug.Assert(totalDemand == clusterDemand.Sum());
         }
 
-        // Verify customer solution
+        // Customer solution verification
         public void verifyCustomerSolution(CluVRPInstance instance)
         {
             // Verify number of vehicles
@@ -176,6 +176,7 @@ namespace cluvrp_grasp
 
         }
 
+        // Check demand taked for vehicles is correct respect the capacity - FOR DEBUG
         public static void checkDemand(CluVRPInstance instance, List<int>[] clusterRouteForVehicule)
         {    // Vehicle remmaining capacity is correct respect to cluster demand
             int[] clusterDemand = instance.clusters_demand;
@@ -197,6 +198,7 @@ namespace cluvrp_grasp
             Debug.Assert(totalDemand == clusterDemand.Sum());
         }
 
+        // Check free space on vehicles is correct respect the capacity - FOR DEBUG
         public static void checkCorrectRemSpace(CluVRPInstance instance, List<int>[] clusterRouteForVehicule, int[] vehicleRemSpace)
         {    // Vehicle remmaining capacity is correct respect to cluster demand
             int[] clusterDemand = instance.clusters_demand;
@@ -212,7 +214,7 @@ namespace cluvrp_grasp
                 totalDemand += totalDemandOnVehicle;
                 if (instance.capacity - totalDemandOnVehicle != vehicleRemSpace[vehicle] || vehicleRemSpace[vehicle] < 0)
                 {
-                    Console.WriteLine("ERRRRRRRRRRRRRRRRRROR");
+                    Console.WriteLine("ERROR");
                 }
             }
         }

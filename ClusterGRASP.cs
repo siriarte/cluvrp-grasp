@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 /*
  * Grasp for CluVRP at cluster-level. 
@@ -22,7 +21,6 @@ using System.Linq;
     enum FitAlgorithm {RCL, BestFit, FirstFit};
     class ClusterGRASP
     {
-
         // Public variables
         public CluVRPInstance instance { get; set; }
         public CluVRPSolution solution { get; set; }
@@ -179,7 +177,7 @@ using System.Linq;
             }
 
              // Calculte total inter-cluster distance
-            double travelTotalDistance = calculateClusterTravelDistance(clusterRouteForVehicle, instance.clustersDistanceMatrix);
+            double travelTotalDistance = calculateTotalClusterTravelDistance(clusterRouteForVehicle, instance.clustersDistanceMatrix);
 
             // Set solution
             CluVRPSolution newSolution = new CluVRPSolution();
@@ -210,7 +208,6 @@ using System.Linq;
                     // If there is space on vehicle j AND
                     // The remaning space is less than minCapacity AND
                     // the distance es acceptable for RCL condition
-
                     if (vehicleRemSpace[j] >= clusterDemand &&
                         vehicleRemSpace[j] - clusterDemand < minCapacity)
                     {
@@ -269,20 +266,6 @@ using System.Linq;
                     clustersToVisit.Remove(clusterSelected);
                 }
              }
-        }
-
-        private void forceInsertFitCluster(List<int>[] clusterRouteForVehicle, int[] vehicleRemSpace, List<int> clustersToVisit)
-        {
-            foreach (int cluster in clustersToVisit)
-            {
-                int spaceNeed = instance.clusters_demand[cluster];
-
-                for(int vehicle = 0; vehicle < clusterRouteForVehicle.Length; vehicle++)
-                {
-
-                }
-            }
-
         }
 
         private void forceSwapFitCluster(List<int>[] clusterRouteForVehicle, int[] vehicleRemSpace, List<int> clustersToVisit)
@@ -472,11 +455,11 @@ using System.Linq;
         }
 
         /*
-      * 
-      *  Build RCL with the criteria of minimal distance bewteen next cluster 
-      *  and last cluster on each vehicle      
-      * 
-      */
+        * 
+        *  Build RCL with the criteria of minimal distance bewteen next cluster 
+        *  and last cluster on each vehicle      
+        * 
+        */
         private List<int> buildVehicleByDistanceRCL(IList[] clusterRouteForVehicle, int vehicleCapacity, int[] vechiculeRemSpace, int clusterSelected, int clusterDemand, double alphaDistance)
         {
             // Set variables
@@ -564,10 +547,10 @@ using System.Linq;
        
         /*
          *
-         * Calculate the total distance of the cluster travel
+         * Calculate the total distance of the cluster travel for all vehicles
          *
          */ 
-        public static double calculateClusterTravelDistance(List<int>[] travel, double[][] clustersDistanceMatrix)
+        public static double calculateTotalClusterTravelDistance(List<int>[] travel, double[][] clustersDistanceMatrix)
         {
             // Set variables
             double totalDistance = 0;
@@ -575,7 +558,7 @@ using System.Linq;
             // Iterate each vehicle
             for (int vehicleNumber = 0; vehicleNumber < travel.Length; vehicleNumber++)
             {
-                totalDistance += calculateClusterTravelDistance(travel[vehicleNumber], clustersDistanceMatrix);
+                totalDistance += calculateClusterTravelDistanceForVehicle(travel[vehicleNumber], clustersDistanceMatrix);
             }
 
             // Return total distance
@@ -583,11 +566,11 @@ using System.Linq;
         }
 
         /*
-        *
-        * Calculate the total distance of the cluster travel
-        *
-        */
-        public static double calculateClusterTravelDistance(List<int> travel, double[][] clustersDistanceMatrix)
+         *
+         * Calculate the total distance of a vehicle travel
+         *
+         */
+        public static double calculateClusterTravelDistanceForVehicle(List<int> travel, double[][] clustersDistanceMatrix)
         {
             // Set variables
             double totalDistance = 0;
@@ -604,7 +587,7 @@ using System.Linq;
             return totalDistance;
         }
 
-        public static double estimateClusterTravelDistance(List<int>[] travel, double[][] clustersDistanceMatrix, double[] suffleAverageClusterDistance)
+        public static double estimateTotalClusterTravelDistance(List<int>[] travel, double[][] clustersDistanceMatrix, double[] suffleAverageClusterDistance)
         {
             // Init distance
             double totalDistance = 0;
@@ -612,14 +595,14 @@ using System.Linq;
             // Iterate each cluster on vehicle route
             for (int vehicle = 0; vehicle < travel.Length; vehicle++)
             {
-                totalDistance += estimateClusterTravelDistance(travel[vehicle], clustersDistanceMatrix, suffleAverageClusterDistance);
+                totalDistance += estimateClusterTravelDistanceForVehicle(travel[vehicle], clustersDistanceMatrix, suffleAverageClusterDistance);
             }
 
             // Return total distance
             return totalDistance;
         }
         
-        public static double estimateClusterTravelDistance(List<int> travel, double[][] clustersDistanceMatrix, double[] suffleAverageClusterDistance)
+        public static double estimateClusterTravelDistanceForVehicle(List<int> travel, double[][] clustersDistanceMatrix, double[] suffleAverageClusterDistance)
         {
             // Set variables
             double totalDistance = 0;

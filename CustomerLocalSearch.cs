@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace cluvrp_grasp
@@ -6,18 +7,19 @@ namespace cluvrp_grasp
 
     class CustomerLocalSearch
     {
+        // Attributes
         public int maxIterationsWithoutImprovementTwoOpt { get; set; }
         public int maxIterationsWithoutImprovementRelocate { get; set; }
         public int maxIterationsWithoutImprovementExchange { get; set; }
         public CluVRPSolution solution { get; set; }
         public CluVRPInstance instance { get; set; }
 
+        // Constructor
         public CustomerLocalSearch(CluVRPSolution solution, 
             CluVRPInstance instance,
             int maxIterationsWithoutImprovementTwoOpt = 100,
             int maxIterationsWithoutImprovementRelocate = 100,
-            int maxIterationsWithoutImprovementExchange = 100
-            )
+            int maxIterationsWithoutImprovementExchange = 100)
         {
             this.solution = solution;
             this.instance = instance;
@@ -26,54 +28,77 @@ namespace cluvrp_grasp
             this.maxIterationsWithoutImprovementExchange = maxIterationsWithoutImprovementExchange;
         }
 
+        // TwoOpt local-search 
         public void twoOpt()
         {
+            // Init variables
             List<int>[][] customersCircuit = solution.customersPaths;
             int numberOfVehicles = customersCircuit.Length;
-            double[] bestDistance = new double[numberOfVehicles];
-
+          
+            // For each vehicle route
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
-
+                // Calculate the complete travel distance by vehicle
                 List<int>[] clusterRoute = customersCircuit[vehicle];
-                int iteration = 0;             
-                bestDistance[vehicle] = Functions.calculateTotalTravelDistance(customersCircuit, instance.customersDistanceMatrix, vehicle);
-
+          
+                // Main cycle
+                int iteration = 0;
                 while (iteration < maxIterationsWithoutImprovementTwoOpt)
                 {
+                    // For every cluster on the route
                     for (int clusterIt = 0; clusterIt < clusterRoute.Length; clusterIt++)
                     {
+                        // For every customer path of a cluster
                         List<int> route = clusterRoute[clusterIt];
-                        int max_w = route.Count();
+                        int maxW = route.Count();
 
-                        for (int i = 1; i < max_w - 1; i++)
+                        // Starting from second customer (avoid depot)
+                        for (int i = 1; i + 1< maxW; i++)
                         {
-                            for (int k = i + 1; k < max_w; k++)
+                            // Until the last one on the path
+                            for (int j = i + 1; j < maxW; j++)
                             {
+                                // Backup original route
                                 List<int> oldRoute = customersCircuit[vehicle][clusterIt];
-                                List<int> newRoute = twoOptSwap(customersCircuit[vehicle][clusterIt], i, k);
+
+                                // New route create by two-opt-swap between customer i and j 
+                                List<int> newRoute = twoOptSwap(customersCircuit[vehicle][clusterIt], i, j);
+
+                                // Assign the new route to the circuit
                                 customersCircuit[vehicle][clusterIt] = newRoute;
+
+                                // Calculate the new distance
                                 double newDistance = Functions.calculateTotalTravelDistance(customersCircuit, instance.customersDistanceMatrix, vehicle);
-                                if (newDistance < bestDistance[vehicle])
+
+                                // If distance if better
+                                if (newDistance + 0.5 < this.solution.vehiculeRouteDistance[vehicle])
                                 {
+                                    // Update best distance
+                                    this.solution.vehiculeRouteDistance[vehicle] = newDistance;
+                                    
+                                    // Restart iterator
                                     iteration = 0;
-                                    customersCircuit[vehicle][clusterIt] = newRoute;
-                                    bestDistance[vehicle] = newDistance;
-                                }else
+                                }
+                                else
                                 {
+                                    // Restore old route to the circuit
                                     customersCircuit[vehicle][clusterIt] = oldRoute;
                                 }
-                            }
-                        }
-                        iteration++;
-                    }
-                }
-            }
+                            } // end for j
+                        } // end for i
 
-            this.solution.customersPaths = customersCircuit;
-            this.solution.vehiculeRouteDistance = bestDistance;
+                        // Increase iterator
+                        iteration++;
+
+                    } // End for clusterIt
+                } // End for iterator
+            } // End for vehicle
+
+            // Update the total customer route distance (the sum all vehicle route distances)
+            solution.totalCustomerRouteDistance = this.solution.vehiculeRouteDistance.Sum();
         }
         
+        // TwoOpt Algorithm
         public List<int> twoOptSwap(List<int> route, int i, int k)
         {
             List<int> newRoute = route.GetRange(0, i);
@@ -86,76 +111,94 @@ namespace cluvrp_grasp
             newRoute.AddRange(endRoute);
             return newRoute;
         }
-        
+
+        // Relocate local-search
         public void relocate()
         {
+            // Init variables
             int numberOfVehicles = solution.customersPaths.Length;
-
+            
+            // For each vehicle
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
+                // Get number of cluster on the vehicle route 
                 int numberOfClusters = solution.customersPaths[vehicle].Length;
 
+                // For each cluster
                 for (int clusterIt = 0; clusterIt < numberOfClusters; clusterIt++)
-                {
-                    int iteration = 0;
+                {                    
+                    // Get the customer route of the cluste
                     List<int> route = solution.customersPaths[vehicle][clusterIt];
+
+                    // Main cycle
+                    int iteration = 0;
                     while (iteration < maxIterationsWithoutImprovementRelocate)
                     {
+                        // For each i-customer
                         for (int i = 0; i < route.Count; i++)
                         {
+                            // For each j-customer
                             for (int j = 0; j < route.Count; j++)
                             {
+                                // If is the same customer or the depot dont do anything
                                 if ((i == j) || ((i == 0 && j == route.Count - 1) ||
                                     (i == route.Count - 1 && j == 0)))
+                                {
                                     continue;
+                                }
 
+                                // If perform realocate success 
                                 if (relocate(vehicle, clusterIt, i, j))
                                 {
+                                    // Restart iterator
                                     iteration = 0;
                                 }
-                            }
-                        }
+                            } // End for j
+                        } // End for i
+
+                        // Increase iterator
                         iteration++;
-                    }
-                }
-            }
+
+                    } // End for While 
+                } // End for clusterIt
+            } // End for vehicle
         }
 
+        // Relocate Algorithm
         public bool relocate(int vehicle, int cluster, int i, int j)
         {
+            // Get customer path for vehicle and cluster
             List<int> route = solution.customersPaths[vehicle][cluster];
 
-            // Para no irnos del camino
-            var celda_anterior_i = i - 1 == -1 ? route.Count - 1 : i - 1;
-            var celda_anterior_j = j - 1 == -1 ? route.Count - 1 : j - 1;
-
-            var celda_siguiente_i = i + 1 == route.Count ? 0 : i + 1;
-            var celda_siguiente_j = j + 1 == route.Count ? 0 : j + 1;
-
-            if (i < j)
-                celda_anterior_j++;
-            else
-                celda_siguiente_j--;
-
-            // Calculamos el nuevo costo, a ver si es mejor cambiar o no de posición 
+            // Backup the original route
             List<int> oldRoute = new List<int>(route);
-            var valor = route[i];
+
+            // Perform relocate
+            int customer = route[i];
             route.RemoveAt(i);
-            route.Insert(j, valor);
+            route.Insert(j, customer);
+
+            // Set the new route to the path
             solution.customersPaths[vehicle][cluster] = route;
 
-            var nuevo_costo = Functions.calculateTotalTravelDistance(solution.customersPaths, instance.customersDistanceMatrix, vehicle);
-            if (nuevo_costo < solution.vehiculeRouteDistance[vehicle])
+            // Calculate new distance
+            double newDistance = Functions.calculateTotalTravelDistance(solution.customersPaths, instance.customersDistanceMatrix, vehicle);
+
+            // If distance was improved
+            if (newDistance + 0.5 < solution.vehiculeRouteDistance[vehicle])
             {
-                solution.vehiculeRouteDistance[vehicle] = nuevo_costo;
+                // Update new distance to the vehicle route
+                solution.vehiculeRouteDistance[vehicle] = newDistance;
                 solution.totalCustomerRouteDistance = solution.vehiculeRouteDistance.Sum();
                 return true;
             }
              
-             solution.customersPaths[vehicle][cluster] = oldRoute;
-             return false;
+            // Else back to the original route
+            solution.customersPaths[vehicle][cluster] = oldRoute;
+            return false;
         }
-/*
+        
+        /*
         public void exchange()
         {
             int numberOfVehicles = _customerSolution.clusterRouteForVehicule.Length;
@@ -257,13 +300,6 @@ namespace cluvrp_grasp
             }
             return false;
         }*/
-        public bool isValidRoute(List<int> route)
-        {
-            if (route.Count > 0)
-            {
-                return (route[0] == 0 && route[route.Count - 1] == 0);
-            }
-            return false;
-        }
+           
     }
 }

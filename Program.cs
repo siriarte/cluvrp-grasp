@@ -31,20 +31,20 @@ namespace cluvrp_grasp
                         double alphaDistance = j * 1.0 / 10;
 
                         ClusterGRASP clusterGrasp = new ClusterGRASP(instance);
-                        CluVRPSolution cluVRPSolution = clusterGrasp.Grasp(500, alphaCapacity, alphaDistance);
+                        CluVRPSolution cluVRPSolution = clusterGrasp.Grasp(300, alphaCapacity, alphaDistance);
 
                         if (cluVRPSolution.clusterRouteForVehicule != null)
                         {
                             cluVRPSolution.verifyClusterSolution(instance);
 
                             CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution);
-                            customerGrasp.Grasp(200, alphaDistance);
+                            customerGrasp.Grasp(100, alphaDistance);
 
                             cluVRPSolution.verifyCustomerSolution(instance);
 
                             string algorithm = string.Join("|", customerGrasp.solution.fitAlgorithmCounter);
-                            //string s1 = instance.file_name + '\t' + customerGrasp.solution.totalCustomerRouteDistance + '\t' + alphaCapacity + '\t' + alphaDistance + '\t' + algorithm;
-                            //Console.WriteLine(s1);
+                            string s1 = instance.file_name + '\t' + customerGrasp.solution.totalCustomerRouteDistance + '\t' + alphaCapacity + '\t' + alphaDistance + '\t' + algorithm;
+                            Console.WriteLine(s1);
 
                             if (customerGrasp.solution.totalCustomerRouteDistance < bestDistance)
                             {

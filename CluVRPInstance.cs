@@ -6,11 +6,18 @@ using System.Threading.Tasks;
 
 namespace cluvrp_grasp
 {
+    /*
+     * 
+     * Node class used for customers to create CluVRP instance 
+     * 
+     */
     class NodePoint
     {
+        // Attributes
         public int x { get; }
         public int y { get; }
 
+        // Constructor
         public NodePoint(int x, int y)
         {
             this.x = x;
@@ -18,8 +25,14 @@ namespace cluvrp_grasp
         }
     }
     
+    /*
+     * 
+     * CluVRP instance class used on the solution 
+     * 
+     */
     class CluVRPInstance
     {
+        // Attributes for a CluVRP instance
         public string file_name { get; set; }
         public string name { get; set; }
         public string comment { get; set; }
@@ -33,13 +46,17 @@ namespace cluvrp_grasp
         public int[] clusters_demand { get; set; }
         public int depot { get; set; }
 
+        // Distance matrices using on the solutions
         public double[][] clustersDistanceMatrix { set; get; }
         public double[][] customersDistanceMatrix { set; get; }
         public double[] suffleRandomAverageClusterDistance { set; get; }
 
+        // Constructor
         public CluVRPInstance(string file_name, string name, string comment, int dimension, int vehicules, int gvrp_sets, 
             int capacity, string edge_weight_type, NodePoint[] nodes, int[][] clusters, int[] clusters_demand, int depot)
         {
+
+            // Set all the attributes
             this.file_name = file_name;
             this.name = name;
             this.comment = comment;
@@ -53,16 +70,17 @@ namespace cluvrp_grasp
             this.clusters_demand = clusters_demand;
             this.depot = depot;
 
+            // Calculate all the neccesary distance matrices
             calculateCustomersDistanceMatrix();
             calculateClustersDistanceMatrix();
             calculateSuffleAverageDistance();
         }
 
         /*
-* Calculate the intercluster distances 
-* Use the shortest edge between two clusters as an approximation for the inter-cluster distance
-*           
-*/
+        * Calculate the intercluster distances 
+        * Use the shortest edge between two clusters as an approximation for the inter-cluster distance
+        *           
+        */
         public void calculateClustersDistanceMatrix()
         {
             // Variables from instances 
@@ -95,9 +113,69 @@ namespace cluvrp_grasp
         }
 
         /*
+         *
+         * Return customers distance matrix
+         * 
+         */
+        private void calculateCustomersDistanceMatrix()
+        {
+            customersDistanceMatrix = new double[this.dimension + 1][];
+            NodePoint[] nodesPosition = this.nodes;
+
+            for (int i = 0; i < this.dimension; i++)
+            {
+                customersDistanceMatrix[i + 1] = new double[this.dimension + 1];
+                for (int j = 0; j < this.dimension; j++)
+                {
+                    customersDistanceMatrix[i + 1][j + 1] = Functions.distance(nodesPosition[i].x, nodesPosition[i].y, nodesPosition[j].x, nodesPosition[j].y);
+                }
+            }
+        }
+
+        /*
+         * 
+         * Calculate the aproximate total distance between all customers of the clusters
+         * using the average distance performing a N suffles on the customers positions
+         * 
+         */
+        public void calculateSuffleAverageDistance()
+        {
+            suffleRandomAverageClusterDistance = new double[clusters.Length];
+            for (int clusterIt = 0; clusterIt < clusters.Length; clusterIt++)
+            {
+                int iterations = clusters[clusterIt].Length * 2;
+                List<int> clusterList = clusters[clusterIt].OfType<int>().ToList();
+                double totalDistance = 0;
+                Random rng = new Random();
+                for (int it = 0; it < iterations; it++)
+                {
+                    Functions.Shuffle(rng, clusterList);
+                    totalDistance += interClusterCustomerPathDistance(clusterList, customersDistanceMatrix);
+                }
+                suffleRandomAverageClusterDistance[clusterIt] = totalDistance * 1.0 / iterations;
+            }
+        }
+        
+        /*
+         *
+         * Calculate cumplete distance on path of customers 
+         * on a cluster
+         *
+         */
+        private static double interClusterCustomerPathDistance(List<int> customerList, double[][] costumerDistanceMatrix)
+        {
+            double distance = 0;
+            for (int i = 0; i + 1 < customerList.Count; i++)
+            {
+                distance += costumerDistanceMatrix[customerList[i]][customerList[i + 1]];
+            }
+            return distance;
+        }
+
+        /*
          * 
          * Calculte min distance between two clusters
-         * We use the shortest edge between two clusters as an approximation 
+         * using the shortest edge between two clusters as an approximation 
          * for the inter-cluster distance
          *
          */
@@ -134,51 +212,5 @@ namespace cluvrp_grasp
             return minDistance;
         }
 
-        // Return a customers distance matrix
-        private void calculateCustomersDistanceMatrix()
-        {
-            customersDistanceMatrix = new double[this.dimension + 1][];
-            NodePoint[] nodesPosition = this.nodes;
-
-            for (int i = 0; i < this.dimension; i++)
-            {
-                customersDistanceMatrix[i + 1] = new double[this.dimension + 1];
-                for (int j = 0; j < this.dimension; j++)
-                {
-                    customersDistanceMatrix[i + 1][j + 1] = Functions.distance(nodesPosition[i].x, nodesPosition[i].y, nodesPosition[j].x, nodesPosition[j].y);
-                }
-            }
-        }
-
-        // Calculate random average distance on a cluster
-        public void calculateSuffleAverageDistance()
-        {
-            suffleRandomAverageClusterDistance = new double[clusters.Length];
-            for (int clusterIt = 0; clusterIt < clusters.Length; clusterIt++)
-            {
-                int iterations = clusters[clusterIt].Length * 2;
-                List<int> clusterList = clusters[clusterIt].OfType<int>().ToList();
-                double totalDistance = 0;
-                Random rng = new Random();
-                for (int it = 0; it < iterations; it++)
-                {
-                    Functions.Shuffle(rng, clusterList);
-                    totalDistance += interClusterPathDistance(clusterList, customersDistanceMatrix);
-                }
-                suffleRandomAverageClusterDistance[clusterIt] = totalDistance * 1.0 / iterations;
-            }
-        }
-        
-        // Calculate cumplete distance on customerPath
-        private static double interClusterPathDistance(List<int> customerList, double[][] costumerDistanceMatrix)
-        {
-            double distance = 0;
-            for (int i = 0; i + 1 < customerList.Count; i++)
-            {
-                distance += costumerDistanceMatrix[customerList[i]][customerList[i + 1]];
-            }
-            return distance;
-        }
     }
-
 }

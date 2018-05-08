@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace cluvrp_grasp
 {
@@ -12,6 +10,11 @@ namespace cluvrp_grasp
         public CluVRPInstance instance;
         public CluVRPSolution solution;
 
+        /*
+         * 
+         * Constructor 
+         *
+         */
         public CustomerGRASP(CluVRPInstance instance, CluVRPSolution solution)
         {
             // Set variables
@@ -34,13 +37,17 @@ namespace cluvrp_grasp
           */
         public void Grasp(int totalIterations = 100, double alpha = 0)
         {
+            // Set iterator
             int iterator = 0;
+
+            // Main cycle
             while (iterator < totalIterations)
             {
+                // Calculate new initial solution
                 CluVRPSolution newSolution = constructGreedyRandomizedSolution(alpha);
 
                 // Local search 
-                this.localSearch(ref newSolution);
+                this.localSearch(newSolution);
 
                 // Update Best solution
                 if (newSolution.totalCustomerRouteDistance < solution.totalCustomerRouteDistance)
@@ -52,10 +59,16 @@ namespace cluvrp_grasp
                 iterator++;
             }
             
+            //End
             return;
         }
 
-        private void localSearch(ref CluVRPSolution solution)
+        /*
+         * 
+         * Applies a list of local searchs  
+         *
+         */ 
+        private void localSearch(CluVRPSolution solution)
         {
             // Create a local search handler for cluster-level problem
             CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(solution, instance, 100, 100, 100);
@@ -67,16 +80,21 @@ namespace cluvrp_grasp
             customerLocalSearch.relocate();
 
             // Perform Exchange
-            //localSearchsCluster.exchange();
+            //customerLocalSearch.exchange();
 
             // Set the solution
             solution = customerLocalSearch.solution;
         }
 
+        /*
+         * 
+         *  Create a complete Greedy Randomized Solution (with cluster and customers)
+         * 
+         */
         private CluVRPSolution constructGreedyRandomizedSolution(double alpha)
         {
             // Init variables
-            int[][] notSortedClusters = instance.clusters;
+            int[][] originalClusters = instance.clusters;
             List<int>[] clusterRoute = solution.clusterRouteForVehicule;
             List<int>[][] customersCircuit = new List<int>[clusterRoute.Length][];
             Tuple<int, int> customersConnectClusters = new Tuple<int, int>(0, 0);
@@ -85,7 +103,7 @@ namespace cluvrp_grasp
             // Start from depot
             int startingCustomer = 1;
 
-            int[][][] customerByClusterOrderRoute = sortClustersByRoute(notSortedClusters, clusterRoute);
+            int[][][] clusterRouteWithCustomers = this.clusterRouteWithCustomers(originalClusters, clusterRoute);
 
             // For each vehicule cluster-route
             for (int vehicle = 0; vehicle < clusterRoute.Length; vehicle++)
@@ -93,7 +111,7 @@ namespace cluvrp_grasp
 
                 // For each cluster in the i-vehicle route
                 int numbersOfClusters = clusterRoute[vehicle].Count;
-                int[][] clusters = customerByClusterOrderRoute[vehicle];
+                int[][] clustersOneVehicle = clusterRouteWithCustomers[vehicle];
                 customersCircuit[vehicle] = new List<int>[numbersOfClusters];
 
                 // Visit all cluster for the i-vehicle
@@ -106,18 +124,18 @@ namespace cluvrp_grasp
                     // For best customer to conect actual cluster to the next
                     // If the cluster only has 1 customer, you only have to know the 
                     // customer for the next cluster
-                    if (i + 1 < numbersOfClusters && clusters[i].Length > 1)
+                    if (i + 1 < numbersOfClusters && clustersOneVehicle[i].Length > 1)
                     {
-                        customersConnectClusters = bestCustomersBetween2Clusters(clusters[i], clusters[i + 1], startingCustomer);
+                        customersConnectClusters = bestCustomersBetween2Clusters(clustersOneVehicle[i], clustersOneVehicle[i + 1], startingCustomer);
                     }
-                    else if (i + 1 < numbersOfClusters && clusters[i].Length == 1)
+                    else if (i + 1 < numbersOfClusters && clustersOneVehicle[i].Length == 1)
                     {
-                        int nextCustomer = bestNextCustomer(startingCustomer, clusters[i + 1]);
+                        int nextCustomer = bestNextCustomer(startingCustomer, clustersOneVehicle[i + 1]);
                         customersConnectClusters = new Tuple<int, int>(startingCustomer, nextCustomer);
                     }
 
                     // Convert array to list
-                    List<int> customersToVisit = clusters[i].OfType<int>().ToList();
+                    List<int> customersToVisit = clustersOneVehicle[i].OfType<int>().ToList();
 
                     // Remove initial and final customers
                     customersToVisit.Remove(startingCustomer);
@@ -142,7 +160,7 @@ namespace cluvrp_grasp
                     // Add final customer that connect to i+1 cluster
                     // In the final cluster the next customer is 0 
                     // the it has not be added
-                    if (clusters[i].Length > 1 && i + 1 < numbersOfClusters)
+                    if (clustersOneVehicle[i].Length > 1 && i + 1 < numbersOfClusters)
                     {
                         customersCircuit[vehicle][i].Add(customersConnectClusters.Item1);
                     }
@@ -163,22 +181,40 @@ namespace cluvrp_grasp
             return newSolution;
         }
 
-        private int[][][] sortClustersByRoute(int[][] notSortedclusters, List<int>[] clusterRoute)
+        /*
+         * 
+         * Add the list of customers to a cluster route for vehicle
+         * 
+         */
+        private int[][][] clusterRouteWithCustomers(int[][] notSortedclusters, List<int>[] clusterRoute)
         {
+            // Create returned array
             int[][][] sortedClusterRoute = new int[clusterRoute.Length][][];
             
+            // For each vehicle
             for(int vehicle = 0; vehicle < clusterRoute.Length; vehicle++)
             {
                 sortedClusterRoute[vehicle] = new int[clusterRoute[vehicle].Count][];
+
+                // For each cluster of vehicle
                 for (int i = 0; i < clusterRoute[vehicle].Count; i++)
                 {
+                    // Add to the list of costumers to the cluster i
                     int actualCluster = clusterRoute[vehicle][i];
                     sortedClusterRoute[vehicle][i] = notSortedclusters[actualCluster];
                 }
             }
+
+            // Return value
             return sortedClusterRoute;
         }
 
+        /*
+         *
+         * Select the best next customer of 'cluster' from 'startingNode' 
+         * Using min distance as criteria
+         * 
+         */
         private int bestNextCustomer(int startingNode, int[] cluster)
         {
             // Define min distance and tuple
@@ -200,13 +236,17 @@ namespace cluvrp_grasp
                     minDistance = distance;
                     ret = customer1;
                 }
-
             }
 
             // Return min distance
             return ret;
         }
 
+        /*
+         * 
+         * Create RCL list with min distance betweeen customers as criteria 
+         * 
+         */
         private List<int> buildCustomerRCL(int actualCustomer, List<int> customersToVisit, double alpha)
         {
             // Set variables
@@ -222,7 +262,6 @@ namespace cluvrp_grasp
             // For each vehicle
             for (int j = 0; j < customersToVisit.Count; j++)
             {
-
                 // Calculate customers distance
                 double distanceBetweenCustomers = instance.customersDistanceMatrix[actualCustomer][customersToVisit[j]];
 
@@ -237,6 +276,12 @@ namespace cluvrp_grasp
             return RCL;
         }
 
+        /*
+         * 
+         * Return the two customers that has min distance bewteen two clusters
+         * Avoiding using the 'startingNode' as the sources
+         * 
+         */
         private Tuple<int, int> bestCustomersBetween2Clusters(int[] cluster1, int[] cluster2, int startingNode)
         {
 
