@@ -140,7 +140,7 @@ namespace cluvrp_grasp
                             // For each j-customer
                             for (int j = 0; j < route.Count; j++)
                             {
-                                // If is the same customer or the depot dont do anything
+                                // If are the same customer or the depot dont do anything
                                 if ((i == j) || ((i == 0 && j == route.Count - 1) ||
                                     (i == route.Count - 1 && j == 0)))
                                 {
@@ -197,109 +197,136 @@ namespace cluvrp_grasp
             solution.customersPaths[vehicle][cluster] = oldRoute;
             return false;
         }
-        
-        /*
+
+        // Exchange local-search 
         public void exchange()
         {
-            int numberOfVehicles = _customerSolution.clusterRouteForVehicule.Length;
+            // Get number of vehicles
+            int numberOfVehicles = solution.clusterRouteForVehicule.Length;
 
+            // For each vehicle
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
-                List<int> route = _customerSolution.clusterRouteForVehicule[vehicle];
-                int iteration = 0;
-                while (iteration < _maxIterationsWithoutImprovementExchange)
-                {
+                // Get the vehicle route
+                List<int> route = solution.clusterRouteForVehicule[vehicle];
 
+                // Main Cyvcle
+                int iteration = 0;
+                while (iteration < maxIterationsWithoutImprovementExchange)
+                {
+                    // For each i-customer
                     for (int i = 0; i < route.Count; i++)
                     {
+                        // For each j-customer
                         for (int j = 0; j < route.Count; j++)
                         {
+                            // If are the same customer or the depot dont do anything
                             if ((i == j) || ((i == 0 && j == route.Count - 1) ||
                                 (i == route.Count - 1 && j == 0)))
                                 continue;
 
+                            // If perform realocate success 
                             if (exchange(route, vehicle, i, j))
                             {
+                                // Restart iterator
                                 iteration = 0;
                             }
-                        }
-                    }
+                        } // End for i
+                    } // End for j
+
+                    // Increase iterator
                     iteration++;
-                }
-            }
+
+                } // End while
+            } // End for vehicle
+
+            //End
+            return;
         }
 
+        // Exchange Algorithm
         bool exchange(List<int> route, int vehicle, int i, int j)
         {
+            // To be on the route
+            int prev_customer_i = i - 1 == -1 ? route.Count - 1 : i - 1;
+            int prev_customer_j = j - 1 == -1 ? route.Count - 1 : j - 1;
+            int next_customer_i = i + 1 == route.Count ? 0 : i + 1;
+            int next_customer_j = j + 1 == route.Count ? 0 : j + 1;
 
-            // Para no irnos del camino
-            var celda_anterior_i = i - 1 == -1 ? route.Count - 1 : i - 1;
-            var celda_anterior_j = j - 1 == -1 ? route.Count - 1 : j - 1;
+            // Old distances
+            var distance_i_left = instance.clustersDistanceMatrix[route[prev_customer_i]][route[i]];
+            var distance_i_right = instance.clustersDistanceMatrix[route[i]][route[next_customer_i]];
+            var distance_j_left = instance.clustersDistanceMatrix[route[prev_customer_j]][route[j]];
+            var distance_j_right = instance.clustersDistanceMatrix[route[j]][route[next_customer_j]];
 
-            var celda_siguiente_i = i + 1 == route.Count ? 0 : i + 1;
-            var celda_siguiente_j = j + 1 == route.Count ? 0 : j + 1;
+            // New distances
+            double new_distance_i_left, new_distance_i_right;
+            double new_distance_j_left, new_distance_j_right;
 
-            // Calculamos el nuevo costo, a ver si es mejor cambiar o no de posición 
-            // Costos viejos
-            var _distancia_i_izquierda = _customersMatrixDistance[route[celda_anterior_i]][route[i]];
-            var _distancia_i_derecha = _customersMatrixDistance[route[i]][route[celda_siguiente_i]];
-
-            var _distancia_j_izquierda = _customersMatrixDistance[route[celda_anterior_j]][route[j]];
-            var _distancia_j_derecha = _customersMatrixDistance[route[j]][route[celda_siguiente_j]];
-
-            double nuevo_costo = 0;
-            // Costos nuevos
-            double _distancia_nueva_i_izquierda, _distancia_nueva_i_derecha, _distancia_nueva_j_izquierda, _distancia_nueva_j_derecha;
-
-            if (i == celda_siguiente_j)
+            // If i is next customer j
+            if (i == next_customer_j)
             {
-                _distancia_nueva_i_izquierda = _customersMatrixDistance[route[celda_anterior_j]][route[i]];
-                _distancia_nueva_i_derecha = _customersMatrixDistance[route[i]][route[j]];
+                // Calculate new distance for i
+                new_distance_i_left = instance.clustersDistanceMatrix[route[prev_customer_j]][route[i]];
+                new_distance_i_right = instance.clustersDistanceMatrix[route[i]][route[j]];
 
-                _distancia_nueva_j_derecha = _customersMatrixDistance[route[j]][route[celda_siguiente_i]];
-                _distancia_nueva_j_izquierda = _customersMatrixDistance[route[j]][route[i]];
-
-                //_distancia_nueva_i_derecha = _distancia_nueva_j_izquierda 
-                //    = _clusterMatrixDistance[solucion.camino[i], solucion.camino[j]).distancia;
+                // Calculate new distance for j
+                new_distance_j_right = instance.clustersDistanceMatrix[route[j]][route[next_customer_i]];
+                new_distance_j_left = instance.clustersDistanceMatrix[route[j]][route[i]];
             }
-            else if (j == celda_siguiente_i)
+            else if (j == next_customer_i)
             {
-                _distancia_nueva_i_derecha = _customersMatrixDistance[route[i]][route[celda_siguiente_j]];
-                _distancia_nueva_i_izquierda = _customersMatrixDistance[route[j]][route[i]];
+                // Calculate new distance for i
+                new_distance_i_right = instance.clustersDistanceMatrix[route[i]][route[next_customer_j]];
+                new_distance_i_left = instance.clustersDistanceMatrix[route[j]][route[i]];
 
-                _distancia_nueva_j_izquierda = _customersMatrixDistance[route[celda_anterior_i]][route[j]];
-                _distancia_nueva_j_derecha = _customersMatrixDistance[route[i]][route[j]];
-
-                //_distancia_nueva_i_izquierda = _distancia_nueva_j_derecha = 
-                //    _clusterMatrixDistance[solucion.camino[j], solucion.camino[i]).distancia;
+                // Calculate new distance for j
+                new_distance_j_left = instance.clustersDistanceMatrix[route[prev_customer_i]][route[j]];
+                new_distance_j_right = instance.clustersDistanceMatrix[route[i]][route[j]];
             }
             else
             {
-                _distancia_nueva_i_izquierda = _customersMatrixDistance[route[celda_anterior_j]][route[i]];
-                _distancia_nueva_i_derecha = _customersMatrixDistance[route[i]][route[celda_siguiente_j]];
+                // Calculate new distance for i
+                new_distance_i_left = instance.clustersDistanceMatrix[route[prev_customer_j]][route[i]];
+                new_distance_i_right = instance.clustersDistanceMatrix[route[i]][route[next_customer_j]];
 
-                _distancia_nueva_j_izquierda = _customersMatrixDistance[route[celda_anterior_i]][route[j]];
-                _distancia_nueva_j_derecha = _customersMatrixDistance[route[j]][route[celda_siguiente_i]];
+                // Calculate new distance for j
+                new_distance_j_left = instance.clustersDistanceMatrix[route[prev_customer_i]][route[j]];
+                new_distance_j_right = instance.clustersDistanceMatrix[route[j]][route[next_customer_i]];
             }
 
-            nuevo_costo = this._customerSolution.totalRouteDistance - _distancia_i_izquierda - _distancia_i_derecha - _distancia_j_izquierda - _distancia_j_derecha +
-            _distancia_nueva_i_izquierda + _distancia_nueva_i_derecha + _distancia_nueva_j_izquierda + _distancia_nueva_j_derecha;
+            // Calculate new total distance
+            double newDistance = this.solution.totalClusterRouteDistance - distance_i_left - distance_i_right -
+                distance_j_left - distance_j_right + new_distance_i_left + new_distance_i_right +
+                new_distance_j_left + new_distance_j_right;
 
-            if (nuevo_costo < this._customerSolution.totalRouteDistance)
+            // If new distance is better
+            if (newDistance + 0.5 < this.solution.totalClusterRouteDistance)
             {
-                var valor = route[i];
+                // Perform exchange
+                int customer = route[i];
                 route[i] = route[j];
-                route[j] = valor;
+                route[j] = customer;
 
-                if (isValidRoute(route))
+                // If route is valid
+                if (Functions.isValidClusterRoute(route))
                 {
-                    _customerSolution.totalRouteDistance = nuevo_costo;
-                    //_clusterSolution.clusterRouteForVehicule[vehicle] = route;
+                    // Update distance
+                    solution.totalClusterRouteDistance = newDistance;
                     return true;
                 }
-            }
+                else
+                {
+                    // Back to old route
+                    route[j] = route[i];
+                    route[i] = customer;
+                    solution.clusterRouteForVehicule[vehicle] = route;
+                }
+            } // End if distance is better
+
+            // Perform exchange is not possible
             return false;
-        }*/
+        }
            
     }
 }

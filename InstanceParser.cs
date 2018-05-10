@@ -15,17 +15,21 @@ namespace cluvrp_grasp
         static public CluVRPInstance[] loadGVRPSetOfInstances(string InstanceSetName)
         {
 
+            // Init variables
             string filePath = InstanceSetName + ".set";
             CluVRPInstance[] gvrpInstances;
 
+            // Main Cycle
             try
             {
                 string[] lines = System.IO.File.ReadAllLines(filePath);
                 gvrpInstances = new CluVRPInstance[lines.Length];
 
+                // Get all the instances setted on the file
                 int i = 0;
                 foreach (string instanceFilePath in lines)
                 {
+                    // Try to parse instance
                     try
                     {
                         CluVRPInstance instance;
@@ -47,6 +51,7 @@ namespace cluvrp_grasp
                 return null;
             }
 
+            // Return array of instances
             return gvrpInstances;
         }
 

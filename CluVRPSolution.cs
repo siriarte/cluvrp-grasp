@@ -86,6 +86,8 @@ namespace cluvrp_grasp
             // Vehicle remmaining capacity is correct respect to cluster demand
             int[] clusterDemand = instance.clusters_demand;
             int totalDemand = 0;
+
+            // Sum the total demand for vehicle
             for (int vehicle = 0; vehicle < clusterRouteForVehicule.Length; vehicle++)
             {
                 int totalDemandOnVehicle = 0;
@@ -94,6 +96,8 @@ namespace cluvrp_grasp
                     int cluster = clusterRouteForVehicule[vehicle][clusterIt];
                     totalDemandOnVehicle += clusterDemand[cluster];
                 }
+
+                // Sum the total demand of all vehicles
                 totalDemand += totalDemandOnVehicle;
                 Debug.Assert(instance.capacity - totalDemandOnVehicle >= 0);
             }
@@ -176,11 +180,14 @@ namespace cluvrp_grasp
 
         }
 
-        // Check demand taked for vehicles is correct respect the capacity - FOR DEBUG
-        public static void checkDemand(CluVRPInstance instance, List<int>[] clusterRouteForVehicule)
-        {    // Vehicle remmaining capacity is correct respect to cluster demand
+        // Check demand attended by vehicles is correct respect the capacity - FOR DEBUG
+        public static void checkDemand(CluVRPInstance instance, List<int>[] clusterRouteForVehicule, int[] vehicleRemSpace)
+        {    
+            // Vehicle remmaining capacity is correct respect to cluster demand
             int[] clusterDemand = instance.clusters_demand;
             int totalDemand = 0;
+
+            // Sum the total demand for vehicle
             for (int vehicle = 0; vehicle < clusterRouteForVehicule.Length; vehicle++)
             {
                 int totalDemandOnVehicle = 0;
@@ -189,35 +196,18 @@ namespace cluvrp_grasp
                     int cluster = clusterRouteForVehicule[vehicle][clusterIt];
                     totalDemandOnVehicle += clusterDemand[cluster];
                 }
+
+                // Sum the total demand of all vehicles
                 totalDemand += totalDemandOnVehicle;
-                if (instance.capacity - totalDemandOnVehicle < 0)
-                {
-                    return;
-                }
+                
+                // Asserts
+                Debug.Assert(instance.capacity - totalDemandOnVehicle < 0);
+                Debug.Assert(instance.capacity - totalDemandOnVehicle != vehicleRemSpace[vehicle] || vehicleRemSpace[vehicle] < 0);
             }
+
+            // Assert
             Debug.Assert(totalDemand == clusterDemand.Sum());
         }
-
-        // Check free space on vehicles is correct respect the capacity - FOR DEBUG
-        public static void checkCorrectRemSpace(CluVRPInstance instance, List<int>[] clusterRouteForVehicule, int[] vehicleRemSpace)
-        {    // Vehicle remmaining capacity is correct respect to cluster demand
-            int[] clusterDemand = instance.clusters_demand;
-            int totalDemand = 0;
-            for (int vehicle = 0; vehicle < clusterRouteForVehicule.Length; vehicle++)
-            {
-                int totalDemandOnVehicle = 0;
-                for (int clusterIt = 0; clusterIt < clusterRouteForVehicule[vehicle].Count; clusterIt++)
-                {
-                    int cluster = clusterRouteForVehicule[vehicle][clusterIt];
-                    totalDemandOnVehicle += clusterDemand[cluster];
-                }
-                totalDemand += totalDemandOnVehicle;
-                if (instance.capacity - totalDemandOnVehicle != vehicleRemSpace[vehicle] || vehicleRemSpace[vehicle] < 0)
-                {
-                    Console.WriteLine("ERROR");
-                }
-            }
-        }
-
+         
     }
 }

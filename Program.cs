@@ -20,18 +20,19 @@ namespace cluvrp_grasp
 
             foreach(CluVRPInstance instance in instancias)
             {
+                var watch = System.Diagnostics.Stopwatch.StartNew();
                 double bestDistance = double.MaxValue;
                 string fitAlgoBestSol = "";
-                for (int i = 0; i <= 10; i = i + 2)
+                for (int i = 0; i <= 10; i = i + 5)
                 {
                     double alphaCapacity = i * 1.0 / 10;
 
-                    for (int j = 0; j <= 10; j = j + 2)
+                    for (int j = 0; j <= 10; j = j + 5)
                     {
                         double alphaDistance = j * 1.0 / 10;
 
                         ClusterGRASP clusterGrasp = new ClusterGRASP(instance);
-                        CluVRPSolution cluVRPSolution = clusterGrasp.Grasp(300, alphaCapacity, alphaDistance);
+                        CluVRPSolution cluVRPSolution = clusterGrasp.Grasp(100, alphaCapacity, alphaDistance);
 
                         if (cluVRPSolution.clusterRouteForVehicule != null)
                         {
@@ -42,9 +43,9 @@ namespace cluvrp_grasp
 
                             cluVRPSolution.verifyCustomerSolution(instance);
 
-                            string algorithm = string.Join("|", customerGrasp.solution.fitAlgorithmCounter);
+                            string algorithm = '[' + string.Join(",", customerGrasp.solution.fitAlgorithmCounter) + ']';
                             string s1 = instance.file_name + '\t' + customerGrasp.solution.totalCustomerRouteDistance + '\t' + alphaCapacity + '\t' + alphaDistance + '\t' + algorithm;
-                            Console.WriteLine(s1);
+                            //Console.WriteLine(s1);
 
                             if (customerGrasp.solution.totalCustomerRouteDistance < bestDistance)
                             {
@@ -60,7 +61,9 @@ namespace cluvrp_grasp
                        
                     }
                 }
-                string s = instance.file_name + '\t' + bestDistance + '\t' + fitAlgoBestSol;
+                watch.Stop();
+                var elapsedMs = watch.ElapsedMilliseconds;
+                string s = instance.file_name + '\t' + bestDistance + '\t' + elapsedMs  + '\t' + fitAlgoBestSol;
                 logger.logLine(s);
             }
             System.Console.ReadLine();

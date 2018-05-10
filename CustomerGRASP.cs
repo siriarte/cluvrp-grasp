@@ -253,8 +253,8 @@ namespace cluvrp_grasp
             List<int> RCL = new List<int>();
 
             // Calculate max and min distance for RCL condition
-            double minDistance = minCustomerDistance(customersToVisit, actualCustomer);
-            double maxDistance = maxCustomerDistance(customersToVisit, actualCustomer);
+            double minDistance = Functions.minCustomerDistance(customersToVisit, actualCustomer, instance.customersDistanceMatrix);
+            double maxDistance = Functions.maxCustomerDistance(customersToVisit, actualCustomer, instance.customersDistanceMatrix);
 
             // Set RCL condition criteria
             double RCLCondition = minDistance + alpha * (maxDistance - minDistance);
@@ -314,39 +314,6 @@ namespace cluvrp_grasp
             }
 
             // Return min distance
-            return ret;
-        }
-
-        /*
-        * 
-        * Calculte the max distance between the last cluster 
-        * visited (of all vehicles) and toCluster
-        * 
-        */
-        private double maxCustomerDistance(List<int> customers, int toCustomer)
-        {
-            double ret = double.MinValue;
-            for (int i = 0; i < customers.Count; i++)
-            {
-               ret = Math.Max(ret, instance.customersDistanceMatrix[customers[i]][toCustomer]);
-
-            }
-            return ret;
-        }
-
-        /*
-         * 
-         * Calculte the min distance between the last cluster 
-         * visited (of all vehicles) and toCluster
-         * 
-         */
-        private double minCustomerDistance(List<int> customers, int toCustomer)
-        {
-            double ret = double.MaxValue;
-            for (int i = 0; i < customers.Count; i++)
-            {
-                ret = Math.Min(ret, instance.customersDistanceMatrix[customers[i]][toCustomer]);
-            }
             return ret;
         }
 
