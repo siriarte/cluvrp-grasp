@@ -624,7 +624,7 @@ using System.Collections.Generic;
         private void localSearch(CluVRPSolution newSolution)
         {
             // Create a local search handler for cluster-level problem
-            ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(newSolution, instance, 100, 100, 100);
+            ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(newSolution, instance);
 
             // Perform interVehicle Swap
             localSearchsCluster.swapVehicle(instance.clusters_demand);

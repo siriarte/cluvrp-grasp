@@ -120,7 +120,135 @@ namespace cluvrp_grasp
             
             return distance;
         }
-                
+  
+        // Calculate the total cluster distance of the cluster travel for all vehicles
+        public static double calculateTotalClusterTravelDistance(List<int>[] travel, double[][] clustersDistanceMatrix)
+        {
+            // Set variables
+            double totalDistance = 0;
+
+            // Iterate each vehicle
+            for (int vehicleNumber = 0; vehicleNumber < travel.Length; vehicleNumber++)
+            {
+                totalDistance += calculateClusterTravelDistanceForVehicle(travel[vehicleNumber], clustersDistanceMatrix);
+            }
+
+            // Return total distance
+            return totalDistance;
+        }
+  
+        // Calculate the total cluster distance of a vehicle travel
+        public static double calculateClusterTravelDistanceForVehicle(List<int> travel, double[][] clustersDistanceMatrix)
+        {
+            // Set variables
+            double totalDistance = 0;
+
+            // Iterate each cluster on vehicle route
+            for (int clusterIt = 0; clusterIt + 1 < travel.Count; clusterIt++)
+            {
+                int fromCluster = travel[clusterIt];
+                int ToCluster = travel[clusterIt + 1];
+                totalDistance += clustersDistanceMatrix[fromCluster][ToCluster];
+            }
+
+            // Return total distance
+            return totalDistance;
+        }
+
+        // Calculate the RANDOM-SHUFFLE-ESTIMATED cluster distance of the cluster travel for all vehicles
+        public static double estimateTotalClusterTravelDistance(List<int>[] travel, double[][] clustersDistanceMatrix, double[] suffleAverageClusterDistance)
+        {
+            // Init distance
+            double totalDistance = 0;
+
+            // Iterate each cluster on vehicle route
+            for (int vehicle = 0; vehicle < travel.Length; vehicle++)
+            {
+                totalDistance += estimateClusterTravelDistanceForVehicle(travel[vehicle], clustersDistanceMatrix, suffleAverageClusterDistance);
+            }
+
+            // Return total distance
+            return totalDistance;
+        }
+
+        // Calculate the RANDOM-SHUFFLE-ESTIMATED cluster distance of a vehicle travel
+        public static double estimateClusterTravelDistanceForVehicle(List<int> travel, double[][] clustersDistanceMatrix, double[] suffleAverageClusterDistance)
+        {
+            // Set variables
+            double totalDistance = 0;
+
+            // Iterate each cluster on vehicle route
+            for (int clusterIt = 0; clusterIt + 1 < travel.Count; clusterIt++)
+            {
+                int fromCluster = travel[clusterIt];
+                int ToCluster = travel[clusterIt + 1];
+                totalDistance += clustersDistanceMatrix[fromCluster][ToCluster];
+                totalDistance += suffleAverageClusterDistance[fromCluster];
+            }
+
+            // Return total distance
+            return totalDistance;
+        }
+        
+        // Calculte the max distance between the last cluster visited (of all vehicles) and toCluster      
+        public static double maxClusterDistance(List<int>[] clusterRouteForVehicle, int toCluster, double[][] clustersDistanceMatrix)
+        {
+            double ret = double.MinValue;
+            for (int i = 0; i < clusterRouteForVehicle.Length; i++)
+            {
+                int lastClusterIndex = clusterRouteForVehicle[i].Count - 1;
+                int lastCluster = (int)clusterRouteForVehicle[i][lastClusterIndex];
+                ret = Math.Max(ret, clustersDistanceMatrix[lastCluster][toCluster]);
+            }
+            return ret;
+        }
+
+        // Calculte the min distance between the last cluster visited (of all vehicles) and toCluster    
+        public static double minClusterDistance(List<int>[] clusterRouteForVehicle, int toCluster, double[][] clustersDistanceMatrix)
+        {
+            double ret = double.MaxValue;
+            for (int i = 0; i < clusterRouteForVehicle.Length; i++)
+            {
+                int lastClusterIndex = clusterRouteForVehicle[i].Count - 1;
+                int lastCluster = (int)clusterRouteForVehicle[i][lastClusterIndex];
+                ret = Math.Min(ret, clustersDistanceMatrix[lastCluster][toCluster]);
+            }
+            return ret;
+        }
+
+        // Calculte the max distance between the last cluster visited (of all vehicles) and toCluster
+        public static double maxCustomerDistance(List<int> customers, int toCustomer, double[][] customersDistanceMatrix)
+        {
+            double ret = double.MinValue;
+            for (int i = 0; i < customers.Count; i++)
+            {
+                ret = Math.Max(ret, customersDistanceMatrix[customers[i]][toCustomer]);
+
+            }
+            return ret;
+        }
+
+        // Calculte the min distance between the last cluster visited (of all vehicles) and toCluster
+        public static double minCustomerDistance(List<int> customers, int toCustomer, double[][] customersDistanceMatrix)
+        {
+            double ret = double.MaxValue;
+            for (int i = 0; i < customers.Count; i++)
+            {
+                ret = Math.Min(ret, customersDistanceMatrix[customers[i]][toCustomer]);
+            }
+            return ret;
+        }
+
+        // Verify is cluster route is valid (start and end in depot)
+        public static bool isValidClusterRoute(List<int> route)
+        {
+            if (route.Count > 0)
+            {
+                return (route[0] == 0 && route[route.Count - 1] == 0);
+            }
+            return false;
+        }
+
         // Populate array with 'value'
         public static void Populate<T>(this T[] arr, T value)
         {

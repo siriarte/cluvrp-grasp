@@ -23,7 +23,7 @@ namespace cluvrp_grasp
                 var watch = System.Diagnostics.Stopwatch.StartNew();
                 double bestDistance = double.MaxValue;
                 string fitAlgoBestSol = "";
-                for (int i = 0; i <= 10; i = i + 5)
+                for (int i = 0; i <= 10; i = i + 2)
                 {
                     double alphaCapacity = i * 1.0 / 10;
 
@@ -32,14 +32,14 @@ namespace cluvrp_grasp
                         double alphaDistance = j * 1.0 / 10;
 
                         ClusterGRASP clusterGrasp = new ClusterGRASP(instance);
-                        CluVRPSolution cluVRPSolution = clusterGrasp.Grasp(100, alphaCapacity, alphaDistance);
+                        CluVRPSolution cluVRPSolution = clusterGrasp.Grasp(50, alphaCapacity, alphaDistance);
 
                         if (cluVRPSolution.clusterRouteForVehicule != null)
                         {
                             cluVRPSolution.verifyClusterSolution(instance);
 
                             CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution);
-                            customerGrasp.Grasp(100, alphaDistance);
+                            customerGrasp.Grasp(50, alphaDistance);
 
                             cluVRPSolution.verifyCustomerSolution(instance);
 
