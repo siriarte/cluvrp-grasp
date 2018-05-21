@@ -18,33 +18,56 @@ using System.Collections.Generic;
  */
  namespace cluvrp_grasp
 {
-    enum FitAlgorithm {RCL, BestFit, Error};
+    enum FitAlgorithm {RCL, BestFit, RCLError, BestFitError };
+    enum LocalSearch { InsertVehicle, SwapVehicle, RndInsertVehicle, RndSwapVehicle,
+                       TwoOpt, Relocate, Exchange };
+
     class ClusterGRASP
     {
         // Public variables
         public CluVRPInstance instance { get; set; }
         public CluVRPSolution solution { get; set; }
-        public FitAlgorithm fitAlgorithm { get; set; }
         public int[] fitAlgorithmCounter { get; set; }
+        private Parameters parameters { get; set; }
+        private FitAlgorithm fitAlgorithm { get; set; }
         private bool bestFitFirstExecution { get; set; }
         private bool selectFitAlgorithmRandom { get; set; }
         private Random rndFitAlgorithm;
+        private List<LocalSearch> localSearchsOrder;
 
         /* 
          * 
          * Constructor
          * 
          */
-        public ClusterGRASP(CluVRPInstance cluVRPinstance)
+        public ClusterGRASP(CluVRPInstance cluVRPinstance, Parameters parameters)
         {
             // Set instance 
             instance = cluVRPinstance;
             solution = new CluVRPSolution();
-            fitAlgorithm = FitAlgorithm.RCL;
+            fitAlgorithm = parameters.Cluster_FitAlgoritm;
             bestFitFirstExecution = true;
             selectFitAlgorithmRandom = false;
             rndFitAlgorithm = new Random();
-            fitAlgorithmCounter = new int[3];        
+            fitAlgorithmCounter = new int[4];
+            this.parameters = parameters;
+
+            // For local search execute order
+            if (parameters.Cluster_LS_Order.Length == 0)
+            {
+                this.localSearchsOrder = new List<LocalSearch> { LocalSearch.InsertVehicle, LocalSearch.SwapVehicle,
+                LocalSearch.RndInsertVehicle, LocalSearch.RndSwapVehicle, LocalSearch.TwoOpt,
+                LocalSearch.Relocate, LocalSearch.Exchange};
+            }else
+            {
+                this.localSearchsOrder = new List<LocalSearch>();
+                for (int i = 0; i < parameters.Cluster_LS_Order.Length; i++)
+                {
+                    localSearchsOrder.Add((LocalSearch)parameters.Cluster_LS_Order[i]);
+                }
+            }
+            
+            // End of Contructor
         }
 
         /*
@@ -60,13 +83,16 @@ using System.Collections.Generic;
 	     * return BestSolution
          *
          */
-        public CluVRPSolution Grasp(int totalIterations = 100, double alphaCapacity = 0.8, double alphaDistance = 1)
+        public CluVRPSolution Grasp()
         {
             // Set iterator 
             int iterator = 0;
+            int totalIterations = parameters.Cluster_GRASPIterations;
+            double alphaCapacity = parameters.Cluster_AlphaCapacity;
+            double alphaDistance = parameters.Cluster_AlphaDistance;
 
             // Main Cycle
-            while(iterator < totalIterations)
+            while (iterator < totalIterations)
             {
                 // Construct a Greedy Randomized Solution for alpha parameter
                 try
@@ -86,14 +112,22 @@ using System.Collections.Generic;
                             newSolution.totalClusterRouteDistance
                             );
                         solution.fitUsed = fitAlgorithm;
+                        solution.bestClusterLSOrder = localSearchsOrder;
                     }
 
                     // Count the fit algorithm success solution
                     fitAlgorithmCounter[(int)fitAlgorithm]++;
+
+
                 }
                 catch(Exception)
                 {
                     // do nothing, it is handled on the constructGreedyRandomizedSolution
+                    // Count error on fit algorithm
+                    if (fitAlgorithm == FitAlgorithm.RCL)
+                        fitAlgorithmCounter[(int)FitAlgorithm.RCLError]++;
+                    else if (fitAlgorithm == FitAlgorithm.BestFit)
+                        fitAlgorithmCounter[(int)FitAlgorithm.BestFitError]++;
                 }
 
                 // Increace iterator
@@ -624,28 +658,71 @@ using System.Collections.Generic;
         private void localSearch(CluVRPSolution newSolution)
         {
             // Create a local search handler for cluster-level problem
-            ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(newSolution, instance);
+            ClusterLocalSearch localSearchsCluster = new ClusterLocalSearch(newSolution, 
+                instance, 
+                parameters.Cluster_LS_TwoOpt_Iterations,
+                parameters.Cluster_LS_Relocate_Iterations,
+                parameters.Cluster_LS_Exchange_Iterations,
+                parameters.Cluster_LS_RndSwapVehicle,
+                parameters.Cluster_LS_RndInsertVehicle
+                );
 
-            // Perform interVehicle Swap
-            localSearchsCluster.swapVehicle(instance.clusters_demand);
 
-            // Perform interVehicle Insert
-            localSearchsCluster.insertVehicle(instance.clusters_demand);
+            // If random order for local searchs is activated
+            if (parameters.Cluster_LS_Order.Length == 0)
+            {
+                Functions.Shuffle(new Random(), this.localSearchsOrder);
+            }
 
-            // Random versions
-            /*
-            localSearchsCluster.interVehicleRandomInsert(instance.clusters_demand);
-            localSearchsCluster.interVehicleRandomSwap();
-            */
+            // Execute local search in the correct order
+            for (int i = 0; i < localSearchsOrder.Count; i++)
+            {
+                // Next local search 
+                LocalSearch ls = (LocalSearch)localSearchsOrder[i];
 
-            // Perform TwoOpt
-            localSearchsCluster.twoOpt();
+                // Perform interVehicle Swap
+                if (ls == LocalSearch.SwapVehicle && parameters.Cluster_LS_InsertVehicle)
+                {
+                    localSearchsCluster.swapVehicle(instance.clusters_demand);
+                }
 
-            // Perform Relocate
-            localSearchsCluster.relocate();
+                // Perform interVehicle Insert
+                if (ls == LocalSearch.InsertVehicle && parameters.Cluster_LS_SwapVehicle)
+                {
+                    localSearchsCluster.insertVehicle(instance.clusters_demand);
+                }
 
-            // Perform Exchange
-            localSearchsCluster.exchange();   
+                // Perform random interVehicle Insert
+                if (ls == LocalSearch.RndInsertVehicle && parameters.Cluster_LS_RndInsertVehicle != 0)
+                {
+                    localSearchsCluster.interVehicleRandomChange(instance.clusters_demand);
+                }
+
+                // Perform random interVehicle Swap
+                if (ls == LocalSearch.RndSwapVehicle && parameters.Cluster_LS_RndSwapVehicle != 0)
+                {
+                    localSearchsCluster.interVehicleRandomSwap();
+                }
+
+                // Perform Two-opt
+                if (ls == LocalSearch.TwoOpt && parameters.Cluster_LS_TwoOpt_Iterations != 0)
+                {
+                    localSearchsCluster.twoOpt();
+                }
+
+                // Perform Relocate
+                if (ls == LocalSearch.Relocate && parameters.Cluster_LS_Relocate_Iterations != 0)
+                {
+                    localSearchsCluster.relocate();
+                }
+
+                // Perform Exchange
+                if (ls == LocalSearch.Exchange && parameters.Cluster_LS_Exchange_Iterations != 0)
+                {
+                    localSearchsCluster.exchange();
+                }
+
+            }
         }
 
     }

@@ -13,6 +13,8 @@ namespace cluvrp_grasp
         public int[] vehicleRemSpace { set; get; }
         public int[] fitAlgorithmCounter { set; get; }
         public FitAlgorithm fitUsed { set; get; }
+        public List<LocalSearch> bestClusterLSOrder { set; get; }
+        public List<LocalSearch> bestCustomerLSOrder { set; get; }
 
         // For customer problem
         public List<int>[][] customersPaths { set; get; }

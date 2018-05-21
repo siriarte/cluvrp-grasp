@@ -45,6 +45,38 @@ namespace cluvrp_grasp
             }
         }
 
+        // Return a string with all parameters in parameters
+        public static string parametersToString(Parameters parameters)
+        {
+            // Init variables
+            string separator = "\t";
+            string ret = "";
+
+            // For cluster
+            ret += parameters.Cluster_GRASPIterations + separator;
+            ret += parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
+            ret += parameters.Cluster_AlphaDistance.ToString("0.0") + separator;
+            ret += parameters.Cluster_FitAlgoritm + separator;
+            ret += '[' + string.Join(",", parameters.Cluster_LS_Order) + ']' + separator;
+            ret += parameters.Cluster_LS_SwapVehicle.ToString() + separator;
+            ret += parameters.Cluster_LS_InsertVehicle.ToString() + separator;
+            ret += parameters.Cluster_LS_RndSwapVehicle + separator;
+            ret += parameters.Cluster_LS_RndInsertVehicle + separator;
+            ret += parameters.Cluster_LS_TwoOpt_Iterations + separator;
+            ret += parameters.Cluster_LS_Relocate_Iterations + separator;
+            ret += parameters.Cluster_LS_Exchange_Iterations + separator;
+
+            // For customer
+            ret += parameters.Customer_GRASPIterations + separator;
+            ret += parameters.Customer_Alpha.ToString("0.0") + separator;
+            ret += parameters.Customer_LS_TwoOpt_Iterations + separator;
+            ret += parameters.Customer_LS_Relocate_Iterations + separator;
+            ret += parameters.Customer_LS_Exchange_Iterations + separator;
+
+            // Return string
+            return ret;
+        }
+
         // Swap
         public static void Swap<T>(IList<T> list, int indexA, int indexB)
         {
@@ -281,6 +313,12 @@ namespace cluvrp_grasp
         public static double distance(double x1, double y1, double x2, double y2)
         {
             return (Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
+        }
+
+        // Array to string
+        public static string arrayToString<T>(ICollection<T> collection)
+        {
+            return '[' + string.Join(" | ", collection) + ']';
         }
 
     }

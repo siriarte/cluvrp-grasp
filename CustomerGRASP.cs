@@ -4,22 +4,43 @@ using System.Linq;
 
 namespace cluvrp_grasp
 {
+
     class CustomerGRASP
     {
         // Public variables
         public CluVRPInstance instance;
         public CluVRPSolution solution;
+        public Parameters parameters;
+        public List<LocalSearch> localSearchsOrder;
 
         /*
          * 
          * Constructor 
          *
          */
-        public CustomerGRASP(CluVRPInstance instance, CluVRPSolution solution)
+        public CustomerGRASP(CluVRPInstance instance, CluVRPSolution solution, Parameters parameters)
         {
             // Set variables
             this.instance = instance;
             this.solution = solution;
+            this.parameters = parameters;
+
+            // For local search execute order
+            if (parameters.Customer_LS_Order.Length == 0)
+            {
+                this.localSearchsOrder = new List<LocalSearch> { LocalSearch.TwoOpt,
+                LocalSearch.Relocate, LocalSearch.Exchange};
+            }
+            else
+            {
+                this.localSearchsOrder = new List<LocalSearch>();
+                for (int i = 0; i < parameters.Customer_LS_Order.Length; i++)
+                {
+                    localSearchsOrder.Add((LocalSearch)parameters.Customer_LS_Order[i]);
+                }
+            }
+
+            // End of constructor
         }
 
         /*
@@ -35,16 +56,17 @@ namespace cluvrp_grasp
           * return BestSolution
           *
           */
-        public void Grasp(int totalIterations = 100, double alpha = 0)
+        public void Grasp()
         {
             // Set iterator
             int iterator = 0;
+            int totalIterations = parameters.Cluster_GRASPIterations;
 
             // Main cycle
             while (iterator < totalIterations)
             {
                 // Calculate new initial solution
-                CluVRPSolution newSolution = constructGreedyRandomizedSolution(alpha);
+                CluVRPSolution newSolution = constructGreedyRandomizedSolution(parameters.Customer_Alpha);
 
                 // Local search 
                 this.localSearch(newSolution);
@@ -53,6 +75,7 @@ namespace cluvrp_grasp
                 if (newSolution.totalCustomerRouteDistance < solution.totalCustomerRouteDistance)
                 {
                     solution.setCostumerSolution(newSolution.customersPaths, newSolution.vehiculeRouteDistance);
+                    solution.bestCustomerLSOrder = localSearchsOrder;
                 }
 
                 // Increace iterator
@@ -71,17 +94,41 @@ namespace cluvrp_grasp
         private void localSearch(CluVRPSolution solution)
         {
             // Create a local search handler for cluster-level problem
-            CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(solution, instance, 100, 100, 100);
+            CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(solution, 
+                instance, 
+                parameters.Customer_LS_TwoOpt_Iterations,
+                parameters.Customer_LS_Relocate_Iterations,
+                parameters.Customer_LS_Exchange_Iterations
+                );
 
-            // Perform TwoOpt
-            customerLocalSearch.twoOpt();
 
-            // Perform Relocate
-            customerLocalSearch.relocate();
+            // If random order for local searchs is activated
+            if (parameters.Customer_LS_Order.Length == 0)
+            {
+                Functions.Shuffle(new Random(), this.localSearchsOrder);
+            }
 
-            // Perform Exchange
-            //customerLocalSearch.exchange();
+            // Execute local search in the correct order
+            for (int i = 0; i < localSearchsOrder.Count; i++)
+            {
+                // Perform TwoOpt
+                if (localSearchsOrder[i] == LocalSearch.TwoOpt && parameters.Customer_LS_TwoOpt_Iterations != 0)
+                {
+                    customerLocalSearch.twoOpt();
+                }
 
+                // Perform Relocate
+                if (localSearchsOrder[i] == LocalSearch.Relocate && parameters.Customer_LS_Relocate_Iterations != 0)
+                {
+                    customerLocalSearch.relocate();
+                }
+
+                // Perform Exchange
+                if (localSearchsOrder[i] == LocalSearch.Relocate && parameters.Customer_LS_Exchange_Iterations != 0)
+                {
+                    //customerLocalSearch.exchange();
+                }
+            }
             // Set the solution
             solution = customerLocalSearch.solution;
         }
