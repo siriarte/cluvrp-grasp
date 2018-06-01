@@ -68,7 +68,7 @@ namespace cluvrp_grasp
                             double newDistance = Functions.calculateClusterTravelDistanceForVehicle(newRoute, instance.clustersDistanceMatrix);
 
                             // If distance if better and route is valid
-                            if (newDistance + 0.5 < bestDistance[vehicle] && Functions.isValidClusterRoute(newRoute))
+                            if (newDistance + 0.01 < bestDistance[vehicle] && Functions.isValidClusterRoute(newRoute))
                             {
                                 // Update with new route and distance
                                 routeForVehicule[vehicle] = newRoute;
@@ -174,7 +174,7 @@ namespace cluvrp_grasp
             var newDistance = solution.totalClusterRouteDistance - _a - _b + _C + _A + _B - _c;
 
             // If new distance is better
-            if (newDistance + 0.5 < solution.totalClusterRouteDistance)
+            if (newDistance + 0.01 < solution.totalClusterRouteDistance)
             {
                 // Perform realocate
                 int customer = route[i];
@@ -300,7 +300,7 @@ namespace cluvrp_grasp
                 new_distance_j_left + new_distance_j_right;
 
             // If new distance is better
-            if (newDistance + 0.5 < this.solution.totalClusterRouteDistance)
+            if (newDistance + 0.01 < this.solution.totalClusterRouteDistance)
             {
                 // Perform exchange
                 int customer = route[i];
@@ -319,7 +319,6 @@ namespace cluvrp_grasp
                     // Back to old route
                     route[j] = route[i];
                     route[i] = customer;
-                    solution.clusterRouteForVehicule[vehicle] = route;
                 }
             } // end if distance is better
 
@@ -473,7 +472,7 @@ namespace cluvrp_grasp
                 double newDistance = Functions.calculateTotalClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
 
                 // If new distance is better
-                if(newDistance + 0.5 < totalClusterRouteDistance)
+                if(newDistance + 0.01 < totalClusterRouteDistance)
                 {
                     // Update best index and distance
                     bestIndex = clusterIdx;
@@ -489,15 +488,15 @@ namespace cluvrp_grasp
         }
 
         /*
-  * 
-  * Swap cluster beetween vehicles with random criteria
-  * 1 - Select source vehicle_1 by random
-  * 2 - Select destiny vehicle_2 by random
-  * 3 - Select cluster_1 on vehicle_1 by random
-  * 4 - Select cluster_2 on vehicle_2 by random
-  * 5 - Try to swap cluster_1 and cluster_2 if is possible and better
-  * 
-  */
+         * 
+         * Swap cluster beetween vehicles with random criteria
+         * 1 - Select source vehicle_1 by random
+         * 2 - Select destiny vehicle_2 by random
+         * 3 - Select cluster_1 on vehicle_1 by random
+         * 4 - Select cluster_2 on vehicle_2 by random
+         * 5 - Try to swap cluster_1 and cluster_2 if is possible and better
+         * 
+         */
         public void interVehicleRandomSwap()
         {
             // Main cycle
@@ -523,14 +522,24 @@ namespace cluvrp_grasp
                     //  Swap clusters
                     int idxClusterV1 = solution.clusterRouteForVehicule[vehicle1].IndexOf(clusterV1);
                     int idxClusterV2 = solution.clusterRouteForVehicule[vehicle2].IndexOf(clusterV2);
+
+                    // Calculate old distances for each vehicle
+                    double oldDistanceVehicle1 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle1], instance.clustersDistanceMatrix);
+                    double oldDistanceVehicle2 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle2], instance.clustersDistanceMatrix);
+
+                    // Swap clusters
                     solution.clusterRouteForVehicule[vehicle1][idxClusterV1] = clusterV2;
                     solution.clusterRouteForVehicule[vehicle2][idxClusterV2] = clusterV1;
 
-                    // Calculate new distance
-                    double newDistance = Functions.calculateTotalClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
+                    // Calculate new distances for each vehicle
+                    double newDistanceVehicle1 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle1], instance.clustersDistanceMatrix);
+                    double newDistanceVehicle2 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle2], instance.clustersDistanceMatrix);
+
+                    // Calculate new total distance
+                    double newDistance = solution.totalClusterRouteDistance - (oldDistanceVehicle1 + oldDistanceVehicle2) + (newDistanceVehicle1 + newDistanceVehicle2);
 
                     // Verify is new distance is short 
-                    if (newDistance + 0.5 < solution.totalClusterRouteDistance)
+                    if (newDistance + 0.01 < solution.totalClusterRouteDistance)
                     {
                         // Update new vehicle space remaining
                         solution.vehicleRemSpace[vehicle1] += instance.clusters_demand[clusterV1];
@@ -589,24 +598,36 @@ namespace cluvrp_grasp
                 // Set improve to false
                 bool improve = false;
 
-                // Verify if change is possible
+                // Verify if insert is possible
                 if (clusterV1 != 0 && vehicle1 != vehicle2 && solution.vehicleRemSpace[vehicle2] - clusterDemand[clusterV1] >= 0)
                 {
-                    // Remone cluster from vehicle 1
+                    // Calculate old distances for each vehicle
+                    double oldDistanceVehicle1 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle1], instance.clustersDistanceMatrix);
+                    double oldDistanceVehicle2 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle2], instance.clustersDistanceMatrix);
+
+                    // Save index of cluster for re-insert in case of not improve
                     int idxClusterV1 = solution.clusterRouteForVehicule[vehicle1].IndexOf(clusterV1);
+
+                    // Remone cluster from vehicle 1
                     solution.clusterRouteForVehicule[vehicle1].Remove(clusterV1);
 
+                    // Calculate new distances for vehicle 1
+                    double newDistanceVehicle1 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle1], instance.clustersDistanceMatrix);
+     
                     // Seach the best position to insert the cluster on the vehicle 2
-                    for (int i = 0; i < solution.clusterRouteForVehicule[vehicle2].Count; i++)
+                    for (int i = 0; i + 1 < solution.clusterRouteForVehicule[vehicle2].Count; i++)
                     {
                         // Insert cluster on vehicle 2
                         solution.clusterRouteForVehicule[vehicle2].Insert(i + 1, clusterV1);
 
-                        // Calculate new distance
-                        double newDistance = Functions.calculateTotalClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
+                        // Calculate new for vehicle 2
+                        double newDistanceVehicle2 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle2], instance.clustersDistanceMatrix);
+
+                        // Calculate new total distance
+                        double newDistance = solution.totalClusterRouteDistance - (oldDistanceVehicle1 + oldDistanceVehicle2) + (newDistanceVehicle1 + newDistanceVehicle2);
 
                         // If distance is short
-                        if (newDistance < solution.totalClusterRouteDistance)
+                        if (newDistance + 0.01 < solution.totalClusterRouteDistance)
                         {
                             // Update new distance and the space remaining on vehicles
                             solution.totalClusterRouteDistance = newDistance;

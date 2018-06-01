@@ -18,7 +18,6 @@ namespace cluvrp_grasp
 
         // For customer problem
         public List<int>[][] customersPaths { set; get; }
-        public double totalCustomerRouteDistance { set; get; }
         public double[] _vehiculeRouteDistance;
 
         // Setter for vehicle to sum the total distance
@@ -27,8 +26,8 @@ namespace cluvrp_grasp
             set
             {
                 _vehiculeRouteDistance = value;
-                totalCustomerRouteDistance = _vehiculeRouteDistance.Sum();
-            }
+                //totalCustomerRouteDistance = _vehiculeRouteDistance.Sum();
+             }
 
             get
             {
@@ -36,11 +35,19 @@ namespace cluvrp_grasp
             }
         }
 
+        public double totalCustomerRouteDistance
+        {
+            get
+            {
+                if (_vehiculeRouteDistance == null) return double.MaxValue;
+                return _vehiculeRouteDistance.Sum();
+            }
+        }
+
         // Constructor
         public CluVRPSolution()
         {
             totalClusterRouteDistance = double.MaxValue;
-            totalCustomerRouteDistance = double.MaxValue;
         }
 
         // Set cluster solution

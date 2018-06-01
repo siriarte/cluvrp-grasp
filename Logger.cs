@@ -83,5 +83,11 @@ namespace cluvrp_grasp
             }
         }
 
+        // Get the log file path
+        public string getLogFilePath()
+        {
+            return this.logFilePath;
+        }
+
     }
 }

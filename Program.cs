@@ -116,6 +116,10 @@ namespace cluvrp_grasp
             int[] sizeOfSolutionToCompare = new int[] { 16, 32, 66, 151, 200};
 
             // For best solution
+            double[] bestIndividualTotalDistance = new double[solutionToCompare.Length];
+            double[] bestIndividualPropDistance = new double[solutionToCompare.Length];
+            Functions.Populate(bestIndividualTotalDistance, double.MaxValue);
+            string[] bestIndividualParameteres = new string[solutionToCompare.Length];
             double[] bestSolPropDistances = new double[solutionToCompare.Length];
             Functions.Populate(bestSolPropDistances, double.MaxValue);
             double[] bestSolDistances = new double[solutionToCompare.Length];
@@ -136,10 +140,22 @@ namespace cluvrp_grasp
             // Get instances 
             CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(instanceSetFilePath);
 
+            // Log run
+            logger.logLine("*****************************************************");
+            logger.logLine("* STARTING TEST:");
+            logger.logLine("* CONFIG -> " + parametersFilePath);
+            logger.logLine("* SET INSTANCE -> " + instanceSetFilePath);
+            logger.logLine("* LOG FILE -> " + logger.getLogFilePath());
+            logger.logLine("******************************************************");
+            logger.logLine("");
+
             // For each parameter configuration
             foreach (Parameters parameters in parametersList)
             {
-                // String for parameter set
+                // String for parameter set and print
+                logger.logLine("=============================================");
+                logger.logLine("=       EXECUTING NEW TEST CASE             =");
+                logger.logLine("=============================================");
                 string actualParameters = Functions.parametersToString(parameters);
                 logger.logLine(actualParameters);
 
@@ -214,6 +230,15 @@ namespace cluvrp_grasp
                     propDistances[instanceCounter] = (distance - solutionToCompare[instanceCounter]) * 100 / solutionToCompare[instanceCounter];
                     propDistances[instanceCounter] = Math.Truncate(100 * propDistances[instanceCounter]) / 100;
 
+                    // Update individual instance solution
+                    if (distances[instanceCounter] < bestIndividualTotalDistance[instanceCounter])
+                    {
+                        bestIndividualTotalDistance[instanceCounter] = distances[instanceCounter];
+                        bestIndividualPropDistance[instanceCounter] = (distance - solutionToCompare[instanceCounter]) * 100 / solutionToCompare[instanceCounter];
+                        bestIndividualPropDistance[instanceCounter] = Math.Truncate(100 * bestIndividualPropDistance[instanceCounter]) / 100;
+                        bestIndividualParameteres[instanceCounter] = actualParameters;
+                    }
+
                     // Increase distance counter
                     instanceCounter++;   
 
@@ -234,10 +259,13 @@ namespace cluvrp_grasp
                     // Show AVG distance
                     logger.logLine("");
                     logger.logLine("-----------------------------------------------------------------------");
+                    logger.logLine("-------------------------NEW BEST DISTANCE-----------------------------");
+                    logger.logLine("-----------------------------------------------------------------------");
                     logger.logLine("NEW PROPORTIONAL BEST SET DISTANCE -> " + bestSolPropDistances.Sum());
-                    logger.logLine(bestSolParameters);
-                    logger.logLine(Functions.arrayToString(bestSolDistances));
-                    logger.logLine(Functions.arrayToString(bestSolPropDistances));                   
+                    logger.logLine("DISTANCES -> " + Functions.arrayToString(bestSolDistances));
+                    logger.logLine("PROP DISTANCES -> " + Functions.arrayToString(bestSolPropDistances));                   
+                    logger.logLine("-----------------------------------------------------------------------");
+                    logger.logLine("-----------------------------------------------------------------------");
                     logger.logLine("-----------------------------------------------------------------------");
                 }
 
@@ -254,7 +282,7 @@ namespace cluvrp_grasp
             logger.logLine("--------------");
             logger.logLine("BEST SOLUTION:");
             logger.logLine("--------------");
-            logger.logLine("TOTAL TIME -> " + totalElapsedseconds);
+            logger.logLine("TOTAL TIME -> " + totalElapsedseconds + " seconds" );
             logger.logLine("PROPORTIONAL BEST SET DISTANCE -> " + bestSolPropDistances.Sum());
             logger.logLine("DISTANCES -> " + Functions.arrayToString(bestSolDistances));
             logger.logLine("PROPORTIONA DIFF DISTANCES -> " + Functions.arrayToString(bestSolPropDistances));
@@ -262,15 +290,40 @@ namespace cluvrp_grasp
             logger.logLine("TOTAL DISTANCE AVERAGE -> " + totalAvg);
             logger.logLine("");
             logger.logLine("PARAMETERS: ");
+            logger.logLine("***********");
             logger.logLine(bestSolParameters);
             logger.logLine("");
             logger.logLine("CLUSTER LS ORDER:");
+            logger.logLine("*****************");
             for (int i = 0; i < bestSolClusterLSOrder.Count; i++ )
                 logger.logLine((Functions.arrayToString(bestSolClusterLSOrder[i])));
+            logger.logLine("");
             logger.logLine("CUSTOMER LS ORDER:");
+            logger.logLine("******************");
             for (int i = 0; i < bestSolCustomerLSOrder.Count; i++)
                 logger.logLine((Functions.arrayToString(bestSolCustomerLSOrder[i])));
-
+            logger.logLine("");
+            logger.logLine("");
+            logger.logLine("============================");
+            logger.logLine("= BEST INDIVIDUAL RESULTS =:");
+            logger.logLine("============================");
+            totalAvg = Math.Truncate(100 * bestIndividualPropDistance.Sum() / bestIndividualPropDistance.Length) / 100;
+            logger.logLine("DISTANCES -> " + Functions.arrayToString(bestIndividualTotalDistance));
+            logger.logLine("PROPORTIONA DIFF DISTANCES -> " + Functions.arrayToString(bestIndividualPropDistance));
+            logger.logLine("PROPORTIONAL TOTAL DISTANCE -> " + bestIndividualPropDistance.Sum().ToString("00.00"));
+            logger.logLine("TOTAL DISTANCE AVERAGE -> " + totalAvg);
+            logger.logLine("");
+            logger.logLine("");
+            for (int i = 0; i < bestSolClusterLSOrder.Count; i++)
+            {
+                logger.logLine("-----------------------------------------------------------------");
+                logger.logLine("CONFIGURATION FOR INSTANCE " + i);
+                logger.logLine("*****************************");
+                logger.logLine(bestIndividualParameteres[i].ToString());
+                logger.logLine("-----------------------------------------------------------------");
+                logger.logLine("");
+            }
+                
             // Wait for key to close
             System.Console.ReadLine();
         }

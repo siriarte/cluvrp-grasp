@@ -49,29 +49,30 @@ namespace cluvrp_grasp
         public static string parametersToString(Parameters parameters)
         {
             // Init variables
-            string separator = "\t";
+            string separator = "\n";
             string ret = "";
 
             // For cluster
-            ret += parameters.Cluster_GRASPIterations + separator;
-            ret += parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
-            ret += parameters.Cluster_AlphaDistance.ToString("0.0") + separator;
-            ret += parameters.Cluster_FitAlgoritm + separator;
-            ret += '[' + string.Join(",", parameters.Cluster_LS_Order) + ']' + separator;
-            ret += parameters.Cluster_LS_SwapVehicle.ToString() + separator;
-            ret += parameters.Cluster_LS_InsertVehicle.ToString() + separator;
-            ret += parameters.Cluster_LS_RndSwapVehicle + separator;
-            ret += parameters.Cluster_LS_RndInsertVehicle + separator;
-            ret += parameters.Cluster_LS_TwoOpt_Iterations + separator;
-            ret += parameters.Cluster_LS_Relocate_Iterations + separator;
-            ret += parameters.Cluster_LS_Exchange_Iterations + separator;
+            ret += "GRASP CLUSTER ITERATIONS = " +  parameters.Cluster_GRASPIterations + separator;
+            ret += "CLUSTER ALPHA CAPACITY = " + parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
+            ret += "CLUSTER ALPHA DISTANCE = " + parameters.Cluster_AlphaDistance.ToString("0.0") + separator;
+            ret += "CLUSTER FIT ALGORITHM = " + parameters.Cluster_FitAlgoritm + separator;
+            ret += "CLUSTER LS ORDER = " + '[' + string.Join(",", parameters.Cluster_LS_Order) + ']' + separator;
+            ret += "CLUSTER LS SWAP VEHICLE = " + parameters.Cluster_LS_SwapVehicle.ToString() + separator;
+            ret += "CLUSTER LS INSERT VEHICLE = " + parameters.Cluster_LS_InsertVehicle.ToString() + separator;
+            ret += "CLUSTER LS RND SWAP VEHICLE = " +  parameters.Cluster_LS_RndSwapVehicle + separator;
+            ret += "CLUSTER LS RND INSERT VEHICLE = " + parameters.Cluster_LS_RndInsertVehicle + separator;
+            ret += "CLUSTER LS TWO-OPT = " + parameters.Cluster_LS_TwoOpt_Iterations + separator;
+            ret += "CLUSTER LS RELOCATE = " + parameters.Cluster_LS_Relocate_Iterations + separator;
+            ret += "CLUSTER LS EXCHANGE = " + parameters.Cluster_LS_Exchange_Iterations + separator;
 
             // For customer
-            ret += parameters.Customer_GRASPIterations + separator;
-            ret += parameters.Customer_Alpha.ToString("0.0") + separator;
-            ret += parameters.Customer_LS_TwoOpt_Iterations + separator;
-            ret += parameters.Customer_LS_Relocate_Iterations + separator;
-            ret += parameters.Customer_LS_Exchange_Iterations + separator;
+            ret += "GRASP CUSTOMER ITERATIONS = " + parameters.Customer_GRASPIterations + separator;
+            ret += "CUSTOMER ALPHA = " + parameters.Customer_Alpha.ToString("0.0") + separator;
+            ret += "CUSTOMER LS ORDER = " + '[' + string.Join(",", parameters.Customer_LS_Order) + ']' + separator;
+            ret += "CUSTOMER LS TWO-OPT = " + parameters.Customer_LS_TwoOpt_Iterations + separator;
+            ret += "CUSTOMER LS RELOCATE = " + parameters.Customer_LS_Relocate_Iterations + separator;
+            ret += "CUSTOMER LS EXCHANGE = " + parameters.Customer_LS_Exchange_Iterations + separator;
 
             // Return string
             return ret;
@@ -100,26 +101,7 @@ namespace cluvrp_grasp
 
             for (int vehicle = 0; vehicle < customersCircuit.Length; vehicle++)
             {
-                int customer1 = 1;
-                int customer2 = 1;
-
-                for (int clusterIt = 0; clusterIt < customersCircuit[vehicle].Length; clusterIt++)
-                {
-                    for (int customerIt = 0; customerIt + 1 < customersCircuit[vehicle][clusterIt].Count; customerIt++)
-                    {
-                        customer1 = customersCircuit[vehicle][clusterIt][customerIt];
-                        customer2 = customersCircuit[vehicle][clusterIt][customerIt + 1];
-                        distance += customersDistanceMatrix[customer1][customer2];
-                    }
-
-                    if (clusterIt + 1 < customersCircuit[vehicle].Length)
-                    {
-                        int finalCustomerIdx = customersCircuit[vehicle][clusterIt].Count - 1;
-                        int finalCustomer = customersCircuit[vehicle][clusterIt][finalCustomerIdx];
-                        int initialCustomer = customersCircuit[vehicle][clusterIt + 1][0];
-                        distance += customersDistanceMatrix[finalCustomer][initialCustomer];
-                    }
-                }
+                distance += calculateTotalTravelDistance(customersCircuit, customersDistanceMatrix, vehicle);
             }
 
             return distance;

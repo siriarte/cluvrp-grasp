@@ -91,10 +91,10 @@ namespace cluvrp_grasp
          * Applies a list of local searchs  
          *
          */ 
-        private void localSearch(CluVRPSolution solution)
+        private void localSearch(CluVRPSolution newSolution)
         {
             // Create a local search handler for cluster-level problem
-            CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(solution, 
+            CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(newSolution, 
                 instance, 
                 parameters.Customer_LS_TwoOpt_Iterations,
                 parameters.Customer_LS_Relocate_Iterations,
@@ -124,13 +124,13 @@ namespace cluvrp_grasp
                 }
 
                 // Perform Exchange
-                if (localSearchsOrder[i] == LocalSearch.Relocate && parameters.Customer_LS_Exchange_Iterations != 0)
+                if (localSearchsOrder[i] == LocalSearch.Exchange && parameters.Customer_LS_Exchange_Iterations != 0)
                 {
-                    //customerLocalSearch.exchange();
+                    customerLocalSearch.exchange();
                 }
             }
             // Set the solution
-            solution = customerLocalSearch.solution;
+            newSolution = customerLocalSearch.solution;
         }
 
         /*
