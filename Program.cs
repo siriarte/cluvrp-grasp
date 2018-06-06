@@ -1,121 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.IO;
 namespace cluvrp_grasp
 {
     class Program
     {
-        // Files paths
-        static string INSTANCE_SET_FILE_PATH = "../../instances/prueba";
-        static string PARAMETERS_FILE_PATH = "../../configurations/parameters.json";
-        static string INSTANCE_SET_FILE_PATH_PERFORMANCE_TEST_1 = "../../instances/performance_test_1";
-
-        // For complete run
-        static void completeRun()
-        {            
-            // Get parameters to run instances
-            List<Parameters> parametersList = Parameters.parseParameterFile(PARAMETERS_FILE_PATH);
-
-            // Get logger
-            Logger logger = Logger.GetInstance();
-
-            // To logger verbose on
-            logger.setVerbose(true);
-
-            // Get instances 
-            CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(INSTANCE_SET_FILE_PATH);
-
-            // For each parameter configuration
-            foreach (Parameters parameters in parametersList)
-            {
-                // String for parameter set
-                string actualParameters = Functions.parametersToString(parameters);
-                logger.logLine(actualParameters);
-
-                // For each instance
-                foreach (CluVRPInstance instance in instancias)
-                {
-                    // Star watch to calculate time
-                    var watch = System.Diagnostics.Stopwatch.StartNew();
-
-                    // Set max distance value
-                    double bestDistance = double.MaxValue;
-                    string fitAlgoBestSol = "";
-               
-                    // New Grasp for Cluster level instance
-                    ClusterGRASP clusterGrasp = new ClusterGRASP(instance, parameters);
-
-                    // Execute Grasp procedure
-                    CluVRPSolution cluVRPSolution = clusterGrasp.Grasp();
-
-                    // If solutions is avalaible
-                    if (cluVRPSolution.clusterRouteForVehicule != null)
-                    {
-                        // Verify if cluster solution is correct
-                        cluVRPSolution.verifyClusterSolution(instance);
-
-                        // New Grasp for Cluster level instance
-                        CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution, parameters);
-
-                        // Execute Grasp procedure
-                        customerGrasp.Grasp();
-
-                        // Verify if customer solution is correct
-                        cluVRPSolution.verifyCustomerSolution(instance);
-
-                        // Sets strings to show
-                        string algorithm = '[' + string.Join(",", customerGrasp.solution.fitAlgorithmCounter) + ']';
-                        string s1 = instance.file_name + '\t' + customerGrasp.solution.totalCustomerRouteDistance + '\t' + 
-                            parameters.Cluster_AlphaCapacity + '\t' + parameters.Cluster_AlphaDistance + '\t' + algorithm;
-                        //Console.WriteLine(s1);
-
-                        // Check if solution improve 
-                        if (customerGrasp.solution.totalCustomerRouteDistance < bestDistance)
-                        {
-                            // Set new solution 
-                            bestDistance = customerGrasp.solution.totalCustomerRouteDistance;
-                            fitAlgoBestSol = algorithm;
-                        }
-                    }
-                    // If not solution for cluster was reached
-                    else
-                    {
-                        // Show error
-                        string error = "No solution for: " + instance.file_name + '\t' + parameters.Cluster_AlphaCapacity + '\t' + parameters.Cluster_AlphaDistance;
-                        Console.WriteLine(error);
-                    }
-
-                    // Stop timer watchers
-                    watch.Stop();
-
-                    // Set final string result 
-                    var elapsedMs = watch.ElapsedMilliseconds;
-                    string outLine = instance.file_name + '\t' + bestDistance.ToString("0.00") + '\t' + (elapsedMs*1.0/1000). ToString("0.00")+ "s" + '\t' + fitAlgoBestSol;
-
-                    // Log solution
-                    logger.logLine(outLine);
-                }
-
-                // New line for new config
-                logger.logLine("");
-            }
-
-            // Wait for key to close
-            System.Console.ReadLine();
-        }
-        
-        // For testing cases
-        static void firstPerformanceCase(string parametersFilePath, string instanceSetFilePath, string logFilePath)
+        // Main Function
+        static void GraspProcedure(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare)
         {
             // Star watch to calculate total process time
             var totalWatch = System.Diagnostics.Stopwatch.StartNew();
-
-            // To compare result solutions
-            double[] solutionToCompare = new double[] { 253, 522, 687, 804, 914};
-            int[] sizeOfSolutionToCompare = new int[] { 16, 32, 66, 151, 200};
-
-            // For best solution
+           
+            // For best solution set
             double[] bestIndividualTotalDistance = new double[solutionToCompare.Length];
             double[] bestIndividualPropDistance = new double[solutionToCompare.Length];
             Functions.Populate(bestIndividualTotalDistance, double.MaxValue);
@@ -126,7 +23,8 @@ namespace cluvrp_grasp
             List<List<LocalSearch>> bestSolClusterLSOrder = new List<List<LocalSearch>>();
             List<List<LocalSearch>> bestSolCustomerLSOrder = new List<List<LocalSearch>>();
             string bestSolParameters = "";
-
+            double totalAvg = double.MaxValue;
+           
             // Get parameters to run instances
             List<Parameters> parametersList = Parameters.parseParameterFile(parametersFilePath);
 
@@ -141,21 +39,21 @@ namespace cluvrp_grasp
             CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(instanceSetFilePath);
 
             // Log run
-            logger.logLine("*****************************************************");
-            logger.logLine("* STARTING TEST:");
-            logger.logLine("* CONFIG -> " + parametersFilePath);
-            logger.logLine("* SET INSTANCE -> " + instanceSetFilePath);
-            logger.logLine("* LOG FILE -> " + logger.getLogFilePath());
-            logger.logLine("******************************************************");
-            logger.logLine("");
+            logger.logLine("*****************************************************" + '\n' +
+                            "* STARTING TEST:" + '\n' + 
+                            "* CONFIG -> " + parametersFilePath + '\n' + 
+                            "* SET INSTANCE -> " + instanceSetFilePath + '\n' + 
+                            "* LOG FILE -> " + logger.getLogFilePath() + '\n' + 
+                            "******************************************************" + '\n');
+         
 
             // For each parameter configuration
             foreach (Parameters parameters in parametersList)
             {
                 // String for parameter set and print
-                logger.logLine("=============================================");
-                logger.logLine("=       EXECUTING NEW TEST CASE             =");
-                logger.logLine("=============================================");
+                logger.logLine("=============================================" + '\n' +
+                               "=       EXECUTING NEW TEST CASE             =" + '\n' +
+                               "=============================================" + '\n');
                 string actualParameters = Functions.parametersToString(parameters);
                 logger.logLine(actualParameters);
 
@@ -176,48 +74,30 @@ namespace cluvrp_grasp
                     double distance = 0;
                     string fitAlgoBestSol = "";
 
-                    // New Grasp for Cluster level instance
-                    ClusterGRASP clusterGrasp = new ClusterGRASP(instance, parameters);
+                    // Calculate solution for CluVRP
+                    CluVRPSolution solution = CluVRPGrasp.Grasp(instance, parameters);
 
-                    // Execute Grasp procedure
-                    CluVRPSolution cluVRPSolution = clusterGrasp.Grasp();
-
-                    // If solutions is avalaible
-                    if (cluVRPSolution.clusterRouteForVehicule != null)
+                    // If not possible solution
+                    if (solution.clusterRouteForVehicule == null)
                     {
-                        // Verify if cluster solution is correct
-                        cluVRPSolution.verifyClusterSolution(instance);
-
-                        // New Grasp for Cluster level instance
-                        CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution, parameters);
-
-                        // Execute Grasp procedure
-                        customerGrasp.Grasp();
-
-                        // Verify if customer solution is correct
-                        cluVRPSolution.verifyCustomerSolution(instance);
-
-                        // Sets strings to show - FOR DEBUG
-                        string algorithm = '[' + string.Join(",", customerGrasp.solution.fitAlgorithmCounter) + ']';
-                        string s1 = instance.file_name + '\t' + customerGrasp.solution.totalCustomerRouteDistance + '\t' +
-                            parameters.Cluster_AlphaCapacity + '\t' + parameters.Cluster_AlphaDistance + '\t' + algorithm;
-                        //Console.WriteLine(s1);
-
-                        // For this instance solution
-                        distance = customerGrasp.solution.totalCustomerRouteDistance;
-                        fitAlgoBestSol = algorithm;
-                        LSClusterOrder.Add(customerGrasp.solution.bestClusterLSOrder);
-                        LSCustomerOrder.Add(customerGrasp.solution.bestCustomerLSOrder);
-
-                    }
-                    // If not solution for cluster was reached
-                    else
-                    {
-                        // Show error
-                        string error = "No solution for: " + instance.file_name + '\t' + parameters.Cluster_AlphaCapacity + '\t' + parameters.Cluster_AlphaDistance;
-                        Console.WriteLine(error);
+                        logger.logLine(instance.file_name + '\t' + "No solution for this instance");
+                        propDistances[instanceCounter] = double.MaxValue;
+                        instanceCounter++;
+                        continue;
                     }
 
+                    // Sets strings to show - FOR DEBUG
+                    string algorithm = '[' + string.Join(",", solution.fitAlgorithmCounter) + ']';
+                    string s1 = instance.file_name + '\t' + solution.totalCustomerRouteDistance + '\t' +
+                        parameters.Cluster_AlphaCapacity + '\t' + parameters.Cluster_AlphaDistance + '\t' + algorithm;
+                    //Console.WriteLine(s1);
+
+                    // For this instance solution
+                    distance = solution.totalCustomerRouteDistance;
+                    fitAlgoBestSol = algorithm;
+                    LSClusterOrder.Add(solution.bestClusterLSOrder);
+                    LSCustomerOrder.Add(solution.bestCustomerLSOrder);
+    
                     // Stop timer watchers
                     watch.Stop();
 
@@ -255,6 +135,7 @@ namespace cluvrp_grasp
                     bestSolDistances = distances;
                     bestSolClusterLSOrder = LSClusterOrder;
                     bestSolCustomerLSOrder = LSCustomerOrder;
+                    totalAvg = Math.Truncate(100 * bestSolPropDistances.Sum() / bestSolPropDistances.Length) / 100;
 
                     // Show AVG distance
                     logger.logLine("");
@@ -263,7 +144,8 @@ namespace cluvrp_grasp
                     logger.logLine("-----------------------------------------------------------------------");
                     logger.logLine("NEW PROPORTIONAL BEST SET DISTANCE -> " + bestSolPropDistances.Sum());
                     logger.logLine("DISTANCES -> " + Functions.arrayToString(bestSolDistances));
-                    logger.logLine("PROP DISTANCES -> " + Functions.arrayToString(bestSolPropDistances));                   
+                    logger.logLine("PROP DISTANCES -> " + Functions.arrayToString(bestSolPropDistances));
+                    logger.logLine("TOTAL DISTANCE AVERAGE -> " + totalAvg);
                     logger.logLine("-----------------------------------------------------------------------");
                     logger.logLine("-----------------------------------------------------------------------");
                     logger.logLine("-----------------------------------------------------------------------");
@@ -286,7 +168,7 @@ namespace cluvrp_grasp
             logger.logLine("PROPORTIONAL BEST SET DISTANCE -> " + bestSolPropDistances.Sum());
             logger.logLine("DISTANCES -> " + Functions.arrayToString(bestSolDistances));
             logger.logLine("PROPORTIONA DIFF DISTANCES -> " + Functions.arrayToString(bestSolPropDistances));
-            double totalAvg = Math.Truncate(100 * bestSolPropDistances.Sum() / bestSolPropDistances.Length) / 100;
+            totalAvg = Math.Truncate(100 * bestSolPropDistances.Sum() / bestSolPropDistances.Length) / 100;
             logger.logLine("TOTAL DISTANCE AVERAGE -> " + totalAvg);
             logger.logLine("");
             logger.logLine("PARAMETERS: ");
@@ -313,25 +195,61 @@ namespace cluvrp_grasp
             logger.logLine("PROPORTIONAL TOTAL DISTANCE -> " + bestIndividualPropDistance.Sum().ToString("00.00"));
             logger.logLine("TOTAL DISTANCE AVERAGE -> " + totalAvg);
             logger.logLine("");
-            logger.logLine("");
             for (int i = 0; i < bestSolClusterLSOrder.Count; i++)
             {
                 logger.logLine("-----------------------------------------------------------------");
+                logger.logLine("");
                 logger.logLine("CONFIGURATION FOR INSTANCE " + i);
                 logger.logLine("*****************************");
                 logger.logLine(bestIndividualParameteres[i].ToString());
-                logger.logLine("-----------------------------------------------------------------");
-                logger.logLine("");
             }
-                
-            // Wait for key to close
-            System.Console.ReadLine();
+
+            // End
+            return;
         }
 
         static void Main(string[] args)
         {
-            firstPerformanceCase(args[0], args[1], args[2]);
-           
+            // Check numbers of parameters
+            if(args.Length != 4)
+            {
+                Console.WriteLine(
+                    "Parameter is missing: " + '\n' +
+                    "Use: cluvrp_grasp parametersFilePath instanceSetFilePath logFilePath arrayOfSolutions" + '\n' + '\n'
+                );
+                return;
+            }
+
+            // Set variables
+            string parametersFilePath = args[0];
+            string instanceSetFilePath = args[1];
+            string logFilePath = args[2];
+            string arrayOfSolutions = args[3];
+
+            // Check if parameters are corrects
+            if(!(File.Exists(parametersFilePath) && File.Exists(instanceSetFilePath) && arrayOfSolutions.Length != 0))
+            {
+                Console.WriteLine("Some parameter is incorrect or file not exists");
+                return;
+            }
+
+            // Try to parse array of solutions for compare
+            double[] solutionToCompare = new double[0];
+            try
+            {
+                solutionToCompare = arrayOfSolutions.Split(',').Select(double.Parse).ToArray();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                return;
+            }
+
+            // Excute GRASP
+            GraspProcedure(parametersFilePath, instanceSetFilePath, logFilePath, solutionToCompare);
+
+            // End
+            return;
         }
 }
         

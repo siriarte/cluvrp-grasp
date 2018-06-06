@@ -16,7 +16,7 @@ namespace cluvrp_grasp
         {
 
             // Init variables
-            string filePath = InstanceSetName + ".set";
+            string filePath = InstanceSetName;
             CluVRPInstance[] gvrpInstances;
 
             // Main Cycle

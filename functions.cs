@@ -53,7 +53,9 @@ namespace cluvrp_grasp
             string ret = "";
 
             // For cluster
-            ret += "GRASP CLUSTER ITERATIONS = " +  parameters.Cluster_GRASPIterations + separator;
+            ret += "CLUVRP GRASP VERSION = " + parameters.CluVRP_Version + separator;
+            ret += "CLUVRP GRASP ITERATIONS = " + parameters.CluVRP_GRASPIterations + separator;
+            ret += "CLUSTER GRASP ITERATIONS = " +  parameters.Cluster_GRASPIterations + separator;
             ret += "CLUSTER ALPHA CAPACITY = " + parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
             ret += "CLUSTER ALPHA DISTANCE = " + parameters.Cluster_AlphaDistance.ToString("0.0") + separator;
             ret += "CLUSTER FIT ALGORITHM = " + parameters.Cluster_FitAlgoritm + separator;
@@ -67,7 +69,7 @@ namespace cluvrp_grasp
             ret += "CLUSTER LS EXCHANGE = " + parameters.Cluster_LS_Exchange_Iterations + separator;
 
             // For customer
-            ret += "GRASP CUSTOMER ITERATIONS = " + parameters.Customer_GRASPIterations + separator;
+            ret += "CUSTOMER GRASP ITERATIONS = " + parameters.Customer_GRASPIterations + separator;
             ret += "CUSTOMER ALPHA = " + parameters.Customer_Alpha.ToString("0.0") + separator;
             ret += "CUSTOMER LS ORDER = " + '[' + string.Join(",", parameters.Customer_LS_Order) + ']' + separator;
             ret += "CUSTOMER LS TWO-OPT = " + parameters.Customer_LS_TwoOpt_Iterations + separator;
@@ -120,7 +122,7 @@ namespace cluvrp_grasp
                 {
                     customer1 = customersCircuit[vehicle][clusterIt][customerIt];
                     customer2 = customersCircuit[vehicle][clusterIt][customerIt + 1];
-                    distance += customersDistanceMatrix[customer1][customer2];
+                    distance += Math.Round(customersDistanceMatrix[customer1][customer2], 2);
                 }
 
                 if (clusterIt + 1 < customersCircuit[vehicle].Length)
@@ -128,7 +130,7 @@ namespace cluvrp_grasp
                     int finalCustomerIdx = customersCircuit[vehicle][clusterIt].Count - 1;
                     int finalCustomer = customersCircuit[vehicle][clusterIt][finalCustomerIdx];
                     int initialCustomer = customersCircuit[vehicle][clusterIt + 1][0];
-                    distance += customersDistanceMatrix[finalCustomer][initialCustomer];
+                    distance += Math.Round(customersDistanceMatrix[finalCustomer][initialCustomer],2);
                 }
             }
             
@@ -294,7 +296,7 @@ namespace cluvrp_grasp
         // Distance function
         public static double distance(double x1, double y1, double x2, double y2)
         {
-            return (Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
+            return Math.Round((Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2))),2);
         }
 
         // Array to string

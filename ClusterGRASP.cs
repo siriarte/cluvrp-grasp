@@ -18,7 +18,7 @@ using System.Collections.Generic;
  */
  namespace cluvrp_grasp
 {
-    enum FitAlgorithm {RCL, BestFit, RCLError, BestFitError };
+    enum FitAlgorithm {RCL, BestFit, RCLError, BestFitError, Random };
     enum LocalSearch { InsertVehicle, SwapVehicle, RndInsertVehicle, RndSwapVehicle,
                        TwoOpt, Relocate, Exchange };
 
@@ -65,6 +65,12 @@ using System.Collections.Generic;
                 {
                     localSearchsOrder.Add((LocalSearch)parameters.Cluster_LS_Order[i]);
                 }
+            }
+
+            // For random fit algorithm
+            if(parameters.Cluster_FitAlgoritm == FitAlgorithm.Random)
+            {
+                selectFitAlgorithmRandom = true;
             }
             
             // End of Contructor
@@ -117,8 +123,6 @@ using System.Collections.Generic;
 
                     // Count the fit algorithm success solution
                     fitAlgorithmCounter[(int)fitAlgorithm]++;
-
-
                 }
                 catch(Exception)
                 {
@@ -191,12 +195,10 @@ using System.Collections.Generic;
             // Bluid a cluster route for a vehicle depending on selected fit algorithm
             if (fitAlgorithm == FitAlgorithm.RCL)
             {
-                fitAlgorithmCounter[(int)FitAlgorithm.RCL]++;
                 buildClusterRouteForVehicleByRCL(clusterRouteForVehicle, clustersToVisit, clustersDemand, alphaDemand, alphaDistance, vehicleCapacity, vehicleRemSpace);
             }
             else if (fitAlgorithm == FitAlgorithm.BestFit)
             {
-                fitAlgorithmCounter[(int)FitAlgorithm.BestFit]++;
                 buildClusterRouteForVehicleByBestFit(clusterRouteForVehicle, clustersToVisit, clustersDemand, alphaDemand, alphaDistance, vehicleCapacity, vehicleRemSpace);
             }
 
