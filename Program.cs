@@ -94,6 +94,7 @@ namespace cluvrp_grasp
 
                     // For this instance solution
                     distance = solution.totalCustomerRouteDistance;
+                    distance = Math.Truncate(distance);
                     fitAlgoBestSol = algorithm;
                     LSClusterOrder.Add(solution.bestClusterLSOrder);
                     LSCustomerOrder.Add(solution.bestCustomerLSOrder);
@@ -103,10 +104,10 @@ namespace cluvrp_grasp
 
                     // Set final string result 
                     var elapsedMs = watch.ElapsedMilliseconds;
-                    string outLine = instance.file_name + '\t' + distance.ToString("0.00") + '\t' + (elapsedMs * 1.0 / 1000).ToString("0.00") + "s" + '\t' + fitAlgoBestSol;
+                    string outLine = instance.file_name + '\t' + distance.ToString("0") + '\t' + (elapsedMs * 1.0 / 1000).ToString("0.00") + "s" + '\t' + fitAlgoBestSol;
 
                     // Update solution results
-                    distances[instanceCounter] = Math.Truncate(100 * distance) / 100;
+                    distances[instanceCounter] = distance;
                     propDistances[instanceCounter] = (distance - solutionToCompare[instanceCounter]) * 100 / solutionToCompare[instanceCounter];
                     propDistances[instanceCounter] = Math.Truncate(100 * propDistances[instanceCounter]) / 100;
 

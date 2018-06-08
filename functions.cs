@@ -72,6 +72,7 @@ namespace cluvrp_grasp
             ret += "CUSTOMER GRASP ITERATIONS = " + parameters.Customer_GRASPIterations + separator;
             ret += "CUSTOMER ALPHA = " + parameters.Customer_Alpha.ToString("0.0") + separator;
             ret += "CUSTOMER LS ORDER = " + '[' + string.Join(",", parameters.Customer_LS_Order) + ']' + separator;
+            ret += "CUSTOMER LS SWAP CUSTOMERS = " + parameters.Customer_LS_SwapCustomers + separator;
             ret += "CUSTOMER LS TWO-OPT = " + parameters.Customer_LS_TwoOpt_Iterations + separator;
             ret += "CUSTOMER LS RELOCATE = " + parameters.Customer_LS_Relocate_Iterations + separator;
             ret += "CUSTOMER LS EXCHANGE = " + parameters.Customer_LS_Exchange_Iterations + separator;
@@ -122,7 +123,7 @@ namespace cluvrp_grasp
                 {
                     customer1 = customersCircuit[vehicle][clusterIt][customerIt];
                     customer2 = customersCircuit[vehicle][clusterIt][customerIt + 1];
-                    distance += Math.Round(customersDistanceMatrix[customer1][customer2], 2);
+                    distance += customersDistanceMatrix[customer1][customer2];
                 }
 
                 if (clusterIt + 1 < customersCircuit[vehicle].Length)
@@ -130,7 +131,7 @@ namespace cluvrp_grasp
                     int finalCustomerIdx = customersCircuit[vehicle][clusterIt].Count - 1;
                     int finalCustomer = customersCircuit[vehicle][clusterIt][finalCustomerIdx];
                     int initialCustomer = customersCircuit[vehicle][clusterIt + 1][0];
-                    distance += Math.Round(customersDistanceMatrix[finalCustomer][initialCustomer],2);
+                    distance += customersDistanceMatrix[finalCustomer][initialCustomer];
                 }
             }
             
@@ -255,6 +256,30 @@ namespace cluvrp_grasp
             return ret;
         }
 
+        // Calculate cluster path distance with in and out of its
+        public static double calculateInOutAndPathDistance(List<int>[] clusterPath, int clusterIdx, double[][] customersDistanceMatrix)
+        {
+            int lastCluster = clusterIdx - 1;
+            int nextCluster = clusterIdx + 1;
+            int lastClusterLastCustomer = clusterPath[lastCluster][clusterPath[lastCluster].Count - 1];
+            int nextClusterNextCustomer = clusterPath[nextCluster][0];
+
+            int actualClusterFirstCustomer = clusterPath[clusterIdx][0];
+            int actualClusterLastCustomer = clusterPath[clusterIdx][clusterPath[clusterIdx].Count - 1];
+
+            double distance = customersDistanceMatrix[lastClusterLastCustomer][actualClusterFirstCustomer];
+            distance += customersDistanceMatrix[actualClusterLastCustomer][nextClusterNextCustomer];
+
+            for (int cluster = 0; cluster + 1 < clusterPath[clusterIdx].Count; cluster++)
+            {
+                int from = clusterPath[clusterIdx][cluster];
+                int to = clusterPath[clusterIdx][cluster + 1];
+                distance += customersDistanceMatrix[from][to];
+            }
+
+            return distance;
+        }
+
         // Verify is cluster route is valid (start and end in depot)
         public static bool isValidClusterRoute(List<int> route)
         {
@@ -296,7 +321,7 @@ namespace cluvrp_grasp
         // Distance function
         public static double distance(double x1, double y1, double x2, double y2)
         {
-            return Math.Round((Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2))),2);
+            return(Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
         }
 
         // Array to string

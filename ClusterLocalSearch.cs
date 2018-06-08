@@ -325,8 +325,8 @@ namespace cluvrp_grasp
             // Perform exchange is not possible
             return false;
         }
-
-         // Try to swap all the clusters (one bye one) for all vehicles (one by one)
+          
+        // Try to swap all the clusters (one bye one) for all vehicles (one by one)
         public void swapVehicle(int[] clusterDemand)
         {
             // For each vehicle 1

@@ -158,7 +158,7 @@ namespace cluvrp_grasp
             }
 
             // Total distance is correct
-            Debug.Assert(Math.Round(totalCustomerRouteDistance) == Math.Round(Functions.calculateTotalTravelDistance(customersPaths, instance.customersDistanceMatrix)));
+            Debug.Assert(Math.Truncate(totalCustomerRouteDistance) == Math.Truncate(Functions.calculateTotalTravelDistance(customersPaths, instance.customersDistanceMatrix)));
 
         }
 

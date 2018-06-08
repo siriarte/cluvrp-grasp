@@ -28,6 +28,7 @@ namespace cluvrp_grasp
         public int Customer_GRASPIterations { get; set; }
         public double Customer_Alpha { get; set; }
         public int[] Customer_LS_Order { get; set; }
+        public bool Customer_LS_SwapCustomers { get; set; }
         public int Customer_LS_TwoOpt_Iterations { get; set; }
         public int Customer_LS_Relocate_Iterations { get; set; }
         public int Customer_LS_Exchange_Iterations { get; set; }
@@ -51,6 +52,7 @@ namespace cluvrp_grasp
             int Customer_GRASPIterations,
             double Customer_Alpha,
             int[] Customer_LS_Order,
+            bool Customer_LS_SwapCustomers,
             int Customer_LS_TwoOpt_Iterations,
             int Customer_LS_Relocate_Iterations,
             int Customer_LS_Exchange_Iterations)
@@ -72,6 +74,7 @@ namespace cluvrp_grasp
             this.Customer_GRASPIterations = Customer_GRASPIterations;
             this.Customer_Alpha = Customer_Alpha;
             this.Customer_LS_Order = Customer_LS_Order;
+            this.Customer_LS_SwapCustomers = Customer_LS_SwapCustomers;
             this.Customer_LS_TwoOpt_Iterations = Customer_LS_TwoOpt_Iterations;
             this.Customer_LS_Relocate_Iterations = Customer_LS_Relocate_Iterations;
             this.Customer_LS_Exchange_Iterations = Customer_LS_Exchange_Iterations;
@@ -96,6 +99,7 @@ namespace cluvrp_grasp
             public int[] Cluster_LS_Exchange_Iterations { get; set; }
             public int[] Customer_GRASPIterations { get; set; }
             public float[] Customer_Alpha { get; set; }
+            public bool[] Customer_LS_SwapCustomers { get; set; }
             public int[] Customer_LS_Order { get; set; }
             public int[] Customer_LS_TwoOpt_Iterations { get; set; }
             public int[] Customer_LS_Relocate_Iterations { get; set; }
@@ -124,37 +128,38 @@ namespace cluvrp_grasp
                                                             foreach (int cluster_LS_Exchange_Iterations in pInstance.Cluster_LS_Exchange_Iterations)
                                                                 foreach (int customer_GRASPIterations in pInstance.Customer_GRASPIterations)
                                                                     foreach (double customer_Alpha in pInstance.Customer_Alpha)
-                                                                        foreach (int customer_LS_TwoOpt_Iterations in pInstance.Customer_LS_TwoOpt_Iterations)
-                                                                            foreach (int customer_LS_Relocate_Iterations in pInstance.Customer_LS_Relocate_Iterations)
-                                                                                foreach (int customer_LS_Exchange_Iterations in pInstance.Customer_LS_Exchange_Iterations)
-                                                                                {
+                                                                            foreach(bool customer_LS_SwapCustomers in pInstance.Customer_LS_SwapCustomers)
+                                                                            foreach (int customer_LS_TwoOpt_Iterations in pInstance.Customer_LS_TwoOpt_Iterations)
+                                                                                foreach (int customer_LS_Relocate_Iterations in pInstance.Customer_LS_Relocate_Iterations)
+                                                                                    foreach (int customer_LS_Exchange_Iterations in pInstance.Customer_LS_Exchange_Iterations)
+                                                                                    {
+                                                                                        // Create parameter instance
+                                                                                        Parameters parameter = new Parameters(
+                                                                                            cluvrp_version,
+                                                                                            cluvrp_GRASPIterations,
+                                                                                            cluster_GRASPIterations,
+                                                                                            cluster_AlphaCapacity,
+                                                                                            cluster_AlphaDistance,
+                                                                                            cluster_FitAlgoritm,
+                                                                                            pInstance.Cluster_LS_Order,
+                                                                                            cluster_LS_SwapVehicle,
+                                                                                            cluster_LS_InsertVehicle,
+                                                                                            cluster_LS_RndSwapVehicle,
+                                                                                            cluster_LS_RndInsertVehicle,
+                                                                                            cluster_LS_TwoOpt_Iterations,
+                                                                                            cluster_LS_Relocate_Iterations,
+                                                                                            cluster_LS_Exchange_Iterations,
+                                                                                            customer_GRASPIterations,
+                                                                                            customer_Alpha,
+                                                                                            pInstance.Customer_LS_Order,
+                                                                                            customer_LS_SwapCustomers,
+                                                                                            customer_LS_TwoOpt_Iterations,
+                                                                                            customer_LS_Relocate_Iterations,
+                                                                                            customer_LS_Exchange_Iterations);
 
-                                                                                    // Create parameter instance
-                                                                                    Parameters parameter = new Parameters(
-                                                                                        cluvrp_version,
-                                                                                        cluvrp_GRASPIterations,
-                                                                                        cluster_GRASPIterations,
-                                                                                        cluster_AlphaCapacity,
-                                                                                        cluster_AlphaDistance,
-                                                                                        cluster_FitAlgoritm,
-                                                                                        pInstance.Cluster_LS_Order,
-                                                                                        cluster_LS_SwapVehicle,
-                                                                                        cluster_LS_InsertVehicle,
-                                                                                        cluster_LS_RndSwapVehicle,
-                                                                                        cluster_LS_RndInsertVehicle,
-                                                                                        cluster_LS_TwoOpt_Iterations,
-                                                                                        cluster_LS_Relocate_Iterations,
-                                                                                        cluster_LS_Exchange_Iterations,
-                                                                                        customer_GRASPIterations,
-                                                                                        customer_Alpha,
-                                                                                        pInstance.Customer_LS_Order,
-                                                                                        customer_LS_TwoOpt_Iterations,
-                                                                                        customer_LS_Relocate_Iterations,
-                                                                                        customer_LS_Exchange_Iterations);
-
-                                                                                    // Add to list
-                                                                                    ret.Add(parameter);
-                                                                                }
+                                                                                        // Add to list
+                                                                                        ret.Add(parameter);
+                                                                                    }
             // Return parameter instance list
             return ret;
         }

@@ -29,7 +29,7 @@ namespace cluvrp_grasp
             if (parameters.Customer_LS_Order.Length == 0)
             {
                 this.localSearchsOrder = new List<LocalSearch> { LocalSearch.TwoOpt,
-                LocalSearch.Relocate, LocalSearch.Exchange};
+                LocalSearch.Relocate, LocalSearch.Exchange, LocalSearch.SwapCustomers};
             }
             else
             {
@@ -128,6 +128,13 @@ namespace cluvrp_grasp
                 {
                     customerLocalSearch.exchange();
                 }
+
+                // Perform Customer Swap
+                if (localSearchsOrder[i] == LocalSearch.SwapCustomers && parameters.Customer_LS_SwapCustomers)
+                {
+                    customerLocalSearch.SwapCustomers();
+                }
+
             }
             // Set the solution
             newSolution = customerLocalSearch.solution;

@@ -20,7 +20,7 @@ using System.Collections.Generic;
 {
     enum FitAlgorithm {RCL, BestFit, RCLError, BestFitError, Random };
     enum LocalSearch { InsertVehicle, SwapVehicle, RndInsertVehicle, RndSwapVehicle,
-                       TwoOpt, Relocate, Exchange };
+                       TwoOpt, Relocate, Exchange, SwapCustomers };
 
     class ClusterGRASP
     {
