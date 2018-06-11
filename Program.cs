@@ -7,12 +7,13 @@ namespace cluvrp_grasp
     class Program
     {
         // Main Function
-        static void GraspProcedure(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare)
+        static void GraspProcedure(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare, CluVRPType cluvrpType = CluVRPType.Normal)
         {
             // Star watch to calculate total process time
             var totalWatch = System.Diagnostics.Stopwatch.StartNew();
-           
+
             // For best solution set
+            CluVRPSolution solution = new CluVRPSolution();
             double[] bestIndividualTotalDistance = new double[solutionToCompare.Length];
             double[] bestIndividualPropDistance = new double[solutionToCompare.Length];
             Functions.Populate(bestIndividualTotalDistance, double.MaxValue);
@@ -74,9 +75,14 @@ namespace cluvrp_grasp
                     double distance = 0;
                     string fitAlgoBestSol = "";
 
-                    // Calculate solution for CluVRP
-                    CluVRPSolution solution = CluVRPGrasp.Grasp(instance, parameters);
-
+                    // Calculate solution for normal CluVRP or weak cluster constrains
+                    if (cluvrpType == CluVRPType.Normal)
+                    {                        
+                        solution = CluVRPGrasp.Grasp(instance, parameters);
+                    }else
+                    {
+                        solution = CluVRPGrasp.GraspForWeakCustomer(instance, parameters);
+                    }
                     // If not possible solution
                     if (solution.clusterRouteForVehicule == null)
                     {
@@ -211,14 +217,22 @@ namespace cluvrp_grasp
 
         static void Main(string[] args)
         {
+
+            // Default type of clvrp
+            CluVRPType cluVRPType = CluVRPType.Normal;
+
             // Check numbers of parameters
-            if(args.Length != 4)
+            if (args.Length < 4)
             {
                 Console.WriteLine(
                     "Parameter is missing: " + '\n' +
                     "Use: cluvrp_grasp parametersFilePath instanceSetFilePath logFilePath arrayOfSolutions" + '\n' + '\n'
                 );
                 return;
+            }
+            // If type of cluvrp is defined set it
+            else if(args.Length == 5){
+                cluVRPType = (CluVRPType)int.Parse(args[4]);
             }
 
             // Set variables
@@ -247,11 +261,12 @@ namespace cluvrp_grasp
             }
 
             // Excute GRASP
-            GraspProcedure(parametersFilePath, instanceSetFilePath, logFilePath, solutionToCompare);
+            GraspProcedure(parametersFilePath, instanceSetFilePath, logFilePath, solutionToCompare, cluVRPType);
 
             // End
             return;
         }
-}
+
+    }
         
 }    

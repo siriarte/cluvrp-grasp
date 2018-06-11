@@ -55,6 +55,7 @@ namespace cluvrp_grasp
             // For cluster
             ret += "CLUVRP GRASP VERSION = " + parameters.CluVRP_Version + separator;
             ret += "CLUVRP GRASP ITERATIONS = " + parameters.CluVRP_GRASPIterations + separator;
+            ret += "CLUVRP MAIN LS ITERATIONS = " + parameters.CluVRP_LS_Main_Iterations + separator;
             ret += "CLUSTER GRASP ITERATIONS = " +  parameters.Cluster_GRASPIterations + separator;
             ret += "CLUSTER ALPHA CAPACITY = " + parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
             ret += "CLUSTER ALPHA DISTANCE = " + parameters.Cluster_AlphaDistance.ToString("0.0") + separator;
@@ -168,6 +169,38 @@ namespace cluvrp_grasp
                 totalDistance += clustersDistanceMatrix[fromCluster][ToCluster];
             }
 
+            // Return total distance
+            return totalDistance;
+        }
+
+        // Calculate the total customer distance of a vehicle travel
+        public static double calculateCustomerTravelDistanceForVehicle(List<int> travel, double[][] customersDistanceMatrix)
+        {
+            // Set variables
+            double totalDistance = 0;
+
+            // Iterate each cluster on vehicle route
+            for (int clusterIt = 0; clusterIt + 1 < travel.Count; clusterIt++)
+            {
+                int fromCluster = travel[clusterIt];
+                int ToCluster = travel[clusterIt + 1];
+                totalDistance += customersDistanceMatrix[fromCluster][ToCluster];
+            }
+
+            // Return total distance
+            return totalDistance;
+        }
+
+         // Calculate the total customer distance of a all vehicles
+        public static double calculateCustomerTotalTravelDistanceForVehicle(List<int>[] travel, double[][] customersDistanceMatrix)
+        {
+            // Set variables
+            double totalDistance = 0;
+
+            for (int vehicle = 0; vehicle < travel.Length; vehicle++)
+            {
+                totalDistance += calculateCustomerTravelDistanceForVehicle(travel[vehicle], customersDistanceMatrix);
+            }
             // Return total distance
             return totalDistance;
         }
