@@ -14,11 +14,11 @@ namespace cluvrp_grasp
     class NodePoint
     {
         // Attributes
-        public int x { get; }
-        public int y { get; }
+        public double x { get; }
+        public double y { get; }
 
         // Constructor
-        public NodePoint(int x, int y)
+        public NodePoint(double x, double y)
         {
             this.x = x;
             this.y = y;

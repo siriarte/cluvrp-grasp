@@ -163,7 +163,10 @@ namespace cluvrp_grasp
                     List<int> cluster = customersPaths[vehicle][clusterIt].ToList<int>();
                     List<int> clusterInstance = instance.clusters[clusterNumber].ToList<int>();
                     bool containsAll = Functions.ContainsAllItems(cluster, clusterInstance);
-                    Debug.Assert(containsAll && cluster.Count == clusterInstance.Count);
+                    if (vehicleRoute[vehicle].Count != 2)
+                    {
+                        Debug.Assert(containsAll && cluster.Count == clusterInstance.Count);
+                    }
                 }
             }
 

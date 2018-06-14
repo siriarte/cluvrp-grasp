@@ -179,6 +179,18 @@ namespace cluvrp_grasp
                 int[][] clustersOneVehicle = clusterRouteWithCustomers[vehicle];
                 customersCircuit[vehicle] = new List<int>[numbersOfClusters];
 
+                // If vehicle has not travel
+                if (clusterRoute[vehicle].Count == 2)
+                {
+                    customersCircuit[vehicle] = new List<int>[2];
+                    customersCircuit[vehicle][0] = new List<int>();
+                    customersCircuit[vehicle][1] = new List<int>();
+                    customersCircuit[vehicle][0].Add(1);
+                    customersCircuit[vehicle][1].Add(1);
+                    vehiculeTotalDistance[vehicle] = 0;
+                    continue;
+                }
+
                 // Visit all cluster for the i-vehicle
                 for (int i = 0; i < numbersOfClusters; i++)
                 {
