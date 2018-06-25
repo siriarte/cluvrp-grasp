@@ -68,7 +68,7 @@ namespace cluvrp_grasp
                             double newDistance = Functions.calculateClusterTravelDistanceForVehicle(newRoute, instance.clustersDistanceMatrix);
 
                             // If distance if better and route is valid
-                            if (newDistance + 0.01 < bestDistance[vehicle] && Functions.isValidClusterRoute(newRoute))
+                            if (newDistance + 0.0001 < bestDistance[vehicle] && Functions.isValidClusterRoute(newRoute))
                             {
                                 // Update with new route and distance
                                 routeForVehicule[vehicle] = newRoute;
@@ -174,7 +174,7 @@ namespace cluvrp_grasp
             var newDistance = solution.totalClusterRouteDistance - _a - _b + _C + _A + _B - _c;
 
             // If new distance is better
-            if (newDistance + 0.01 < solution.totalClusterRouteDistance)
+            if (newDistance + 0.0001 < solution.totalClusterRouteDistance)
             {
                 // Perform realocate
                 int customer = route[i];
@@ -300,7 +300,7 @@ namespace cluvrp_grasp
                 new_distance_j_left + new_distance_j_right;
 
             // If new distance is better
-            if (newDistance + 0.01 < this.solution.totalClusterRouteDistance)
+            if (newDistance + 0.0001 < this.solution.totalClusterRouteDistance)
             {
                 // Perform exchange
                 int customer = route[i];
@@ -472,7 +472,7 @@ namespace cluvrp_grasp
                 double newDistance = Functions.calculateTotalClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
 
                 // If new distance is better
-                if(newDistance + 0.01 < totalClusterRouteDistance)
+                if(newDistance + 0.0001 < totalClusterRouteDistance)
                 {
                     // Update best index and distance
                     bestIndex = clusterIdx;
@@ -539,7 +539,7 @@ namespace cluvrp_grasp
                     double newDistance = solution.totalClusterRouteDistance - (oldDistanceVehicle1 + oldDistanceVehicle2) + (newDistanceVehicle1 + newDistanceVehicle2);
 
                     // Verify is new distance is short 
-                    if (newDistance + 0.01 < solution.totalClusterRouteDistance)
+                    if (newDistance + 0.0001 < solution.totalClusterRouteDistance)
                     {
                         // Update new vehicle space remaining
                         solution.vehicleRemSpace[vehicle1] += instance.clusters_demand[clusterV1];
@@ -627,7 +627,7 @@ namespace cluvrp_grasp
                         double newDistance = solution.totalClusterRouteDistance - (oldDistanceVehicle1 + oldDistanceVehicle2) + (newDistanceVehicle1 + newDistanceVehicle2);
 
                         // If distance is short
-                        if (newDistance + 0.01 < solution.totalClusterRouteDistance)
+                        if (newDistance + 0.0001 < solution.totalClusterRouteDistance)
                         {
                             // Update new distance and the space remaining on vehicles
                             solution.totalClusterRouteDistance = newDistance;

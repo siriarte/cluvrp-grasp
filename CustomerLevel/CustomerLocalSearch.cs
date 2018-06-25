@@ -74,7 +74,7 @@ namespace cluvrp_grasp
                                 double newDistance = Functions.calculateInOutAndPathDistance(customersCircuit[vehicle], clusterIt, instance.customersDistanceMatrix);
 
                                 // If distance if better
-                                if (newDistance + 0.01 < bestDistance)
+                                if (newDistance + 0.0001 < bestDistance)
                                 {                                    
                                     // Update best distance
                                     this.solution.vehiculeRouteDistance[vehicle] = Functions.calculateTotalTravelDistance(customersCircuit, instance.customersDistanceMatrix, vehicle);
@@ -206,7 +206,7 @@ namespace cluvrp_grasp
             var newDistance = solution.vehiculeRouteDistance[vehicle] - _a - _b + _C + _A + _B - _c;
 
             // If new distance is better
-            if (newDistance + 0.01 < solution.vehiculeRouteDistance[vehicle])
+            if (newDistance + 0.0001 < solution.vehiculeRouteDistance[vehicle])
             {
                 // Perform realocate
                 int customer = route[i];
@@ -339,7 +339,7 @@ namespace cluvrp_grasp
                 new_distance_j_left + new_distance_j_right;
 
             // If new distance is better
-            if (newDistance + 0.01 < this.solution.vehiculeRouteDistance[vehicle])
+            if (newDistance + 0.0001 < this.solution.vehiculeRouteDistance[vehicle])
             {                
                 // Perform exchange
                 int customer = route[i];

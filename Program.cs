@@ -136,7 +136,7 @@ namespace cluvrp_grasp
                     }
 
                     // Log solution
-                    string outLine = instance.file_name + '\t' + distance.ToString("0") + '\t' + bestIndividualPropDistance[instanceCounter] + "%" + '\t' + (elapsedMs * 1.0 / 1000).ToString("0.00") + "s" + '\t' + fitAlgoBestSol;
+                    string outLine = instance.file_name + '\t' + distance.ToString("0") + '\t' + propDistances[instanceCounter] + "%" + '\t' + (elapsedMs * 1.0 / 1000).ToString("0.00") + "s" + '\t' + fitAlgoBestSol;
                     logger.logLine(outLine);
 
                     // Increase distance counter
