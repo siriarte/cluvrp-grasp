@@ -121,6 +121,17 @@ namespace cluvrp_grasp
                 Debug.Assert(instance.capacity - totalDemandOnVehicle >= 0);
             }
             Debug.Assert(totalDemand == clusterDemand.Sum());
+
+            // Verify if all vehicules visit at least 1 cluster
+            // This is necessary for GVRP and GoldelBattarra instances
+            if (instance.instance_type == Instance.GVRP || instance.instance_type == Instance.GoldenBattarra)
+            {
+                for (int vehicle = 0; vehicle < clusterRouteForVehicule.Length; vehicle++)
+                {
+                    Debug.Assert(clusterRouteForVehicule[vehicle].Count > 2);
+                }
+            }
+
         }
 
         // Customer solution verification

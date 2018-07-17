@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace cluvrp_grasp
 {
-    enum Instance {GVRP, Golden}
+    enum Instance {GVRP, GoldenBattarra, GoldenIzquierdo}
 
     static class InstanceParser
     {
@@ -13,6 +13,7 @@ namespace cluvrp_grasp
         static int GVRP_NODE_COORD_SECTION_IDX = 8;
         static int GVRP_NODE_COORD_SECTION_IDX_GOLDEN = 7;
         static int GVRP_NODE_COORD_SECTION_IDX_GOLDEN_IZQUIERDO = 8;
+        static int GOLDEN_IZQUIERDO_VEHICLES_NUMBER = int.MaxValue;
 
         /*
          * 
@@ -48,7 +49,7 @@ namespace cluvrp_grasp
                         }
                         else if (instanceFilePath.Contains("Golden"))
                         {
-                            instance = parseGoldenInstance(instanceFilePath, instanceFileText);
+                            instance = parseGoldenBattarraInstance(instanceFilePath, instanceFileText);
 
                         } else {
                             instance = parseGVRPInstance(instanceFilePath, instanceFileText);
@@ -74,11 +75,10 @@ namespace cluvrp_grasp
         }
 
         /*
-            Parser for GVRP02 and GVRP03 modified instances. 
-            http://www.personal.soton.ac.uk/tb12v07/gvrp.html
-            Instances of CVRP (Bektas 2011) a adpter by Battarra (2014)  
-
-        */
+         * Parser for GVRP02 and GVRP03 modified instances. 
+         * http://www.personal.soton.ac.uk/tb12v07/gvrp.html
+         * Instances of CVRP (Bektas 2011) a adapted by Battarra (2014)  
+         */
         static private CluVRPInstance parseGVRPInstance(string fileName, string[] instanceText)
         {
             // Set static parameters
@@ -137,15 +137,15 @@ namespace cluvrp_grasp
              }
 
             // Return parsed instance
-            return new CluVRPInstance(file_name, name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
+            return new CluVRPInstance(Instance.GVRP, file_name, name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
                 nodes, clusters, clusters_demand, depot);
         }
 
         /*
-         Parser for Golden instances. 
-         Instances of CVRP (Bektas 2011) a adapter by Battarra (2014)  
-        */
-        static private CluVRPInstance parseGoldenInstance(string fileName, string[] instanceText)
+         * Parser for Golden instances. 
+         *  Instances of CVRP (Bektas 2011) a adapter by Battarra (2014)  
+         */
+        static private CluVRPInstance parseGoldenBattarraInstance(string fileName, string[] instanceText)
         {
             // Set static parameters
             string file_name = fileName;
@@ -205,20 +205,19 @@ namespace cluvrp_grasp
             }
 
             // Return parsed instance
-            return new CluVRPInstance(file_name, name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
+            return new CluVRPInstance(Instance.GoldenBattarra, file_name, name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
                 nodes, clusters, clusters_demand, depot);
         }
 
         /*
- Parser for Golden instances. 
- Instances of CVRP (Bektas 2011) a adapter by Battarra (2014)  
-*/
+         * Parser for Golden instances. 
+         * Instances of CVRP (Bektas 2011) adapted by Exposito-Izquierdo
+         */
         static private CluVRPInstance parseGoldenIzquierdoInstance(string fileName, string[] instanceText)
         {
             // Set static parameters
             string file_name = fileName;
             int dimension = Int32.Parse(instanceText[3].Substring(12));
-            int vehicules = 50;
             int capacity = Int32.Parse(instanceText[4].Substring(11));
             string edge_weight_type = instanceText[5].Substring(19);
             int depot = 1;
@@ -299,14 +298,10 @@ namespace cluvrp_grasp
                 }
             }
 
-            vehicules = (int)Math.Ceiling(clusters_demand.Sum() * 1.0 / capacity ); 
-
             // Return parsed instance
-            return new CluVRPInstance(file_name, "", "", dimension, vehicules, clusters_demand.Length, capacity, edge_weight_type,
-                nodes, clusters, clusters_demand, depot);
-            
+            return new CluVRPInstance(Instance.GoldenIzquierdo, file_name, "", "", dimension, GOLDEN_IZQUIERDO_VEHICLES_NUMBER, clusters_demand.Length, capacity, edge_weight_type,
+                nodes, clusters, clusters_demand, depot);            
         }
-
 
     }
 }

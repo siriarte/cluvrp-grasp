@@ -33,6 +33,7 @@ namespace cluvrp_grasp
     class CluVRPInstance
     {
         // Attributes for a CluVRP instance
+        public Instance instance_type { get; set; }
         public string file_name { get; set; }
         public string name { get; set; }
         public string comment { get; set; }
@@ -52,11 +53,12 @@ namespace cluvrp_grasp
         public double[] suffleRandomAverageClusterDistance { set; get; }
 
         // Constructor
-        public CluVRPInstance(string file_name, string name, string comment, int dimension, int vehicules, int gvrp_sets, 
+        public CluVRPInstance(Instance instance_type, string file_name, string name, string comment, int dimension, int vehicules, int gvrp_sets, 
             int capacity, string edge_weight_type, NodePoint[] nodes, int[][] clusters, int[] clusters_demand, int depot)
         {
 
             // Set all the attributes
+            this.instance_type = instance_type;
             this.file_name = file_name;
             this.name = name;
             this.comment = comment;

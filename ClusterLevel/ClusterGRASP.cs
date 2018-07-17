@@ -156,6 +156,20 @@ using System.Collections.Generic;
             // Set the counter of fit algorithm on solution for reports
             solution.fitAlgorithmCounter = fitAlgorithmCounter;
 
+            // Verify if all vehicules visit at least 1 cluster
+            // This is necessary for GVRP and GoldelBattarra instances
+            if (instance.instance_type == Instance.GVRP || instance.instance_type == Instance.GoldenBattarra && solution.clusterRouteForVehicule != null)
+            {
+                for (int vehicle = 0; vehicle < solution.clusterRouteForVehicule.Length; vehicle++)
+                {
+                    if(solution.clusterRouteForVehicule[vehicle].Count >= 2)
+                    {
+                        solution.clusterRouteForVehicule = null;
+                        break;
+                    }
+                }
+            }
+
             // Return best solution
             return this.solution;
         }
