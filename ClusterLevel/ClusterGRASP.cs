@@ -162,13 +162,14 @@ using System.Collections.Generic;
             {
                 for (int vehicle = 0; vehicle < solution.clusterRouteForVehicule.Length; vehicle++)
                 {
-                    if(solution.clusterRouteForVehicule[vehicle].Count >= 2)
+                    if(solution.clusterRouteForVehicule[vehicle].Count <= 2)
                     {
-                        solution.clusterRouteForVehicule = null;
+                        fixClusterSolution();
+                        this.solution.totalClusterRouteDistance = Functions.calculateTotalClusterTravelDistance(solution.clusterRouteForVehicule, instance.clustersDistanceMatrix);
                         break;
                     }
                 }
-            }
+             }
 
             // Return best solution
             return this.solution;
@@ -627,11 +628,11 @@ using System.Collections.Generic;
         }
 
         /*
-        * 
-        *  Build RCL with the criteria of minimal distance bewteen next cluster 
-        *  and last cluster on each vehicle      
-        * 
-        */
+         * 
+         *  Build RCL with the criteria of minimal distance bewteen next cluster 
+         *  and last cluster on each vehicle      
+         * 
+         */
         private List<int> buildVehicleByDistanceRCL(List<int>[] clusterRouteForVehicle, int vehicleCapacity, int[] vechiculeRemSpace, int clusterSelected, int clusterDemand, double alphaDistance)
         {
             // Set variables
@@ -680,7 +681,65 @@ using System.Collections.Generic;
             // return rcl
             return RCL;
         }
-   
+
+        /*
+        * 
+        * For Battarra instances all the vehicles has to visit at least 1      
+        * 
+        */
+        private void fixClusterSolution()
+        {
+            List<int> emptyVehicleList = new List<int>();
+            List<int> notEmptyVehicleList = new List<int>();
+            List<int> clustersAvalaibles = new List<int>();
+            bool[] clusterUsed = new bool[instance.clusters.Length];
+            int clustersNeeded = 0;
+
+            for (int vehicle = 0; vehicle < solution.clusterRouteForVehicule.Length; vehicle++)
+            {
+                if (solution.clusterRouteForVehicule[vehicle].Count <= 2)
+                {
+                    emptyVehicleList.Add(vehicle);
+                    clustersNeeded++;
+                }
+                else if (solution.clusterRouteForVehicule[vehicle].Count > 3)
+                {
+                    notEmptyVehicleList.Add(vehicle);
+                }                    
+            }
+
+
+        
+            foreach (int vehicle1 in emptyVehicleList)
+            {
+                int minDistCluster = 0;
+                int minDistClusterVehicle = 0;
+                double minDistance = double.MaxValue;
+                int vehicle2 = 0;
+                for (int vehicle2It = 0; vehicle2It < notEmptyVehicleList.Count; vehicle2It++)
+                {
+                    vehicle2 = notEmptyVehicleList[vehicle2It];
+                    if (solution.clusterRouteForVehicule[vehicle2].Count > 3) {
+                        for (int clusterIt = 1; clusterIt + 1 < solution.clusterRouteForVehicule[vehicle2].Count; clusterIt++)
+                        {
+                            int actualCluster = solution.clusterRouteForVehicule[vehicle2][clusterIt];
+                            if (instance.clustersDistanceMatrix[0][actualCluster] < minDistance)
+                            {
+                                minDistance = instance.clustersDistanceMatrix[0][actualCluster];
+                                minDistCluster = actualCluster;
+                                minDistClusterVehicle = vehicle2;
+                            }
+                        }
+                    }
+                }
+                solution.clusterRouteForVehicule[vehicle1].Insert(1, minDistCluster);
+                solution.clusterRouteForVehicule[minDistClusterVehicle].Remove(minDistCluster);
+                solution.vehicleRemSpace[vehicle1] -= instance.clusters_demand[minDistCluster];
+                solution.vehicleRemSpace[minDistClusterVehicle] += instance.clusters_demand[minDistCluster];
+            }
+            
+        }
+
         /*
          * 
          * Performance a set of local search techniques
