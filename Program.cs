@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Globalization;
+
 namespace cluvrp_grasp
 {
     class Program
@@ -107,7 +109,14 @@ namespace cluvrp_grasp
 
                     // For this instance solution
                     distance = solution.totalCustomerRouteDistance;
-                    distance = Math.Truncate(distance);
+                    if (instance.instance_type == Instance.GoldenIzquierdo)
+                    {
+                        distance = Math.Truncate(100 * distance) / 100;
+                    }
+                    else
+                    {
+                        distance = Math.Truncate(distance);
+                    }
                     fitAlgoBestSol = algorithm;
                     LSClusterOrder.Add(solution.bestClusterLSOrder);
                     LSCustomerOrder.Add(solution.bestCustomerLSOrder);
@@ -136,7 +145,15 @@ namespace cluvrp_grasp
                     }
 
                     // Log solution
-                    string outLine = instance.file_name + '\t' + distance.ToString("0") + '\t' + propDistances[instanceCounter] + "%" + '\t' + (elapsedMs * 1.0 / 1000).ToString("0.00") + "s" + '\t' + fitAlgoBestSol;
+                    string s_distance; 
+                    if (instance.instance_type == Instance.GoldenIzquierdo)
+                    {
+                        s_distance = distance.ToString("0.00");
+                    }else
+                    {
+                        s_distance = distance.ToString("0");
+                    }
+                    string outLine = instance.file_name + '\t' + s_distance + '\t' + propDistances[instanceCounter] + "%" + '\t' + (elapsedMs * 1.0 / 1000).ToString("0.00") + "s" + '\t' + fitAlgoBestSol;
                     logger.logLine(outLine);
 
                     // Increase distance counter
@@ -300,7 +317,7 @@ namespace cluvrp_grasp
                 {
                     Console.WriteLine("Solution to compare file is empty");
                 }
-                solutionToCompare = arrayOfSolutions[0].Split(',').Select(double.Parse).ToArray();
+                solutionToCompare = arrayOfSolutions[0].Split(',').Select(s=>double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
             }
             catch (Exception e)
             {

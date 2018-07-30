@@ -90,7 +90,7 @@ namespace cluvrp_grasp
                         break;
                     }
                 }
-                Debug.Assert(wasVisited);
+                Debug.Assert(wasVisited, "All clusters are not visited");
                 wasVisited = false;
             }
 
@@ -100,7 +100,7 @@ namespace cluvrp_grasp
             {
                 totalLength += clusterRouteForVehicule[vehicle].Count;
             }
-            Debug.Assert(instance.clusters.Length == totalLength - (2 * clusterRouteForVehicule.Length) + 1);
+            Debug.Assert(instance.clusters.Length == totalLength - (2 * clusterRouteForVehicule.Length) + 1, "Number of cluster visited is incorrect");
 
             // Vehicle remmaining capacity is correct respect to cluster demand
             int[] clusterDemand = instance.clusters_demand;
@@ -118,9 +118,9 @@ namespace cluvrp_grasp
 
                 // Sum the total demand of all vehicles
                 totalDemand += totalDemandOnVehicle;
-                Debug.Assert(instance.capacity - totalDemandOnVehicle >= 0);
+                Debug.Assert(instance.capacity - totalDemandOnVehicle >= 0, "The total demand is more big than the capacity of a vehicle");
             }
-            Debug.Assert(totalDemand == clusterDemand.Sum());
+            Debug.Assert(totalDemand == clusterDemand.Sum(), "The total demand is more big than the total capacity");
 
             // Verify if all vehicules visit at least 1 cluster
             // This is necessary for GVRP and GoldelBattarra instances
@@ -128,7 +128,7 @@ namespace cluvrp_grasp
             {
                 for (int vehicle = 0; vehicle < clusterRouteForVehicule.Length; vehicle++)
                 {
-                    Debug.Assert(clusterRouteForVehicule[vehicle].Count > 2);
+                    Debug.Assert(clusterRouteForVehicule[vehicle].Count > 2, "There are vehicles that no visit clusters");
                 }
             }
 
@@ -139,8 +139,8 @@ namespace cluvrp_grasp
         {
             // Verify number of vehicles
             int numberOfVehicles = instance.vehicles;
-            Debug.Assert(customersPaths.Length == numberOfVehicles);
-            Debug.Assert(vehiculeRouteDistance.Length == numberOfVehicles);
+            Debug.Assert(customersPaths.Length == numberOfVehicles, "The number of vehicles on the  customer path is incorrect");
+            Debug.Assert(vehiculeRouteDistance.Length == numberOfVehicles, "The number of vehicles on the route distance is incorrect");
 
             // Verify number of clusters
             int numberOfClusters = instance.clusters.Length;
@@ -149,7 +149,7 @@ namespace cluvrp_grasp
             {
                 clustersCounter += customersPaths[i].Length;
             }
-            Debug.Assert(numberOfClusters == clustersCounter - (customersPaths.Length * 2) + 1);
+            Debug.Assert(numberOfClusters == clustersCounter - (customersPaths.Length * 2) + 1, "The number of cluster in the complete travel is incorrect");
 
             // Verify number of customers
             int numberOfCustomers = instance.dimension;
@@ -176,13 +176,13 @@ namespace cluvrp_grasp
                     bool containsAll = Functions.ContainsAllItems(cluster, clusterInstance);
                     if (vehicleRoute[vehicle].Count != 2)
                     {
-                        Debug.Assert(containsAll && cluster.Count == clusterInstance.Count);
+                        Debug.Assert(containsAll && cluster.Count == clusterInstance.Count, "All the clusters on the travel are not correct respect to their clients");
                     }
                 }
             }
 
             // Total distance is correct
-            Debug.Assert(Math.Truncate(totalCustomerRouteDistance) == Math.Truncate(Functions.calculateTotalTravelDistance(customersPaths, instance.customersDistanceMatrix)));
+            Debug.Assert(Math.Truncate(totalCustomerRouteDistance) == Math.Truncate(Functions.calculateTotalTravelDistance(customersPaths, instance.customersDistanceMatrix)), "The final distance is not correct");
 
         }
 
@@ -191,8 +191,8 @@ namespace cluvrp_grasp
         {
             // Verify number of vehicles
             int numberOfVehicles = instance.vehicles;
-            Debug.Assert(customersWeakRoute.Length == numberOfVehicles);
-            Debug.Assert(vehiculeRouteDistance.Length == numberOfVehicles);
+            Debug.Assert(customersWeakRoute.Length == numberOfVehicles, "CustomerWeak - The number of vehicles is incorrect respect to customer path");
+            Debug.Assert(vehiculeRouteDistance.Length == numberOfVehicles, "CustomerWeak - The number of vehicles is incorrect respect to vehicles distance vector");
 
             // Verify number of customers and all paths start and end on depot
             int numberOfCustomers = instance.dimension;
@@ -200,12 +200,12 @@ namespace cluvrp_grasp
             for (int i = 0; i < customersWeakRoute.Length; i++)
             {
                 customersCounter += customersWeakRoute[i].Count;
-                Debug.Assert(customersWeakRoute[i][0] == 1 && customersWeakRoute[i][customersWeakRoute[i].Count - 1] == 1);
+                Debug.Assert(customersWeakRoute[i][0] == 1 && customersWeakRoute[i][customersWeakRoute[i].Count - 1] == 1, "CustomerWeak - There is a customer path that not start or end on the depot");
             }
-            Debug.Assert(numberOfCustomers == customersCounter - (numberOfVehicles * 2) + 1);
+            Debug.Assert(numberOfCustomers == customersCounter - (numberOfVehicles * 2) + 1, "CustomerWeak - The number of total customers is incorrect on the travel");
 
             // All clusters are correct
-            List<int>[] vehicleRoute = clusterRouteForVehicule;
+            List <int>[] vehicleRoute = clusterRouteForVehicule;
             for (int vehicle = 0; vehicle < vehicleRoute.Length; vehicle++)
             {
                 List<int> clusterList = vehicleRoute[vehicle];
@@ -217,13 +217,13 @@ namespace cluvrp_grasp
                     List<int> clusterInstance = instance.clusters[clusterNumber].ToList<int>();
                     allClustersSizeSum += clusterInstance.Count;
                     bool containsAll = Functions.ContainsAllItems(cluster, clusterInstance);
-                    Debug.Assert(containsAll);
+                    Debug.Assert(containsAll, "CustomerWeak - All the clusters not contains the corrects customers");
                 }
-                Debug.Assert(customersWeakRoute[vehicle].Count == allClustersSizeSum);
+                Debug.Assert(customersWeakRoute[vehicle].Count == allClustersSizeSum, "The total sum of customers is not correct on the travel");
             }
 
             // Total distance is correct
-            Debug.Assert(Math.Truncate(totalCustomerRouteDistance) == Math.Truncate(Functions.calculateCustomerTotalTravelDistanceForVehicle(customersWeakRoute, instance.customersDistanceMatrix)));
+            Debug.Assert(Math.Truncate(totalCustomerRouteDistance) == Math.Truncate(Functions.calculateCustomerTotalTravelDistanceForVehicle(customersWeakRoute, instance.customersDistanceMatrix)), "CustomerWeak - The final distance is not correct");
 
         }
 

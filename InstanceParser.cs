@@ -13,7 +13,7 @@ namespace cluvrp_grasp
         static int GVRP_NODE_COORD_SECTION_IDX = 8;
         static int GVRP_NODE_COORD_SECTION_IDX_GOLDEN = 7;
         static int GVRP_NODE_COORD_SECTION_IDX_GOLDEN_IZQUIERDO = 8;
-        static int GOLDEN_IZQUIERDO_VEHICLES_NUMBER = int.MaxValue;
+        static bool NODES_TO_FILE = true;
 
         /*
          * 
@@ -136,6 +136,12 @@ namespace cluvrp_grasp
                 clusters_demand[i+1] = Int32.Parse(demandParsed[1]);
              }
 
+            // Output points instance file
+            if (NODES_TO_FILE)
+            {
+                pointsToFile(clusters, nodes, fileName);
+            }
+
             // Return parsed instance
             return new CluVRPInstance(Instance.GVRP, file_name, name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
                 nodes, clusters, clusters_demand, depot);
@@ -204,6 +210,12 @@ namespace cluvrp_grasp
                 clusters_demand[i + 1] = Int32.Parse(demandParsed[1]);
             }
 
+            // Output points instance file
+            if (NODES_TO_FILE)
+            {
+                pointsToFile(clusters, nodes, fileName);
+            }
+
             // Return parsed instance
             return new CluVRPInstance(Instance.GoldenBattarra, file_name, name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
                 nodes, clusters, clusters_demand, depot);
@@ -228,7 +240,7 @@ namespace cluvrp_grasp
             int[] demand = new int[dimension];
             int GVRP_DEMAND_SECTION_IDX = GVRP_NODE_COORD_SECTION_IDX_GOLDEN_IZQUIERDO + dimension + 1;
             int GVRP_CLUSTER_SECTION_IDX = GVRP_DEMAND_SECTION_IDX + dimension + 1;
-           
+
             // Separator for split
             String[] separator = new String[] { "  " };
 
@@ -298,10 +310,69 @@ namespace cluvrp_grasp
                 }
             }
 
+            // For this instance the vehicle number is free
+            int vehicles = clusters.Length - 1;
+
+            // Output points instance file
+            if (NODES_TO_FILE)
+            {
+                pointsToFile(clusters, nodes, fileName);
+            }
+
             // Return parsed instance
-            return new CluVRPInstance(Instance.GoldenIzquierdo, file_name, "", "", dimension, GOLDEN_IZQUIERDO_VEHICLES_NUMBER, clusters_demand.Length, capacity, edge_weight_type,
+            return new CluVRPInstance(Instance.GoldenIzquierdo, file_name, "", "", dimension, vehicles, clusters_demand.Length, capacity, edge_weight_type,
                 nodes, clusters, clusters_demand, depot);            
         }
 
+        static public void pointsToFile(int[][] clusters, NodePoint[] nodes, string fileName)
+        {
+
+            string[] abc = new string[]{ "a", "b", "c", "d", "f", "g", "h", "i", "j", "k", "l", "m", "k", "r", "t", "u", "v", "w", "y", "z",
+            "aa", "ab", "ac", "ad", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "ak", "ar", "at", "au", "av", "aw", "ay", "az",
+            "ca", "cb", "cc", "cd", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "ck", "cr", "ct", "cu", "cv", "cw", "cy", "cz"};
+
+            string[] colors = new string[] {"aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "green", "greenyellow", "grey", "honeydew", "hotpink", "indianred", "indigo", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "turquoise", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen"};
+
+            int color = 0;
+            int var1 = 0;
+            int var2 = 1;
+            fileName = fileName + ".points";
+
+            for (int clusterIt = 0; clusterIt < clusters.Length; clusterIt++)
+            {
+                string array1 = abc[var1] + "= [";
+                string array2 = abc[var2] + "= [";
+
+                for (int customerIt = 0; customerIt + 1 < clusters[clusterIt].Length; customerIt++)
+                {
+                    int customer = clusters[clusterIt][customerIt] - 1; 
+                    array1 += nodes[customer].x.ToString().Replace(',', '.') + ",";
+                    array2 += nodes[customer].y.ToString().Replace(',', '.') + ",";
+                }
+                int lastCustomer = clusters[clusterIt][clusters[clusterIt].Length - 1] - 1;
+                array1 += nodes[lastCustomer].x.ToString().Replace(',', '.') + "]";
+                array2 += nodes[lastCustomer].y.ToString().Replace(',', '.') + "]";
+
+                string array3 = "plt.plot(" + abc[var1] + "," + abc[var2] + ",'ro', color = '"+ colors[color] + "')";
+
+                try
+                {
+                    using (System.IO.StreamWriter file = System.IO.File.AppendText(fileName))
+                    {
+                        file.WriteLine(array1);
+                        file.WriteLine(array2);
+                        file.WriteLine(array3);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
+
+                var1 = (var1 + 2) % abc.Length;
+                var2 = (var2 + 2) % abc.Length;
+                color = (color + 1) % colors.Length;
+            }
+        }
     }
 }

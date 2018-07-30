@@ -403,8 +403,11 @@ namespace cluvrp_grasp
                 // For each vehicle 2
                 for (int vehicle2 = 0; vehicle2 < solution.clusterRouteForVehicule.Length; vehicle2++)
                 {
+                    // No empty vehicles for barreta instances
+                    bool notEmptyVehicle = !(solution.clusterRouteForVehicule[vehicle1].Count > 2 && (instance.instance_type == Instance.GoldenBattarra || instance.instance_type == Instance.GVRP));
+
                     // If not the same vehicle
-                    if (vehicle1 != vehicle2)
+                    if (vehicle1 != vehicle2 && notEmptyVehicle)
                     {
                         // For each cluster 1 on vehicle 1
                         for (int cluster1Idx = 1; cluster1Idx + 1 < solution.clusterRouteForVehicule[vehicle1].Count; cluster1Idx++)
@@ -598,8 +601,11 @@ namespace cluvrp_grasp
                 // Set improve to false
                 bool improve = false;
 
+                // No empty vehicles for barreta instances
+                bool notEmptyVehicle = !(solution.clusterRouteForVehicule[vehicle1].Count > 2 && (instance.instance_type == Instance.GoldenBattarra || instance.instance_type == Instance.GVRP));
+
                 // Verify if insert is possible
-                if (clusterV1 != 0 && vehicle1 != vehicle2 && solution.vehicleRemSpace[vehicle2] - clusterDemand[clusterV1] >= 0)
+                if (notEmptyVehicle && clusterV1 != 0 && vehicle1 != vehicle2 && solution.vehicleRemSpace[vehicle2] - clusterDemand[clusterV1] >= 0)
                 {
                     // Calculate old distances for each vehicle
                     double oldDistanceVehicle1 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle1], instance.clustersDistanceMatrix);
