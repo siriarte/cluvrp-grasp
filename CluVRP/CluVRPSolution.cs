@@ -2,11 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Diagnostics;
+using System.Text;
 
 namespace cluvrp_grasp
 {
     class CluVRPSolution
     {
+        // Configuration
+        const string PYTHON_PATH = "c:\\util\\Python\\Python36-32\\python.exe";
+
         // For cluster problem
         public List<int>[] clusterRouteForVehicule { set; get; }
         public double totalClusterRouteDistance { set; get; }
@@ -30,7 +34,7 @@ namespace cluvrp_grasp
             {
                 _vehiculeRouteDistance = value;
                 //totalCustomerRouteDistance = _vehiculeRouteDistance.Sum();
-             }
+            }
 
             get
             {
@@ -205,7 +209,7 @@ namespace cluvrp_grasp
             Debug.Assert(numberOfCustomers == customersCounter - (numberOfVehicles * 2) + 1, "CustomerWeak - The number of total customers is incorrect on the travel");
 
             // All clusters are correct
-            List <int>[] vehicleRoute = clusterRouteForVehicule;
+            List<int>[] vehicleRoute = clusterRouteForVehicule;
             for (int vehicle = 0; vehicle < vehicleRoute.Length; vehicle++)
             {
                 List<int> clusterList = vehicleRoute[vehicle];
@@ -256,7 +260,7 @@ namespace cluvrp_grasp
 
         // Check demand attended by vehicles is correct respect the capacity - FOR DEBUG
         public static void checkDemand(CluVRPInstance instance, List<int>[] clusterRouteForVehicule, int[] vehicleRemSpace)
-        {    
+        {
             // Vehicle remmaining capacity is correct respect to cluster demand
             int[] clusterDemand = instance.clusters_demand;
             int totalDemand = 0;
@@ -273,7 +277,7 @@ namespace cluvrp_grasp
 
                 // Sum the total demand of all vehicles
                 totalDemand += totalDemandOnVehicle;
-                
+
                 // Asserts
                 Debug.Assert(instance.capacity - totalDemandOnVehicle < 0);
                 Debug.Assert(instance.capacity - totalDemandOnVehicle != vehicleRemSpace[vehicle] || vehicleRemSpace[vehicle] < 0);
@@ -282,6 +286,139 @@ namespace cluvrp_grasp
             // Assert
             Debug.Assert(totalDemand == clusterDemand.Sum());
         }
-         
+
+        // Write a python script to draw the solution
+        public static void solutionDrawPythonCode(CluVRPInstance instance, CluVRPSolution solution)
+        {
+            // Lines of file
+            List<string> lines = new List<string>();
+
+            // Add initial lines to script
+            lines.Add("import matplotlib.pyplot as plt");
+            lines.Add("plt.figure(num=None, figsize=(24, 16), dpi=120, facecolor='w', edgecolor='k')");
+
+            // For python vars
+            string[] abc = new string[]{ "a", "b", "c", "d", "f", "g", "h", "i", "j", "k", "l", "m", "k", "r", "t", "u", "v", "w", "y", "z",
+            "aa", "ab", "ac", "ad", "af", "ag", "ah", "ai", "aj", "ak", "al", "am", "ak", "ar", "at", "au", "av", "aw", "ay", "az",
+            "ca", "cb", "cc", "cd", "cf", "cg", "ch", "ci", "cj", "ck", "cl", "cm", "ck", "cr", "ct", "cu", "cv", "cw", "cy", "cz"};
+
+            // Array of colors
+            string[] colors = new string[] { "aqua", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "green", "greenyellow", "grey", "honeydew", "hotpink", "indianred", "indigo", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "turquoise", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen" };
+            string[] vehicle_colors = new string[] { "red", "green", "blue", "orange", "purple", "cyan", "magenta", "lime", "pink", "teal", "lavender", "brown", "beige", "maroon", "mint", "olive", "coral", "navy", "grey", "white", "black" };
+
+            // Variables
+            int colorIt = 0;
+            int var1 = 0;
+            int var2 = 1;
+            string outFileName = instance.file_name + ".py";
+
+            // Code for draw the customers points
+            // All customers of one cluster have the same color
+            string array1 = abc[var1] + "= [" + instance.nodes[0].x.ToString().Replace(',', '.') + "]";
+            string array2 = abc[var2] + "= [" + instance.nodes[0].y.ToString().Replace(',', '.') + "]";
+            string array3 = "plt.plot(" + abc[0] + "," + abc[1] + ",'ro', markersize= 44, color = '" + colors[0] + "')";
+            lines.Add(array1);
+            lines.Add(array2);
+            lines.Add(array3);
+            var1 = var1 + 2;
+            var2 = var2 + 2;
+            colorIt++;
+            for (int clusterIt = 1; clusterIt < instance.clusters.Length; clusterIt++)
+            {                
+                array1 = abc[var1] + "= [";
+                array2 = abc[var2] + "= [";
+
+                for (int customerIt = 0; customerIt  < instance.clusters[clusterIt].Length; customerIt++)
+                {
+                    int customer = instance.clusters[clusterIt][customerIt] - 1;
+                    array1 += instance.nodes[customer].x.ToString().Replace(',', '.') + ",";
+                    array2 += instance.nodes[customer].y.ToString().Replace(',', '.') + ",";
+                }
+
+                StringBuilder sb = new StringBuilder(array1);
+                sb[sb.Length - 1] = ']';
+                array1 = sb.ToString();
+                sb = new StringBuilder(array2);
+                sb[sb.Length - 1] = ']';
+                array2 = sb.ToString();
+                array3 = "plt.plot(" + abc[var1] + "," + abc[var2] + ",'ro', color = '" + colors[colorIt] + "')";
+
+                // For centroides
+                var1 = (var1 + 2) % abc.Length;
+                var2 = (var1 + 2) % abc.Length;
+                string array4 = abc[var1] + "= [";
+                string array5 = abc[var2] + "= [";
+                array4 += instance.clustersCentroid[clusterIt].Item1.ToString().Replace(',', '.') + "]";
+                array5 += instance.clustersCentroid[clusterIt].Item2.ToString().Replace(',', '.') + "]";
+                string array6 = "plt.plot(" + abc[var1] + "," + abc[var2] + ",'ro',markersize=22, color = '" + colors[colorIt] + "')";
+                
+                // Write python code for clusters and customers
+                lines.Add(array1);
+                lines.Add(array2);
+                lines.Add(array3);
+                lines.Add(array4);
+                lines.Add(array5);
+                lines.Add(array6);
+
+                // Change color and variables name for next cluster
+                var1 = (var1 + 2) % abc.Length;
+                var2 = (var2 + 2) % abc.Length;
+                colorIt = (colorIt + 1) % colors.Length;
+            }
+
+            // Draw vehicle travel
+            var1 = 0;
+            var2 = 1; 
+            colorIt = 0;
+            for(int vehicle = 0; vehicle < solution.customersPaths.Length; vehicle++)
+            {
+                array1 = abc[var1] + "= [";
+                array2 = abc[var2] + "= [";
+                for(int clusterIt = 0; clusterIt < solution.customersPaths[vehicle].Length; clusterIt++)
+                {
+                    for(int customerIt = 0; customerIt < solution.customersPaths[vehicle][clusterIt].Count; customerIt++)
+                    {
+                        int customer = solution.customersPaths[vehicle][clusterIt][customerIt] - 1;
+                        array1 += instance.nodes[customer].x.ToString().Replace(',', '.') + ",";
+                        array2 += instance.nodes[customer].y.ToString().Replace(',', '.') + ",";
+                    }
+                }
+                StringBuilder sb = new StringBuilder(array1);
+                sb[sb.Length-1] = ']';
+                array1 = sb.ToString();
+                sb = new StringBuilder(array2);
+                sb[sb.Length - 1] = ']';
+                array2 = sb.ToString();
+                
+                array3 = "plt.plot(" + abc[var1] + "," + abc[var2] + ", color = '" + vehicle_colors[colorIt] + "')";
+
+                // Write python code for clusters and customers
+                lines.Add(array1);
+                lines.Add(array2);
+                lines.Add(array3);
+                
+                // Change color and variables name for next cluster
+                var1 = (var1 + 2) % abc.Length;
+                var2 = (var2 + 2) % abc.Length;
+                colorIt = (colorIt + 1) % vehicle_colors.Length;
+            }
+
+            // Add final line
+            lines.Add("plt.savefig('" + instance.file_name + ".png')");
+
+            // Write file
+            try
+            {
+                System.IO.File.WriteAllLines(outFileName, lines);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+
+            // Excute script
+            System.Diagnostics.Process.Start(PYTHON_PATH, outFileName);
+        }
+
     }
 }

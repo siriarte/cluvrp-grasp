@@ -18,6 +18,7 @@ namespace cluvrp_grasp
             long elapsedMs = 0;
 
             // For best solution set
+            Dictionary<CluVRPInstance, CluVRPSolution> bestSolutionForInstance = new Dictionary<CluVRPInstance, CluVRPSolution>();
             CluVRPSolution solution = new CluVRPSolution();
             double[] bestIndividualTotalDistance = new double[solutionToCompare.Length];
             double[] bestIndividualPropDistance = new double[solutionToCompare.Length];
@@ -96,19 +97,21 @@ namespace cluvrp_grasp
                     if (solution.clusterRouteForVehicule == null)
                     {
                         logger.logLine(instance.file_name + '\t' + "No solution for this instance");
-                        propDistances[instanceCounter] = double.MaxValue;
+                        propDistances[instanceCounter] = 10;
                         instanceCounter++;
                         continue;
                     }
 
                     // Sets strings to show - FOR DEBUG
-                    string algorithm = '[' + string.Join(",", solution.fitAlgorithmCounter) + ']';
                     string s1 = instance.file_name + '\t' + solution.totalCustomerRouteDistance + '\t' +
-                        parameters.Cluster_AlphaCapacity + '\t' + parameters.Cluster_AlphaDistance + '\t' + algorithm;
+                        parameters.Cluster_AlphaCapacity + '\t' + parameters.Cluster_AlphaDistance + '\t';
                     //Console.WriteLine(s1);
 
                     // For this instance solution
                     distance = solution.totalCustomerRouteDistance;
+                    //solution.customersPaths[0][5][0] = 20;
+                    //solution.customersPaths[0][5][1] = 19;
+                    //distance = Functions.calculateTotalTravelDistance(solution.customersPaths, instance.customersDistanceMatrix);
                     if (instance.instance_type == Instance.GoldenIzquierdo)
                     {
                         distance = Math.Truncate(100 * distance) / 100;
@@ -117,7 +120,6 @@ namespace cluvrp_grasp
                     {
                         distance = Math.Truncate(distance);
                     }
-                    fitAlgoBestSol = algorithm;
                     LSClusterOrder.Add(solution.bestClusterLSOrder);
                     LSCustomerOrder.Add(solution.bestCustomerLSOrder);
     
@@ -142,6 +144,7 @@ namespace cluvrp_grasp
                         bestIndividualPropDistance[instanceCounter] = Math.Truncate(100 * bestIndividualPropDistance[instanceCounter]) / 100;
                         bestIndividualParameteres[instanceCounter] = actualParameters;
                         bestIndividualTime[instanceCounter] = elapsedSeconds;
+                        bestSolutionForInstance[instance] = solution;
                     }
 
                     // Log solution
@@ -270,6 +273,14 @@ namespace cluvrp_grasp
                 logger.logLine("*****************************");
                 logger.logLine(bestIndividualParameteres[i].ToString());
             }
+            
+            foreach (CluVRPInstance instance in bestSolutionForInstance.Keys)
+            {
+                CluVRPSolution.solutionDrawPythonCode(instance, bestSolutionForInstance[instance]);
+            }
+
+            // Pause
+            //System.Console.ReadKey();
 
             // End
             return;

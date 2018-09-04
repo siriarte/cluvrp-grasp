@@ -32,6 +32,10 @@ namespace cluvrp_grasp
      */
     class CluVRPInstance
     {
+
+        // Cluster distance criteria
+        public static int CLUSTER_DISTANCE_CRITERIA = 0;
+
         // Attributes for a CluVRP instance
         public Instance instance_type { get; set; }
         public string file_name { get; set; }
@@ -46,11 +50,12 @@ namespace cluvrp_grasp
         public int[][] clusters { get; set; }
         public int[] clusters_demand { get; set; }
         public int depot { get; set; }
-
+        
         // Distance matrices using on the solutions
         public double[][] clustersDistanceMatrix { set; get; }
         public double[][] customersDistanceMatrix { set; get; }
         public double[] suffleRandomAverageClusterDistance { set; get; }
+        public Tuple<double, double>[] clustersCentroid { set; get; }
 
         // Constructor
         public CluVRPInstance(Instance instance_type, string file_name, string name, string comment, int dimension, int vehicules, int gvrp_sets, 
@@ -71,6 +76,9 @@ namespace cluvrp_grasp
             this.clusters = clusters;
             this.clusters_demand = clusters_demand;
             this.depot = depot;
+
+            // Cluster centroids
+            calculateCentroidOfCluster();
 
             // Calculate all the neccesary distance matrices
             calculateCustomersDistanceMatrix();
@@ -106,8 +114,19 @@ namespace cluvrp_grasp
                     int[] cluster2 = clusters[clusterIt2];
 
                     // Calculate best distance between 2 cluster
-                    double distance = bestDistanceBetween2Clusters(cluster1, cluster2);
-
+                    double distance;
+                    if (CLUSTER_DISTANCE_CRITERIA == 0)
+                    {
+                        distance = bestDistanceBetween2Clusters(cluster1, cluster2);
+                    }
+                    else
+                    {
+                        distance = Functions.distance(clustersCentroid[clusterIt1].Item1,
+                            clustersCentroid[clusterIt1].Item2,
+                            clustersCentroid[clusterIt2].Item1,
+                            clustersCentroid[clusterIt2].Item2);
+                    }
+                    
                     // Update matrix value
                     clustersDistanceMatrix[clusterIt1][clusterIt2] = distance;
                 }
@@ -212,6 +231,31 @@ namespace cluvrp_grasp
 
             // Return min distance
             return minDistance;
+        }
+
+        private void calculateCentroidOfCluster()
+        {
+            Tuple<double, double>[] clustersCentroid = new Tuple<double, double>[clusters.Length];
+
+            for(int clusterIt = 0; clusterIt < clusters.Length; clusterIt++)
+            {
+                double sumX = 0;
+                double sumY = 0;
+
+                for(int customerIt = 0; customerIt < clusters[clusterIt].Length; customerIt++)
+                {
+                    int customer = clusters[clusterIt][customerIt] - 1;
+                    sumX+= nodes[customer].x;
+                    sumY += nodes[customer].y;
+                }
+
+                sumX = sumX / clusters[clusterIt].Length;
+                sumY = sumY / clusters[clusterIt].Length;
+
+                clustersCentroid[clusterIt] = new Tuple<double, double>(sumX, sumY);
+            }
+
+            this.clustersCentroid = clustersCentroid;
         }
 
     }

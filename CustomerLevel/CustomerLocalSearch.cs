@@ -74,7 +74,7 @@ namespace cluvrp_grasp
                                 double newDistance = Functions.calculateInOutAndPathDistance(customersCircuit[vehicle], clusterIt, instance.customersDistanceMatrix);
 
                                 // If distance if better
-                                if (newDistance + 0.0001 < bestDistance)
+                                if (newDistance + 0.000001 < bestDistance)
                                 {                                    
                                     // Update best distance
                                     this.solution.vehiculeRouteDistance[vehicle] = Functions.calculateTotalTravelDistance(customersCircuit, instance.customersDistanceMatrix, vehicle);
@@ -206,7 +206,7 @@ namespace cluvrp_grasp
             var newDistance = solution.vehiculeRouteDistance[vehicle] - _a - _b + _C + _A + _B - _c;
 
             // If new distance is better
-            if (newDistance + 0.0001 < solution.vehiculeRouteDistance[vehicle])
+            if (newDistance + 0.000001 < solution.vehiculeRouteDistance[vehicle])
             {
                 // Perform realocate
                 int customer = route[i];
@@ -339,7 +339,7 @@ namespace cluvrp_grasp
                 new_distance_j_left + new_distance_j_right;
 
             // If new distance is better
-            if (newDistance + 0.0001 < this.solution.vehiculeRouteDistance[vehicle])
+            if (newDistance + 0.000001 < this.solution.vehiculeRouteDistance[vehicle])
             {                
                 // Perform exchange
                 int customer = route[i];
@@ -361,13 +361,21 @@ namespace cluvrp_grasp
         // Swap Algorithm
         public void SwapCustomers()
         {
+
             // For each vehicle
             for (int vehicle = 0; vehicle < solution.customersPaths.Length; vehicle++)
             {
-
                 // For each cluster
-                for (int cluster = 1; cluster < solution.customersPaths[vehicle].Length - 1; cluster++)
+                for (int clusterIt = 1; clusterIt < solution.customersPaths[vehicle].Length - 1; clusterIt++)
                 {
+                    // For random order on iterations
+                    List<int> rndPosition = new List<int>();
+                    for (int i = 1; i < solution.customersPaths[vehicle].Length - 1; i++) rndPosition.Add(i);
+                    Functions.Shuffle<int>(new Random(), rndPosition);
+
+                    // Select cluster random
+                    int cluster = rndPosition[clusterIt-1];
+
                     // Calculate path distance including In and Out of cluster
                     double bestDistance = Functions.calculateInOutAndPathDistance(solution.customersPaths[vehicle], cluster, instance.customersDistanceMatrix);
 

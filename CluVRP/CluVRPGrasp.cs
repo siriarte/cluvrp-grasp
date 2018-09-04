@@ -6,8 +6,8 @@ using System.Threading.Tasks;
 
 namespace cluvrp_grasp
 {
-    enum CluVRPVersion {TwoPhase, Complete}
-    enum CluVRPType { Normal, Weak}
+    enum CluVRPVersion { TwoPhase, Complete }
+    enum CluVRPType { Normal, Weak }
 
     class CluVRPGrasp
     {       
@@ -18,18 +18,6 @@ namespace cluvrp_grasp
             // For best solution
             CluVRPSolution bestSolution = new CluVRPSolution();
           
-            // If version is complete internal cluster and grasp iteration must be only one
-            if (parameters.CluVRP_Version == CluVRPVersion.Complete)
-            {
-                parameters.Cluster_GRASPIterations = 1;
-                parameters.Customer_GRASPIterations = 1;
-            }
-            // If version is twophase only one main iteration is necesary
-            else if (parameters.CluVRP_Version == CluVRPVersion.TwoPhase)
-            {
-                parameters.CluVRP_GRASPIterations = 1;
-            }
-
             // Main cycle
             int iterator = 0;
             while(iterator < parameters.CluVRP_GRASPIterations)
@@ -40,37 +28,24 @@ namespace cluvrp_grasp
                 // Execute Grasp procedure
                 CluVRPSolution cluVRPSolution = clusterGrasp.Grasp();
 
-                // If solution is NULL and algorithm is RCL and grasp is COMPLETE version
-                // Try with bestFit
-                if (cluVRPSolution.clusterRouteForVehicule == null &&
-                   parameters.Cluster_FitAlgoritm == FitAlgorithm.RCL &&
-                   parameters.CluVRP_Version == CluVRPVersion.Complete)
+                // If solutions is not available avalaible
+                if (cluVRPSolution.clusterRouteForVehicule == null)
                 {
-                    // Change fit algorithm
-                    parameters.Cluster_FitAlgoritm = FitAlgorithm.BestFit;
-
-                    // Execute Grasp procedure
-                    cluVRPSolution = clusterGrasp.Grasp();
-
-                    // Change back fit algorithm
-                    parameters.Cluster_FitAlgoritm = FitAlgorithm.RCL;
+                    continue;
                 }
+          
+                // Verify if cluster solution is correct
+                cluVRPSolution.verifyClusterSolution(instance);
 
-                // If solutions is avalaible
-                if (cluVRPSolution.clusterRouteForVehicule != null)
-                {
-                    // Verify if cluster solution is correct
-                    cluVRPSolution.verifyClusterSolution(instance);
+                // New Grasp for Cluster level instance
+                CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution, parameters);
 
-                    // New Grasp for Cluster level instance
-                    CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution, parameters);
+                // Execute Grasp procedure
+                customerGrasp.Grasp();
 
-                    // Execute Grasp procedure
-                    customerGrasp.Grasp();
-
-                    // Verify if customer solution is correct
-                    cluVRPSolution.verifyCustomerSolution(instance);
-                }
+                // Verify if customer solution is correct
+                cluVRPSolution.verifyCustomerSolution(instance);
+                
 
                 // Update best solution
                 if (cluVRPSolution.totalCustomerRouteDistance < bestSolution.totalCustomerRouteDistance)
@@ -92,18 +67,6 @@ namespace cluvrp_grasp
             // For best solution
             CluVRPSolution bestSolution = new CluVRPSolution();
 
-            // If version is complete internal cluster and grasp iteration must be only one
-            if (parameters.CluVRP_Version == CluVRPVersion.Complete)
-            {
-                parameters.Cluster_GRASPIterations = 1;
-                parameters.Customer_GRASPIterations = 1;
-            }
-            // If version is twophase only one main iteration is necesary
-            else if (parameters.CluVRP_Version == CluVRPVersion.TwoPhase)
-            {
-                parameters.CluVRP_GRASPIterations = 1;
-            }
-
             // Main cycle
             int iterator = 0;
             while (iterator < parameters.CluVRP_GRASPIterations)
@@ -114,38 +77,24 @@ namespace cluvrp_grasp
                 // Execute Grasp procedure
                 CluVRPSolution cluVRPSolution = clusterGrasp.Grasp();
 
-                // If solution is NULL and algorithm is RCL and grasp is COMPLETE version
-                // Try with bestFit
-                if (cluVRPSolution.clusterRouteForVehicule == null &&
-                   parameters.Cluster_FitAlgoritm == FitAlgorithm.RCL &&
-                   parameters.CluVRP_Version == CluVRPVersion.Complete)
+                // If solutions is not avalaible continue next iteration
+                if (cluVRPSolution.clusterRouteForVehicule == null)
                 {
-                    // Change fit algorithm
-                    parameters.Cluster_FitAlgoritm = FitAlgorithm.BestFit;
-
-                    // Execute Grasp procedure
-                    cluVRPSolution = clusterGrasp.Grasp();
-
-                    // Change back fit algorithm
-                    parameters.Cluster_FitAlgoritm = FitAlgorithm.RCL;
+                    continue;
                 }
+                
+                // Verify if cluster solution is correct
+                cluVRPSolution.verifyClusterSolution(instance);
 
-                // If solutions is avalaible
-                if (cluVRPSolution.clusterRouteForVehicule != null)
-                {
-                    // Verify if cluster solution is correct
-                    cluVRPSolution.verifyClusterSolution(instance);
+                // New Grasp for Cluster level instance
+                CustomerWeakGRASP customerGrasp = new CustomerWeakGRASP(instance, cluVRPSolution, parameters);
 
-                    // New Grasp for Cluster level instance
-                    CustomerWeakGRASP customerGrasp = new CustomerWeakGRASP(instance, cluVRPSolution, parameters);
+                // Execute Grasp procedure
+                customerGrasp.Grasp();
 
-                    // Execute Grasp procedure
-                    customerGrasp.Grasp();
-
-                    // Verify if customer solution is correct
-                    cluVRPSolution.verifyCustomerWeakSolution(instance);
-                }
-
+                // Verify if customer solution is correct
+                cluVRPSolution.verifyCustomerWeakSolution(instance);
+                
                 // Update best solution
                 if (cluVRPSolution.totalCustomerRouteDistance < bestSolution.totalCustomerRouteDistance)
                 {

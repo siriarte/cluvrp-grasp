@@ -13,7 +13,6 @@ namespace cluvrp_grasp
         static int GVRP_NODE_COORD_SECTION_IDX = 8;
         static int GVRP_NODE_COORD_SECTION_IDX_GOLDEN = 7;
         static int GVRP_NODE_COORD_SECTION_IDX_GOLDEN_IZQUIERDO = 8;
-        static bool NODES_TO_FILE = true;
 
         /*
          * 
@@ -136,12 +135,6 @@ namespace cluvrp_grasp
                 clusters_demand[i+1] = Int32.Parse(demandParsed[1]);
              }
 
-            // Output points instance file
-            if (NODES_TO_FILE)
-            {
-                pointsToFile(clusters, nodes, fileName);
-            }
-
             // Return parsed instance
             return new CluVRPInstance(Instance.GVRP, file_name, name, comment, dimension, vehicules, gvrp_sets, capacity, edge_weight_type,
                 nodes, clusters, clusters_demand, depot);
@@ -208,12 +201,6 @@ namespace cluvrp_grasp
             {
                 string[] demandParsed = instanceText[GVRP_DEMAND_SECTION_IDX + i].Split(new String[] { " " }, StringSplitOptions.RemoveEmptyEntries);
                 clusters_demand[i + 1] = Int32.Parse(demandParsed[1]);
-            }
-
-            // Output points instance file
-            if (NODES_TO_FILE)
-            {
-                pointsToFile(clusters, nodes, fileName);
             }
 
             // Return parsed instance
@@ -312,12 +299,6 @@ namespace cluvrp_grasp
 
             // For this instance the vehicle number is free
             int vehicles = clusters.Length - 1;
-
-            // Output points instance file
-            if (NODES_TO_FILE)
-            {
-                pointsToFile(clusters, nodes, fileName);
-            }
 
             // Return parsed instance
             return new CluVRPInstance(Instance.GoldenIzquierdo, file_name, "", "", dimension, vehicles, clusters_demand.Length, capacity, edge_weight_type,

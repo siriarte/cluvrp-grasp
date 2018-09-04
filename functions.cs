@@ -52,15 +52,18 @@ namespace cluvrp_grasp
             string separator = "\n";
             string ret = "";
 
-            // For cluster
+            // For GRASP
             ret += "CLUVRP GRASP VERSION = " + parameters.CluVRP_Version + separator;
             ret += "CLUVRP GRASP ITERATIONS = " + parameters.CluVRP_GRASPIterations + separator;
+            ret += "CLUVRP CLUSTER GRASP ITERATIONS = " +  parameters.Cluster_GRASPIterations + separator;
+            ret += "CLUVRP CUSTOMER GRASP ITERATIONS = " + parameters.Customer_GRASPIterations + separator;
             ret += "CLUVRP MAIN LS ITERATIONS = " + parameters.CluVRP_LS_Main_Iterations + separator;
-            ret += "CLUSTER GRASP ITERATIONS = " +  parameters.Cluster_GRASPIterations + separator;
+            ret += separator;
+
+            // For cluster
+            ret += "CLUSTER FIT ALGORITHM = " + parameters.Cluster_FitAlgoritm + separator;
             ret += "CLUSTER ALPHA CAPACITY = " + parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
             ret += "CLUSTER ALPHA DISTANCE = " + parameters.Cluster_AlphaDistance.ToString("0.0") + separator;
-            ret += "CLUSTER FIT ALGORITHM = " + parameters.Cluster_FitAlgoritm + separator;
-            ret += "CLUSTER LS ORDER = " + '[' + string.Join(",", parameters.Cluster_LS_Order) + ']' + separator;
             ret += "CLUSTER LS SWAP VEHICLE = " + parameters.Cluster_LS_SwapVehicle.ToString() + separator;
             ret += "CLUSTER LS INSERT VEHICLE = " + parameters.Cluster_LS_InsertVehicle.ToString() + separator;
             ret += "CLUSTER LS RND SWAP VEHICLE = " +  parameters.Cluster_LS_RndSwapVehicle + separator;
@@ -68,15 +71,16 @@ namespace cluvrp_grasp
             ret += "CLUSTER LS TWO-OPT = " + parameters.Cluster_LS_TwoOpt_Iterations + separator;
             ret += "CLUSTER LS RELOCATE = " + parameters.Cluster_LS_Relocate_Iterations + separator;
             ret += "CLUSTER LS EXCHANGE = " + parameters.Cluster_LS_Exchange_Iterations + separator;
+            ret += "CLUSTER LS ORDER = " + '[' + string.Join(",", parameters.Cluster_LS_Order) + ']' + separator;
+            ret += separator;
 
             // For customer
-            ret += "CUSTOMER GRASP ITERATIONS = " + parameters.Customer_GRASPIterations + separator;
             ret += "CUSTOMER ALPHA = " + parameters.Customer_Alpha.ToString("0.0") + separator;
-            ret += "CUSTOMER LS ORDER = " + '[' + string.Join(",", parameters.Customer_LS_Order) + ']' + separator;
             ret += "CUSTOMER LS SWAP CUSTOMERS = " + parameters.Customer_LS_SwapCustomers + separator;
             ret += "CUSTOMER LS TWO-OPT = " + parameters.Customer_LS_TwoOpt_Iterations + separator;
             ret += "CUSTOMER LS RELOCATE = " + parameters.Customer_LS_Relocate_Iterations + separator;
             ret += "CUSTOMER LS EXCHANGE = " + parameters.Customer_LS_Exchange_Iterations + separator;
+            ret += "CUSTOMER LS ORDER = " + '[' + string.Join(",", parameters.Customer_LS_Order) + ']' + separator;
 
             // Return string
             return ret;
@@ -312,6 +316,51 @@ namespace cluvrp_grasp
 
             return distance;
         }
+
+        internal static double maxClusterDistanceFromVehicle(List<int> clustersToVisit, int lastClusterOnVehicle, double[][] clustersDistanceMatrix)
+        {
+            double max = double.MinValue;
+            for (int i = 0; i < clustersToVisit.Count; i++)
+            {
+                max = Math.Max(clustersDistanceMatrix[clustersToVisit[i]][lastClusterOnVehicle], max);
+            }
+            return max;
+        }
+
+        internal static double minClusterDistanceFromVehicle(List<int> clustersToVisit, int lastClusterOnVehicle, double[][] clustersDistanceMatrix)
+        {
+            double min = double.MaxValue;
+            for(int i = 0; i < clustersToVisit.Count; i++)
+            {
+                min = Math.Min(clustersDistanceMatrix[clustersToVisit[i]][lastClusterOnVehicle], min);
+            }
+            return min;
+        }
+
+        internal static double maxClusterDistanceFromVehicleAndToDepot(List<int> clustersToVisit, int lastClusterOnVehicle, double[][] clustersDistanceMatrix)
+        {
+            double max = double.MinValue;
+            for (int i = 0; i < clustersToVisit.Count; i++)
+            {
+                double dist = clustersDistanceMatrix[clustersToVisit[i]][lastClusterOnVehicle] +
+                    clustersDistanceMatrix[clustersToVisit[i]][0];
+                max = Math.Max(dist, max);
+            }
+            return max;
+        }
+
+        internal static double minClusterDistanceFromVehicleAndToDepot(List<int> clustersToVisit, int lastClusterOnVehicle, double[][] clustersDistanceMatrix)
+        {
+            double min = double.MaxValue;
+            for (int i = 0; i < clustersToVisit.Count; i++)
+            {
+                double dist = clustersDistanceMatrix[clustersToVisit[i]][lastClusterOnVehicle] +
+                    clustersDistanceMatrix[clustersToVisit[i]][0];
+                min = Math.Min(dist, min);
+            }
+            return min;
+        }
+
 
         // Verify is cluster route is valid (start and end in depot)
         public static bool isValidClusterRoute(List<int> route)

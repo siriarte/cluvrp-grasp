@@ -68,7 +68,7 @@ namespace cluvrp_grasp
                             double newDistance = Functions.calculateCustomerTravelDistanceForVehicle(customersCircuit[vehicle], instance.customersDistanceMatrix);
 
                             // If distance if better
-                            if (newDistance + 0.0001 < bestDistance && isValidRoute(newRoute))
+                            if (newDistance + 0.000001 < bestDistance && isValidRoute(newRoute))
                             {
                                 // Update best distance
                                 this.solution.vehiculeRouteDistance[vehicle] = newDistance;
@@ -193,7 +193,7 @@ namespace cluvrp_grasp
 
             // If new distance is better
             int lastCustomerIndex = route.Count - 1;
-            if (newDistance + 0.0001 < solution.vehiculeRouteDistance[vehicle] && 
+            if (newDistance + 0.000001 < solution.vehiculeRouteDistance[vehicle] && 
                 i != 0 && i != lastCustomerIndex && j != 0 && j != lastCustomerIndex)
             {
                 // Perform realocate
@@ -324,7 +324,7 @@ namespace cluvrp_grasp
 
             // If new distance is better
             int lastCustomerIndex = route.Count - 1;
-            if (newDistance + 0.0001 < this.solution.vehiculeRouteDistance[vehicle] &&
+            if (newDistance + 0.000001 < this.solution.vehiculeRouteDistance[vehicle] &&
                 i != 0 && i != lastCustomerIndex && j != 0 && j != lastCustomerIndex)
             {
                 // Perform exchange

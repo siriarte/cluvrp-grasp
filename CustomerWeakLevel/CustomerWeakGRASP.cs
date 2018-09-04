@@ -44,18 +44,18 @@ namespace cluvrp_grasp
         }
 
         /*
-          * 
-          * Grasp():
-          * M <- calculateCustomerDistance
-          * BestSolution = 0
-          * While(StopCondition)
-          *      Solution <- ConstructGreedySolution()
-          *      NewSolution <- LocalSearch(solution)
-          *      if NewSolution isBetterThan BestSolution
-          *          BestSolution = NewSolution
-          * return BestSolution
-          *
-          */
+        * 
+        * Grasp():
+        * M <- calculateCustomerDistance
+        * BestSolution = 0
+        * While(StopCondition)
+        *      Solution <- ConstructGreedySolution()
+        *      NewSolution <- LocalSearch(solution)
+        *      if NewSolution isBetterThan BestSolution
+        *          BestSolution = NewSolution
+        * return BestSolution
+        *
+        */
         public void Grasp()
         {
             // Set iterator
@@ -102,7 +102,7 @@ namespace cluvrp_grasp
 
         /*
          *
-         * Gruop all customer for each cluster for each vehicle
+         * Group all customer for each cluster for each vehicle
          *
          *
          */
