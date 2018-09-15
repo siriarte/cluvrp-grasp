@@ -9,7 +9,7 @@ namespace cluvrp_grasp
     class Program
     {
         // Main Function
-        static void GraspProcedure(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare, CluVRPType cluvrpType = CluVRPType.Normal)
+        static void GraspProcedureCycleParameters(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare, CluVRPType cluvrpType = CluVRPType.Normal)
         {
             // Star watch to calculate total process time
             var totalWatch = System.Diagnostics.Stopwatch.StartNew();
@@ -34,7 +34,7 @@ namespace cluvrp_grasp
             string bestSolParameters = "";
             double totalAvg = double.MaxValue;
             double totalAvgTime = double.MaxValue;
-
+ 
             // Get parameters to run instances
             List<Parameters> parametersList = Parameters.parseParameterFile(parametersFilePath);
 
@@ -286,6 +286,204 @@ namespace cluvrp_grasp
             return;
         }
 
+        // Main Function
+        static void GraspProcedure(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare, CluVRPType cluvrpType = CluVRPType.Normal)
+        {
+
+            // Star watch to calculate total process time
+            var totalWatch = System.Diagnostics.Stopwatch.StartNew();
+
+            // For watch for each instance execution
+            long elapsedMs = 0;
+
+            // Number of instances
+            int instancesNumber = solutionToCompare.Length;
+
+            // For best results 
+            Dictionary<CluVRPInstance, CluVRPSolution> bestSolutionForInstance = new Dictionary<CluVRPInstance, CluVRPSolution>();
+            CluVRPSolution solution = new CluVRPSolution();
+            double[] bestSolutionTotalDistance = new double[instancesNumber];
+            double[] bestSolutionPropDistance = new double[instancesNumber];
+            double[] bestSolutionTime = new double[instancesNumber];
+            Functions.Populate(bestSolutionTotalDistance, double.MaxValue);
+            string[] bestSolutionParameters = new string[instancesNumber];
+            
+            // For Average results
+            double[] totalDistance = new double[instancesNumber];
+            double[] totalTime = new double[instancesNumber];
+            double[] solutionAvgPropDistance = new double[instancesNumber];
+            int[] instanceOKsolutions = new int[instancesNumber];
+
+            // Get parameters to run instances
+            List<Parameters> parametersList = Parameters.parseParameterFile(parametersFilePath);
+
+            // Get logger
+            Logger logger = Logger.GetInstance();
+
+            // To logger verbose on
+            logger.setVerbose(true);
+            logger.setLogFilePath(logFilePath);
+
+            // Get instances 
+            CluVRPInstance[] instancias = InstanceParser.loadGVRPSetOfInstances(instanceSetFilePath);
+
+            // Log run
+            logger.logLine("*****************************************************" + '\n' +
+                            "* STARTING TEST:" + '\n' +
+                            "* CONFIG -> " + parametersFilePath + '\n' +
+                            "* SET INSTANCE -> " + instanceSetFilePath + '\n' +
+                            "* LOG FILE -> " + logger.getLogFilePath() + '\n' +
+                            "******************************************************" + '\n');
+
+            // For each instance
+            int instanceIterator = 0;
+            foreach (CluVRPInstance instance in instancias)
+            {
+                // For this instance
+                double distance;
+
+                // For each parameter configuration
+                foreach (Parameters parameters in parametersList)
+                {
+                    // Star watch to calculate time
+                    var watch = System.Diagnostics.Stopwatch.StartNew();
+
+                    // Actual Parameter
+                    string actualParameters = Functions.parametersToString(parameters);
+                    //logger.logLine(actualParameters);
+
+                    // Calculate solution for normal CluVRP or weak cluster constrains
+                    if (cluvrpType == CluVRPType.Normal)
+                    {
+                        solution = CluVRPGrasp.Grasp(instance, parameters);
+                    }
+                    else
+                    {
+                        solution = CluVRPGrasp.GraspForWeakCustomer(instance, parameters);
+                    }
+
+                    // If not possible solution
+                    if (solution.clusterRouteForVehicule == null)
+                    {
+                        continue;
+                    }
+
+                    // Increase instance OK solution iteration
+                    instanceOKsolutions[instanceIterator]++;
+   
+                    // For this instance solution
+                    distance = solution.totalCustomerRouteDistance;                    
+
+                    // Izquierdo instances results are not integers
+                    if (instance.instance_type == Instance.GoldenIzquierdo)
+                    {
+                        distance = Math.Truncate(100 * distance) / 100;
+                    }
+                    else
+                    {
+                        distance = Math.Truncate(distance);
+                    }
+
+                    // Stop timer watchers
+                    watch.Stop();
+
+                    // Set execution time
+                    elapsedMs = watch.ElapsedMilliseconds;
+                    double elapsedSeconds = Math.Round(elapsedMs * 1.0 / 1000, 2);
+
+                    // Update solution results
+                    totalDistance[instanceIterator] += distance;
+                    totalTime[instanceIterator] += elapsedSeconds;
+
+                    // Update individual instance solution
+                    if (distance < bestSolutionTotalDistance[instanceIterator])
+                    {
+                        bestSolutionTotalDistance[instanceIterator] = distance;
+                        bestSolutionPropDistance[instanceIterator] = (distance - solutionToCompare[instanceIterator]) * 100 / solutionToCompare[instanceIterator];
+                        bestSolutionPropDistance[instanceIterator] = Math.Truncate(100 * bestSolutionPropDistance[instanceIterator]) / 100;
+                        bestSolutionParameters[instanceIterator] = actualParameters;
+                        bestSolutionTime[instanceIterator] = elapsedSeconds;
+                        bestSolutionForInstance[instance] = solution;
+                    }
+
+                }
+
+                // Calculate averages
+                double averageDistance = totalDistance[instanceIterator] / instanceOKsolutions[instanceIterator];
+                double averageTime = totalTime[instanceIterator] / instanceOKsolutions[instanceIterator];
+                averageTime = Math.Round(averageTime, 2);
+                double averagePropDistance = (averageDistance - solutionToCompare[instanceIterator]) * 100 / solutionToCompare[instanceIterator];
+                averagePropDistance = Math.Truncate(100 * averagePropDistance) / 100;
+                bestSolutionPropDistance[instanceIterator] = Math.Truncate(100 * bestSolutionPropDistance[instanceIterator]) / 100;
+                solutionAvgPropDistance[instanceIterator] = averagePropDistance;
+
+                // For log solution
+                string s_distance;
+                string s_averageDistance;
+                string s_bestSolutionPropDistance = bestSolutionPropDistance[instanceIterator].ToString("0.00");
+                string s_bestSolutionTime = bestSolutionTime[instanceIterator].ToString("0.00");
+                string s_averagePropDistance = averagePropDistance.ToString("0.00");
+                string s_averageTime = averageTime.ToString("0.00");
+                string s_fileName = Path.GetFileName(instancias[instanceIterator].file_name);
+                if (instance.instance_type == Instance.GoldenIzquierdo)
+                {
+                    s_distance = bestSolutionTotalDistance[instanceIterator].ToString("0.00");
+                    s_averageDistance = averageDistance.ToString("0.00");
+                }
+                else
+                {
+                    s_distance = bestSolutionTotalDistance[instanceIterator].ToString("0");
+                    s_averageDistance = averageDistance.ToString("0");
+                }
+
+                // Print solution
+                string outLine = s_fileName + '\t' + '\t' + s_distance + '\t' + s_bestSolutionPropDistance + "%" + '\t' + s_bestSolutionTime + "s" + '\t' + '\t' + s_averageDistance + '\t' + s_averagePropDistance + "%" + '\t' +  s_averageTime + "s";
+                logger.logLine(outLine);
+
+                // Increase distance counter
+                instanceIterator++;
+            }
+               
+            // Stop timer watchers
+            totalWatch.Stop();
+            var totalElapsedseconds = totalWatch.ElapsedMilliseconds / 1000;
+
+            // Total values
+            string s_totalPropBestDistance = (bestSolutionPropDistance.Sum() / instancesNumber).ToString("0.00");
+            string s_totalPropAvgDistance = (solutionAvgPropDistance.Sum() / instancesNumber).ToString("0.00");
+
+            // Show parameters for best solution
+            logger.logLine("");
+            logger.logLine("*************************************");
+            logger.logLine("* PARAMETERS FOR BEST SOLUTIONS:    *");
+            logger.logLine("*************************************");
+            logger.logLine("TOTAL TIME -> " + totalElapsedseconds + " seconds");
+            logger.logLine("TOTAL BEST PROP DISTANCE -> " + s_totalPropBestDistance + "%");
+            logger.logLine("TOTAL AVG PROP DISTANCE -> " + s_totalPropAvgDistance + "%");
+            logger.logLine("");
+            for (int i = 0; i < bestSolutionParameters.Length; i++)
+            {
+                logger.logLine("-----------------------------------------------------------------");
+                logger.logLine("");
+                logger.logLine("CONFIGURATION FOR INSTANCE " + i);
+                logger.logLine("*****************************");
+                logger.logLine(bestSolutionParameters[i].ToString());
+            }
+          
+            // Draw PNG solution
+            foreach (CluVRPInstance instance in bestSolutionForInstance.Keys)
+            {
+                CluVRPSolution.solutionDrawPythonCode(instance, bestSolutionForInstance[instance]);
+            }
+
+            // Pause
+            //System.Console.ReadKey();
+
+            // End
+            return;
+        }
+
+        // Main call
         static void Main(string[] args)
         {
 
@@ -297,7 +495,7 @@ namespace cluvrp_grasp
             {
                 Console.WriteLine(
                     "Parameter is missing: " + '\n' +
-                    "Use: cluvrp_grasp parametersFilePath instanceSetFilePath logFilePath arrayOfSolutionsFilePath" + '\n' + '\n'
+                    "Use: cluvrp_grasp parametersFilePath instanceSetFilePath logFilePath solutionsFilePath" + '\n' + '\n'
                 );
                 return;
             }
@@ -310,40 +508,18 @@ namespace cluvrp_grasp
             string parametersFilePath = args[0];
             string instanceSetFilePath = args[1];
             string logFilePath = args[2];
-            string arrayOfSolutionsFilePath = args[3];
+            string solutionsFilePath = args[3];
 
             // Check if parameters are corrects
-            if(!(File.Exists(parametersFilePath) && File.Exists(instanceSetFilePath) && File.Exists(arrayOfSolutionsFilePath)))
+            if(!(File.Exists(parametersFilePath) && File.Exists(instanceSetFilePath) && File.Exists(solutionsFilePath)))
             {
                 Console.WriteLine("Some parameter is incorrect or file not exists");
                 return;
             }
 
             // Try to parse array of solutions for compare
-            double[] solutionToCompare = new double[0];
-            try
-            {
-                string[] arrayOfSolutions = System.IO.File.ReadAllLines(arrayOfSolutionsFilePath);
-                if(arrayOfSolutions.Length == 0)
-                {
-                    Console.WriteLine("Solution to compare file is empty");
-                }
-                solutionToCompare = arrayOfSolutions[0].Split(',').Select(s=>double.Parse(s, CultureInfo.InvariantCulture)).ToArray();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                return;
-            }
-
-            // To compare in instances with results to compare
-            int instanceNumber  = File.ReadLines(instanceSetFilePath).Count();
-            if(instanceNumber != solutionToCompare.Length)
-            {
-                Console.WriteLine("Different number of instances and solutions to compare");
-                return;
-            }
-
+            double[] solutionToCompare = Functions.createSolutionArrayForInstances(instanceSetFilePath, solutionsFilePath);
+  
             // Excute GRASP
             GraspProcedure(parametersFilePath, instanceSetFilePath, logFilePath, solutionToCompare, cluVRPType);
 

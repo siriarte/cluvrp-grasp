@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace cluvrp_grasp
 {
@@ -55,18 +57,18 @@ namespace cluvrp_grasp
             // For GRASP
             ret += "CLUVRP GRASP VERSION = " + parameters.CluVRP_Version + separator;
             ret += "CLUVRP GRASP ITERATIONS = " + parameters.CluVRP_GRASPIterations + separator;
-            ret += "CLUVRP CLUSTER GRASP ITERATIONS = " +  parameters.Cluster_GRASPIterations + separator;
+            ret += "CLUVRP CLUSTER GRASP ITERATIONS = " + parameters.Cluster_GRASPIterations + separator;
             ret += "CLUVRP CUSTOMER GRASP ITERATIONS = " + parameters.Customer_GRASPIterations + separator;
             ret += "CLUVRP MAIN LS ITERATIONS = " + parameters.CluVRP_LS_Main_Iterations + separator;
             ret += separator;
 
             // For cluster
             ret += "CLUSTER FIT ALGORITHM = " + parameters.Cluster_FitAlgoritm + separator;
-            ret += "CLUSTER ALPHA CAPACITY = " + parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
             ret += "CLUSTER ALPHA DISTANCE = " + parameters.Cluster_AlphaDistance.ToString("0.0") + separator;
+            ret += "CLUSTER ALPHA CAPACITY/BACKTODEPOT = " + parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
             ret += "CLUSTER LS SWAP VEHICLE = " + parameters.Cluster_LS_SwapVehicle.ToString() + separator;
             ret += "CLUSTER LS INSERT VEHICLE = " + parameters.Cluster_LS_InsertVehicle.ToString() + separator;
-            ret += "CLUSTER LS RND SWAP VEHICLE = " +  parameters.Cluster_LS_RndSwapVehicle + separator;
+            ret += "CLUSTER LS RND SWAP VEHICLE = " + parameters.Cluster_LS_RndSwapVehicle + separator;
             ret += "CLUSTER LS RND INSERT VEHICLE = " + parameters.Cluster_LS_RndInsertVehicle + separator;
             ret += "CLUSTER LS TWO-OPT = " + parameters.Cluster_LS_TwoOpt_Iterations + separator;
             ret += "CLUSTER LS RELOCATE = " + parameters.Cluster_LS_Relocate_Iterations + separator;
@@ -93,7 +95,7 @@ namespace cluvrp_grasp
             list[indexA] = list[indexB];
             list[indexB] = tmp;
         }
-         
+
         // Select a element from a list with random criteria
         public static int selectRandomElement(List<int> list)
         {
@@ -139,10 +141,10 @@ namespace cluvrp_grasp
                     distance += customersDistanceMatrix[finalCustomer][initialCustomer];
                 }
             }
-            
+
             return distance;
         }
-  
+
         // Calculate the total cluster distance of the cluster travel for all vehicles
         public static double calculateTotalClusterTravelDistance(List<int>[] travel, double[][] clustersDistanceMatrix)
         {
@@ -158,7 +160,7 @@ namespace cluvrp_grasp
             // Return total distance
             return totalDistance;
         }
-  
+
         // Calculate the total cluster distance of a vehicle travel
         public static double calculateClusterTravelDistanceForVehicle(List<int> travel, double[][] clustersDistanceMatrix)
         {
@@ -195,7 +197,7 @@ namespace cluvrp_grasp
             return totalDistance;
         }
 
-         // Calculate the total customer distance of a all vehicles
+        // Calculate the total customer distance of a all vehicles
         public static double calculateCustomerTotalTravelDistanceForVehicle(List<int>[] travel, double[][] customersDistanceMatrix)
         {
             // Set variables
@@ -243,7 +245,7 @@ namespace cluvrp_grasp
             // Return total distance
             return totalDistance;
         }
-        
+
         // Calculte the max distance between the last cluster visited (of all vehicles) and toCluster      
         public static double maxClusterDistance(List<int>[] clusterRouteForVehicle, int toCluster, double[][] clustersDistanceMatrix)
         {
@@ -330,32 +332,32 @@ namespace cluvrp_grasp
         internal static double minClusterDistanceFromVehicle(List<int> clustersToVisit, int lastClusterOnVehicle, double[][] clustersDistanceMatrix)
         {
             double min = double.MaxValue;
-            for(int i = 0; i < clustersToVisit.Count; i++)
+            for (int i = 0; i < clustersToVisit.Count; i++)
             {
                 min = Math.Min(clustersDistanceMatrix[clustersToVisit[i]][lastClusterOnVehicle], min);
             }
             return min;
         }
 
-        internal static double maxClusterDistanceFromVehicleAndToDepot(List<int> clustersToVisit, int lastClusterOnVehicle, double[][] clustersDistanceMatrix)
+        internal static double maxClusterDistanceFromVehicleAndToDepot(List<int> clustersToVisit, int lastClusterOnVehicle, double[][] clustersDistanceMatrix, double alphaBackToDepot)
         {
             double max = double.MinValue;
             for (int i = 0; i < clustersToVisit.Count; i++)
             {
                 double dist = clustersDistanceMatrix[clustersToVisit[i]][lastClusterOnVehicle] +
-                    clustersDistanceMatrix[clustersToVisit[i]][0];
+                    alphaBackToDepot * clustersDistanceMatrix[clustersToVisit[i]][0];
                 max = Math.Max(dist, max);
             }
             return max;
         }
 
-        internal static double minClusterDistanceFromVehicleAndToDepot(List<int> clustersToVisit, int lastClusterOnVehicle, double[][] clustersDistanceMatrix)
+        internal static double minClusterDistanceFromVehicleAndToDepot(List<int> clustersToVisit, int lastClusterOnVehicle, double[][] clustersDistanceMatrix, double alphaBackToDepot)
         {
             double min = double.MaxValue;
             for (int i = 0; i < clustersToVisit.Count; i++)
             {
                 double dist = clustersDistanceMatrix[clustersToVisit[i]][lastClusterOnVehicle] +
-                    clustersDistanceMatrix[clustersToVisit[i]][0];
+                    alphaBackToDepot * clustersDistanceMatrix[clustersToVisit[i]][0];
                 min = Math.Min(dist, min);
             }
             return min;
@@ -403,7 +405,7 @@ namespace cluvrp_grasp
         // Distance function
         public static double distance(double x1, double y1, double x2, double y2)
         {
-            return(Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
+            return (Math.Sqrt(Math.Pow(x1 - x2, 2) + Math.Pow(y1 - y2, 2)));
         }
 
         // Array to string
@@ -412,5 +414,46 @@ namespace cluvrp_grasp
             return '[' + string.Join(" | ", collection) + ']';
         }
 
+        // Load JSON instances solution to a Dicctionary
+        public static Dictionary<String, Double> loadInstancesSolution(string jsonFilePath)
+        {
+            using (StreamReader r = new StreamReader(jsonFilePath))
+            {
+                string json = r.ReadToEnd();
+                Dictionary<String, Double> items = JsonConvert.DeserializeObject<Dictionary<string, double>>(json);
+                return items;
+            }
+        }
+
+        // Create an array of solution for an instances file
+        public static double[] createSolutionArrayForInstances(string instanceSetFilePath, string solutionsFilePath)
+        {
+            // Return value
+            double[] arrayOfSolutions = null;
+
+            // Create proccess
+            try {
+                Dictionary<string, double> instanceAndSolutions = loadInstancesSolution(solutionsFilePath);
+                string[] lines = System.IO.File.ReadAllLines(instanceSetFilePath);
+                arrayOfSolutions = new double[lines.Length];
+
+                // Get all the instances setted on the file
+                int idx = 0;
+                foreach (string instanceFilePath in lines)
+                {
+                    string instanceFileName = Path.GetFileName(instanceFilePath);
+                    arrayOfSolutions[idx] = instanceAndSolutions[instanceFileName];
+                    idx++;                   
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+
+            // Return array
+            return arrayOfSolutions;
+        }
     }
 }

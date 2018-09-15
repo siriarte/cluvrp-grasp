@@ -174,7 +174,7 @@ namespace cluvrp_grasp
                 }
 
                 // Perform Customer Swap
-                if (localSearchsOrder[i] == LocalSearch.SwapCustomers && parameters.Customer_LS_SwapCustomers)
+                if (localSearchsOrder[i] == LocalSearch.SwapCustomers && parameters.Customer_LS_SwapCustomers != 0)
                 {
                     customerLocalSearch.SwapCustomers();
                 }

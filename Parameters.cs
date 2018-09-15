@@ -17,8 +17,8 @@ namespace cluvrp_grasp
         public double Cluster_AlphaDistance { get; set; }
         public FitAlgorithm Cluster_FitAlgoritm { get; set; }
         public int[] Cluster_LS_Order { get; set; }
-        public bool Cluster_LS_SwapVehicle { get; set; }
-        public bool Cluster_LS_InsertVehicle { get; set; }
+        public int Cluster_LS_SwapVehicle { get; set; }
+        public int Cluster_LS_InsertVehicle { get; set; }
         public int Cluster_LS_RndSwapVehicle { get; set; }
         public int Cluster_LS_RndInsertVehicle { get; set; }
         public int Cluster_LS_TwoOpt_Iterations { get; set; }
@@ -29,7 +29,7 @@ namespace cluvrp_grasp
         public int Customer_GRASPIterations { get; set; }
         public double Customer_Alpha { get; set; }
         public int[] Customer_LS_Order { get; set; }
-        public bool Customer_LS_SwapCustomers { get; set; }
+        public int Customer_LS_SwapCustomers { get; set; }
         public int Customer_LS_TwoOpt_Iterations { get; set; }
         public int Customer_LS_Relocate_Iterations { get; set; }
         public int Customer_LS_Exchange_Iterations { get; set; }
@@ -44,8 +44,8 @@ namespace cluvrp_grasp
             double Cluster_AlphaDistance,
             FitAlgorithm Cluster_FitAlgoritm,
             int[] Cluster_LS_Order,
-            bool Cluster_LS_SwapVehicle,
-            bool Cluster_LS_InsertVehicle,
+            int Cluster_LS_SwapVehicle,
+            int Cluster_LS_InsertVehicle,
             int Cluster_LS_RndSwapVehicle,
             int Cluster_LS_RndInsertVehicle,
             int Cluster_LS_TwoOpt_Iterations,
@@ -54,7 +54,7 @@ namespace cluvrp_grasp
             int Customer_GRASPIterations,
             double Customer_Alpha,
             int[] Customer_LS_Order,
-            bool Customer_LS_SwapCustomers,
+            int Customer_LS_SwapCustomers,
             int Customer_LS_TwoOpt_Iterations,
             int Customer_LS_Relocate_Iterations,
             int Customer_LS_Exchange_Iterations)
@@ -94,8 +94,8 @@ namespace cluvrp_grasp
             public float[] Cluster_AlphaDistance { get; set; }
             public int[] Cluster_FitAlgoritm { get; set; }
             public int[] Cluster_LS_Order { get; set; }
-            public bool[] Cluster_LS_SwapVehicle { get; set; }
-            public bool[] Cluster_LS_InsertVehicle { get; set; }
+            public int[] Cluster_LS_SwapVehicle { get; set; }
+            public int[] Cluster_LS_InsertVehicle { get; set; }
             public int[] Cluster_LS_RndSwapVehicle { get; set; }
             public int[] Cluster_LS_RndInsertVehicle { get; set; }
             public int[] Cluster_LS_TwoOpt_Iterations { get; set; }
@@ -103,7 +103,7 @@ namespace cluvrp_grasp
             public int[] Cluster_LS_Exchange_Iterations { get; set; }
             public int[] Customer_GRASPIterations { get; set; }
             public float[] Customer_Alpha { get; set; }
-            public bool[] Customer_LS_SwapCustomers { get; set; }
+            public int[] Customer_LS_SwapCustomers { get; set; }
             public int[] Customer_LS_Order { get; set; }
             public int[] Customer_LS_TwoOpt_Iterations { get; set; }
             public int[] Customer_LS_Relocate_Iterations { get; set; }
@@ -124,8 +124,8 @@ namespace cluvrp_grasp
                             foreach (double cluster_AlphaCapacity in pInstance.Cluster_AlphaCapacity)
                                 foreach (double cluster_AlphaDistance in pInstance.Cluster_AlphaDistance)
                                     foreach (FitAlgorithm cluster_FitAlgoritm in pInstance.Cluster_FitAlgoritm)
-                                        foreach (bool cluster_LS_SwapVehicle in pInstance.Cluster_LS_SwapVehicle)
-                                            foreach (bool cluster_LS_InsertVehicle in pInstance.Cluster_LS_InsertVehicle)
+                                        foreach (int cluster_LS_SwapVehicle in pInstance.Cluster_LS_SwapVehicle)
+                                            foreach (int cluster_LS_InsertVehicle in pInstance.Cluster_LS_InsertVehicle)
                                                 foreach (int cluster_LS_RndSwapVehicle in pInstance.Cluster_LS_RndSwapVehicle)
                                                     foreach (int cluster_LS_RndInsertVehicle in pInstance.Cluster_LS_RndInsertVehicle)
                                                         foreach (int cluster_LS_TwoOpt_Iterations in pInstance.Cluster_LS_TwoOpt_Iterations)
@@ -133,7 +133,7 @@ namespace cluvrp_grasp
                                                                 foreach (int cluster_LS_Exchange_Iterations in pInstance.Cluster_LS_Exchange_Iterations)
                                                                     foreach (int customer_GRASPIterations in pInstance.Customer_GRASPIterations)
                                                                         foreach (double customer_Alpha in pInstance.Customer_Alpha)
-                                                                                foreach(bool customer_LS_SwapCustomers in pInstance.Customer_LS_SwapCustomers)
+                                                                                foreach(int customer_LS_SwapCustomers in pInstance.Customer_LS_SwapCustomers)
                                                                                 foreach (int customer_LS_TwoOpt_Iterations in pInstance.Customer_LS_TwoOpt_Iterations)
                                                                                     foreach (int customer_LS_Relocate_Iterations in pInstance.Customer_LS_Relocate_Iterations)
                                                                                         foreach (int customer_LS_Exchange_Iterations in pInstance.Customer_LS_Exchange_Iterations)

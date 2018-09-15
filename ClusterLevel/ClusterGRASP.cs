@@ -155,7 +155,6 @@ using System.Collections.Generic;
                 catch(Exception)
                 {
                     // do nothing, it is handled on the constructGreedyRandomizedSolution
-                    // Count error on fit algorithm
                 }
 
                 // Increace iterator
@@ -215,9 +214,16 @@ using System.Collections.Generic;
                 fitAlgorithm = (FitAlgorithm) rndFitAlgorithm.Next(0, 5);
             }
 
-
             // Bluid a cluster route for a vehicle depending on selected fit algorithm
-            if (fitAlgorithm == FitAlgorithm.DemandRCL)
+            if (fitAlgorithm == FitAlgorithm.Simple)
+            {
+                buildClusterRouteSimpleRCL(clusterRouteForVehicle, clustersToVisit, clustersDemand, alphaDistance, alphaDemand, vehicleCapacity, vehicleRemSpace);
+            }
+            else if (fitAlgorithm == FitAlgorithm.DoubleRCL)
+            {
+                buildClusterRouteDoubleRCL(clusterRouteForVehicle, clustersToVisit, clustersDemand, alphaDistance, alphaDemand, vehicleCapacity, vehicleRemSpace);
+            }
+            else if (fitAlgorithm == FitAlgorithm.DemandRCL)
             {
                 buildClusterRouteDemandRCL(clusterRouteForVehicle, clustersToVisit, clustersDemand, alphaDemand, alphaDistance, vehicleCapacity, vehicleRemSpace);
             }
@@ -225,15 +231,7 @@ using System.Collections.Generic;
             {
                 buildClusterRouteBestFit(clusterRouteForVehicle, clustersToVisit, clustersDemand, alphaDistance, vehicleCapacity, vehicleRemSpace);
             }
-            if (fitAlgorithm == FitAlgorithm.DoubleRCL)
-            {
-                buildClusterRouteDoubleRCL(clusterRouteForVehicle, clustersToVisit, clustersDemand, alphaDistance, vehicleCapacity, vehicleRemSpace);
-            }
-            else if(fitAlgorithm == FitAlgorithm.Simple)
-            {
-                buildClusterRouteSimpleRCL(clusterRouteForVehicle, clustersToVisit, clustersDemand, alphaDistance, vehicleCapacity, vehicleRemSpace);
-            }
-      
+                
             // If there are clusters without vehicle try swaping clusters to win space and inserts the remaining clusters
             if (clustersToVisit.Count  != 0)
             {
@@ -335,7 +333,7 @@ using System.Collections.Generic;
          * Very simple RCL greedy builder, no feature on demand
          * 
          */
-        private void buildClusterRouteSimpleRCL(List<int>[] clusterRouteForVehicle, List<int> clustersToVisit, int[] clustersDemand, double alphaDistance, int vehicleCapacity, int[] vehicleRemSpace)
+        private void buildClusterRouteSimpleRCL(List<int>[] clusterRouteForVehicle, List<int> clustersToVisit, int[] clustersDemand, double alphaDistance, double alphaBackToDepot, int vehicleCapacity, int[] vehicleRemSpace)
         {
             // Variables
             int numberOfVehicles = clusterRouteForVehicle.Length;
@@ -348,10 +346,10 @@ using System.Collections.Generic;
                 for(int clusterIt = 0; clusterIt < numberOfCluster; clusterIt++)
                 {
                     // Build cluster RCL for this vehicle
-                    List<int> RCL = RCLForVehicle(vehicle, clusterRouteForVehicle, clustersToVisit, vehicleRemSpace, clustersDemand, alphaDistance);
+                    List<int> RCL = RCLForVehicle(vehicle, clusterRouteForVehicle, clustersToVisit, vehicleRemSpace, clustersDemand, alphaDistance, alphaBackToDepot);
 
                     // If is not posible left the vehicle
-                    if (RCL.Count == 0) break;
+                    if (RCL.Count == 0) continue;
 
                     // Select random next cluster from RCL
                     int nextCluster = Functions.selectRandomElement(RCL);
@@ -372,9 +370,10 @@ using System.Collections.Generic;
          * 
          * Build route using RCL for each vehicle and cluster list and other RCL 
          * to select the vehicle to include the cluster
+         * In this algorithm alphaDemand is alphaBackToDepot
          * 
          */
-        private void buildClusterRouteDoubleRCL(List<int>[] clusterRouteForVehicle, List<int> clustersToVisit, int[] clustersDemand, double alphaDistance, int vehicleCapacity, int[] vehicleRemSpace)
+        private void buildClusterRouteDoubleRCL(List<int>[] clusterRouteForVehicle, List<int> clustersToVisit, int[] clustersDemand, double alphaDistance, double alphaBackToDepot, int vehicleCapacity, int[] vehicleRemSpace)
         {
             // Variables
             int numberOfVehicles = clusterRouteForVehicle.Length;
@@ -388,7 +387,7 @@ using System.Collections.Generic;
                 for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
                 {
                     // Build RCL for the vehicle
-                    vehicleRCL[vehicle] = RCLForVehicle(vehicle, clusterRouteForVehicle, clustersToVisit, vehicleRemSpace, clustersDemand, alphaDistance);
+                    vehicleRCL[vehicle] = RCLForVehicle(vehicle, clusterRouteForVehicle, clustersToVisit, vehicleRemSpace, clustersDemand, alphaDistance, alphaBackToDepot);
                 }
 
                 // Select vehicles with RCL > 0
@@ -403,10 +402,15 @@ using System.Collections.Generic;
                         vehicleNextCluster[vehicle] = Functions.selectRandomElement(vehicleRCL[vehicle]);
                         vehiclesUsables.Add(vehicle);
                     }
-                }                
+                }
 
-                // Select next vehicle random and cluster to use 
-                int nextVehicle = Functions.selectRandomElement(vehiclesUsables);                
+                // Select next vehicle with RCL criteria
+                List<int> RCLVehicle = RCLToChooseVehicle(vehiclesUsables, vehicleNextCluster, clusterRouteForVehicle, alphaDistance);
+
+                // Select the next vehicle from RCL
+                int nextVehicle = Functions.selectRandomElement(RCLVehicle);     
+                
+                // Select the next cluster for the vehicle taked           
                 int nextCluster = vehicleNextCluster[nextVehicle];
 
                 // Add cluster to select vehicle
@@ -419,7 +423,7 @@ using System.Collections.Generic;
                 clustersToVisit.Remove(nextCluster);
             }
         }
-    
+
         /*
          * 
          *  Build a cluster route using BestFit algorithm 
@@ -597,7 +601,7 @@ using System.Collections.Generic;
          * Given a vehicle and a list of cluster build a RCL for that vehicle
          * 
          */
-        private List<int> RCLForVehicle(int vehicle, List<int>[] clusterRouteForVehicle, List<int> clustersToVisit, int[] vehicleRemSpace, int[] clustersDemand, double alphaDistance)
+        private List<int> RCLForVehicle(int vehicle, List<int>[] clusterRouteForVehicle, List<int> clustersToVisit, int[] vehicleRemSpace, int[] clustersDemand, double alphaDistance, double alphaBackToDepot)
         {
             List<int> RCL = new List<int>();
 
@@ -605,8 +609,8 @@ using System.Collections.Generic;
             int lastClusterOnVehicle = clusterRouteForVehicle[vehicle][lastClusterIndexOnVehicle];
 
             // Calculate max and min distance for RCL condition
-            double minDistance = Functions.minClusterDistanceFromVehicleAndToDepot(clustersToVisit, lastClusterOnVehicle, instance.clustersDistanceMatrix);
-            double maxDistance = Functions.maxClusterDistanceFromVehicleAndToDepot(clustersToVisit, lastClusterOnVehicle, instance.clustersDistanceMatrix);
+            double minDistance = Functions.minClusterDistanceFromVehicleAndToDepot(clustersToVisit, lastClusterOnVehicle, instance.clustersDistanceMatrix, alphaBackToDepot);
+            double maxDistance = Functions.maxClusterDistanceFromVehicleAndToDepot(clustersToVisit, lastClusterOnVehicle, instance.clustersDistanceMatrix, alphaBackToDepot);
 
             // Set RCL condition criteria
             double RCLCondition = minDistance + alphaDistance * (maxDistance - minDistance);
@@ -615,7 +619,8 @@ using System.Collections.Generic;
             for (int clusterIt = 0; clusterIt < clustersToVisit.Count; clusterIt++)
             {
                 int cluster = clustersToVisit[clusterIt];
-                double distanceBetweenClusters = instance.clustersDistanceMatrix[lastClusterOnVehicle][cluster];
+                double distanceBetweenClusters = instance.clustersDistanceMatrix[lastClusterOnVehicle][cluster] +
+                    alphaBackToDepot * instance.clustersDistanceMatrix[clustersToVisit[clusterIt]][0];
 
                 // If RCL condition is OK and there is space on vehicle add to RCL
                 if (vehicleRemSpace[vehicle] >= clustersDemand[cluster] && distanceBetweenClusters <= RCLCondition)
@@ -840,6 +845,62 @@ using System.Collections.Generic;
             return RCL;
         }
         
+        /*
+         * 
+         * Create a RCL with vehicles that next possible cluster is ok with rcl condition
+         * 
+         */
+        private List<int> RCLToChooseVehicle(List<int> vehiclesUsables, int[] vehicleNextCluster, List<int>[] clusterRouteForVehicle, double alphaDistance)
+        {
+            // Variables
+            List<int> RCL = new List<int>();
+            double minDistance = double.MaxValue;
+            double maxDistance = double.MinValue;
+
+            // For each vehicle
+            for (int vehicleIt = 0; vehicleIt < vehiclesUsables.Count; vehicleIt++)
+            {
+                // Select usable vehicle
+                int vehicle = vehiclesUsables[vehicleIt];
+
+                // Set the last cluster visited on vehicle
+                int lastClusterOnVehicleIndex = clusterRouteForVehicle[vehicle].Count - 1;
+                int lastClusterOnVehicle = clusterRouteForVehicle[vehicle][lastClusterOnVehicleIndex];
+
+                // Set next possible cluster for vehicle
+                int nextClusterForVehicle = vehicleNextCluster[vehicle];
+
+                // Calculate distance
+                double distance = instance.clustersDistanceMatrix[lastClusterOnVehicle][nextClusterForVehicle];
+
+                // Set if min, max, or nothing
+                if (distance < minDistance) minDistance = distance;
+                if (distance > maxDistance) maxDistance = distance;
+            }
+
+            // Set RCL condition criteria
+            double RCLCondition = minDistance + alphaDistance * (maxDistance - minDistance);
+
+            for (int vehicleIt = 0; vehicleIt < vehiclesUsables.Count; vehicleIt++)
+            {
+                int vehicle = vehiclesUsables[vehicleIt];
+                int lastClusterOnVehicleIndex = clusterRouteForVehicle[vehicle].Count - 1;
+                int lastClusterOnVehicle = clusterRouteForVehicle[vehicle][lastClusterOnVehicleIndex];
+                int nextClusterForVehicle = vehicleNextCluster[vehicle];
+                double distance = instance.clustersDistanceMatrix[lastClusterOnVehicle][nextClusterForVehicle];
+
+                // If meet the condition add to RCL
+                if (distance <= RCLCondition)
+                {
+                    RCL.Add(vehicle);
+                }
+            }
+
+            // Return RCL
+            return RCL;
+        }
+
+
         #endregion
 
         #region Solution fixers
@@ -916,10 +977,9 @@ using System.Collections.Generic;
             // Get number of cluster does not have vehicle
             int numberOfClusterToFit = clustersToVisit.Count;
 
-            // For each cluster doens't have vehicle
+            // For each cluster doesn't have vehicle
             for (int clusterIt = 0; clusterIt < numberOfClusterToFit; clusterIt++)
             {
-
                 // Get cluster to insert and its demand
                 int clusterToInsert = clustersToVisit[clusterIt];
                 int neededSpace = instance.clusters_demand[clusterToInsert];
@@ -1032,7 +1092,9 @@ using System.Collections.Generic;
                 parameters.Cluster_LS_Relocate_Iterations,
                 parameters.Cluster_LS_Exchange_Iterations,
                 parameters.Cluster_LS_RndSwapVehicle,
-                parameters.Cluster_LS_RndInsertVehicle
+                parameters.Cluster_LS_RndInsertVehicle,
+                parameters.Cluster_LS_SwapVehicle,
+                parameters.Cluster_LS_InsertVehicle
                 );
 
 
@@ -1049,13 +1111,13 @@ using System.Collections.Generic;
                 LocalSearch ls = (LocalSearch)localSearchsOrder[i];
 
                 // Perform interVehicle Swap
-                if (ls == LocalSearch.SwapVehicle && parameters.Cluster_LS_InsertVehicle)
+                if (ls == LocalSearch.SwapVehicle && parameters.Cluster_LS_InsertVehicle > 0)
                 {
                     localSearchsCluster.swapVehicle(instance.clusters_demand);
                 }
 
                 // Perform interVehicle Insert
-                if (ls == LocalSearch.InsertVehicle && parameters.Cluster_LS_SwapVehicle)
+                if (ls == LocalSearch.InsertVehicle && parameters.Cluster_LS_SwapVehicle > 0)
                 {
                     localSearchsCluster.insertVehicle(instance.clusters_demand);
                 }
@@ -1089,10 +1151,10 @@ using System.Collections.Generic;
                 {
                     localSearchsCluster.exchange();
                 }
-                // Perform Exchange
+                // Perform SwapClusters
                 if (ls == LocalSearch.SwapClusters)
                 {
-                    //localSearchsCluster.SwapClusters();
+                    localSearchsCluster.SwapClusters();
                 }
 
 

@@ -11,6 +11,7 @@ namespace cluvrp_grasp
         public int maxIterationsWithoutImprovementTwoOpt { get; set; }
         public int maxIterationsWithoutImprovementRelocate { get; set; }
         public int maxIterationsWithoutImprovementExchange { get; set; }
+        public int maxIterationsWithoutImprovementSwapCustomers { get; set; }
         public CluVRPSolution solution { get; set; }
         public CluVRPInstance instance { get; set; }
 
@@ -19,13 +20,15 @@ namespace cluvrp_grasp
             CluVRPInstance instance,
             int maxIterationsWithoutImprovementTwoOpt = 100,
             int maxIterationsWithoutImprovementRelocate = 100,
-            int maxIterationsWithoutImprovementExchange = 100)
+            int maxIterationsWithoutImprovementExchange = 100,
+            int maxIterationsWithoutImprovementSwapCustomers = 100)
         {
             this.solution = solution;
             this.instance = instance;
             this.maxIterationsWithoutImprovementTwoOpt = maxIterationsWithoutImprovementTwoOpt;
             this.maxIterationsWithoutImprovementRelocate = maxIterationsWithoutImprovementRelocate;
             this.maxIterationsWithoutImprovementExchange = maxIterationsWithoutImprovementExchange;
+            this.maxIterationsWithoutImprovementSwapCustomers = maxIterationsWithoutImprovementSwapCustomers;
         }
 
         // TwoOpt local-search 
@@ -361,111 +364,129 @@ namespace cluvrp_grasp
         // Swap Algorithm
         public void SwapCustomers()
         {
-
             // For each vehicle
             for (int vehicle = 0; vehicle < solution.customersPaths.Length; vehicle++)
             {
-                // For each cluster
-                for (int clusterIt = 1; clusterIt < solution.customersPaths[vehicle].Length - 1; clusterIt++)
+                int iterations = 0;
+                while (iterations < maxIterationsWithoutImprovementSwapCustomers &&  solution.customersPaths[vehicle].Length > 3)
                 {
-                    // For random order on iterations
-                    List<int> rndPosition = new List<int>();
-                    for (int i = 1; i < solution.customersPaths[vehicle].Length - 1; i++) rndPosition.Add(i);
-                    Functions.Shuffle<int>(new Random(), rndPosition);
-
-                    // Select cluster random
-                    int cluster = rndPosition[clusterIt-1];
-
-                    // Calculate path distance including In and Out of cluster
-                    double bestDistance = Functions.calculateInOutAndPathDistance(solution.customersPaths[vehicle], cluster, instance.customersDistanceMatrix);
-
-                    // For each customer
-                    for (int customerIt1 = 0; customerIt1 < solution.customersPaths[vehicle][cluster].Count; customerIt1++)
+                    // For each cluster
+                    for (int clusterIt = 1; clusterIt < solution.customersPaths[vehicle].Length - 1; clusterIt++)
                     {
-                        // Against all customer on the path
-                        for (int customerIt2 = 0; customerIt2 < solution.customersPaths[vehicle][cluster].Count; customerIt2++)
+                        // For random order on iterations
+                        List<int> rndPosition = new List<int>();
+                        for (int i = 1; i < solution.customersPaths[vehicle].Length - 1; i++) rndPosition.Add(i);
+                        Functions.Shuffle<int>(new Random(), rndPosition);
+
+                        // Select cluster random
+                        int cluster = rndPosition[clusterIt - 1];
+
+                        // Calculate path distance including In and Out of cluster
+                        double bestDistance = Functions.calculateInOutAndPathDistance(solution.customersPaths[vehicle], cluster, instance.customersDistanceMatrix);
+
+                        // For each customer
+                        for (int customerIt1 = 0; customerIt1 < solution.customersPaths[vehicle][cluster].Count; customerIt1++)
                         {
-                            // No swap for same customers
-                            if(customerIt1 == customerIt2)
+                            // Against all customer on the path
+                            for (int customerIt2 = 0; customerIt2 < solution.customersPaths[vehicle][cluster].Count; customerIt2++)
                             {
-                                continue;
-                            }
-                            
-                            // If is border case calculate all path plus diff in border
-                            if (customerIt1 == 0 || customerIt1 == solution.customersPaths[vehicle][cluster].Count - 1 ||
-                                customerIt2 == 0 || customerIt2 == solution.customersPaths[vehicle][cluster].Count - 1)
-                            {
-                                // Perform Swap
-                                Functions.Swap(solution.customersPaths[vehicle][cluster], customerIt1, customerIt2);
-
-                                // Calculate new distance
-                                double newDistance = Functions.calculateInOutAndPathDistance(solution.customersPaths[vehicle], cluster, instance.customersDistanceMatrix);
-
-                                // If solution not improve swap back
-                                if (newDistance < bestDistance)
+                                // No swap for same customers
+                                if (customerIt1 == customerIt2)
                                 {
-                                    // Update distance
-                                    solution.vehiculeRouteDistance[vehicle] = solution.vehiculeRouteDistance[vehicle] - bestDistance + newDistance;
-                                    bestDistance = newDistance;
-                                }
-                                else
-                                {
-                                    // Perform Swap back
-                                    Functions.Swap(solution.customersPaths[vehicle][cluster], customerIt1, customerIt2);
-                                }
-                            }
-                            // If is not a boerder case only calculate the diff on the swap
-                            else
-                            {
-                                // Calculate old diff distance
-                                int customer1 = solution.customersPaths[vehicle][cluster][customerIt1];
-                                int customer2 = solution.customersPaths[vehicle][cluster][customerIt2];
-                                int customer1_next = solution.customersPaths[vehicle][cluster][customerIt1 + 1];
-                                int customer1_last = solution.customersPaths[vehicle][cluster][customerIt1 + -1];
-                                int customer2_next = solution.customersPaths[vehicle][cluster][customerIt2 + 1];
-                                int customer2_last = solution.customersPaths[vehicle][cluster][customerIt2 - 1];
-
-                                double oldDiffCustomer1 = instance.customersDistanceMatrix[customer1_last][customer1] +
-                                   instance.customersDistanceMatrix[customer1][customer1_next];
-                                double oldDiffCustomer2 = instance.customersDistanceMatrix[customer2_last][customer2] +
-                                    instance.customersDistanceMatrix[customer2][customer2_next];
-
-                                // If one is the next of the other
-                                if (customerIt2 - customerIt1 == 1)
-                                {
-                                    customer1_next = customer1;
-                                    customer2_last = customer2;
-                                }
-                                else if (customerIt1 - customerIt2 == 1)
-                                {
-                                    customer2_next = customer2;
-                                    customer1_last = customer1;
+                                    iterations++;
+                                    continue;
                                 }
 
-                                // Calculate new diff distance 
-                                double newDiffCustomer1 = instance.customersDistanceMatrix[customer2_last][customer1] +
-                                   instance.customersDistanceMatrix[customer1][customer2_next];
-                                double newDiffCustomer2 = instance.customersDistanceMatrix[customer1_last][customer2] +
-                                   instance.customersDistanceMatrix[customer2][customer1_next];
-
-                                // Calculate total new distance
-                                double newDistance = bestDistance - (oldDiffCustomer1 + oldDiffCustomer2) + (newDiffCustomer1 + newDiffCustomer2);
-
-                                // If solution not improve swap back
-                                if (newDistance < bestDistance)
+                                // If is border case calculate all path plus diff in border
+                                if (customerIt1 == 0 || customerIt1 == solution.customersPaths[vehicle][cluster].Count - 1 ||
+                                    customerIt2 == 0 || customerIt2 == solution.customersPaths[vehicle][cluster].Count - 1)
                                 {
                                     // Perform Swap
                                     Functions.Swap(solution.customersPaths[vehicle][cluster], customerIt1, customerIt2);
 
-                                    // Update distance
-                                    solution.vehiculeRouteDistance[vehicle] = solution.vehiculeRouteDistance[vehicle] - bestDistance + newDistance;
-                                    bestDistance = newDistance;
-                                }
+                                    // Calculate new distance
+                                    double newDistance = Functions.calculateInOutAndPathDistance(solution.customersPaths[vehicle], cluster, instance.customersDistanceMatrix);
 
-                            }// End else not border case
-                        }// End for customer1
-                    }// End for customer2
-                } // End for cluster
+                                    // If solution not improve swap back
+                                    if (newDistance + 0.000001 < bestDistance)
+                                    {
+                                        // Update distance
+                                        solution.vehiculeRouteDistance[vehicle] = solution.vehiculeRouteDistance[vehicle] - bestDistance + newDistance;
+                                        bestDistance = newDistance;
+
+                                        // Reset iterator
+                                        iterations = 0;
+                                    }
+                                    else
+                                    {
+                                        // Perform Swap back
+                                        Functions.Swap(solution.customersPaths[vehicle][cluster], customerIt1, customerIt2);
+
+                                        // Increase iterator
+                                        iterations++;                                            
+                                    }
+                                }
+                                // If is not a boerder case only calculate the diff on the swap
+                                else
+                                {
+                                    // Calculate old diff distance
+                                    int customer1 = solution.customersPaths[vehicle][cluster][customerIt1];
+                                    int customer2 = solution.customersPaths[vehicle][cluster][customerIt2];
+                                    int customer1_next = solution.customersPaths[vehicle][cluster][customerIt1 + 1];
+                                    int customer1_last = solution.customersPaths[vehicle][cluster][customerIt1 + -1];
+                                    int customer2_next = solution.customersPaths[vehicle][cluster][customerIt2 + 1];
+                                    int customer2_last = solution.customersPaths[vehicle][cluster][customerIt2 - 1];
+
+                                    double oldDiffCustomer1 = instance.customersDistanceMatrix[customer1_last][customer1] +
+                                       instance.customersDistanceMatrix[customer1][customer1_next];
+                                    double oldDiffCustomer2 = instance.customersDistanceMatrix[customer2_last][customer2] +
+                                        instance.customersDistanceMatrix[customer2][customer2_next];
+
+                                    // If one is the next of the other
+                                    if (customerIt2 - customerIt1 == 1)
+                                    {
+                                        customer1_next = customer1;
+                                        customer2_last = customer2;
+                                    }
+                                    else if (customerIt1 - customerIt2 == 1)
+                                    {
+                                        customer2_next = customer2;
+                                        customer1_last = customer1;
+                                    }
+
+                                    // Calculate new diff distance 
+                                    double newDiffCustomer1 = instance.customersDistanceMatrix[customer2_last][customer1] +
+                                       instance.customersDistanceMatrix[customer1][customer2_next];
+                                    double newDiffCustomer2 = instance.customersDistanceMatrix[customer1_last][customer2] +
+                                       instance.customersDistanceMatrix[customer2][customer1_next];
+
+                                    // Calculate total new distance
+                                    double newDistance = bestDistance - (oldDiffCustomer1 + oldDiffCustomer2) + (newDiffCustomer1 + newDiffCustomer2);
+
+                                    // If solution not improve swap back
+                                    if (newDistance + 0.000001 < bestDistance)
+                                    {
+                                        // Perform Swap
+                                        Functions.Swap(solution.customersPaths[vehicle][cluster], customerIt1, customerIt2);
+
+                                        // Update distance
+                                        solution.vehiculeRouteDistance[vehicle] = solution.vehiculeRouteDistance[vehicle] - bestDistance + newDistance;
+                                        bestDistance = newDistance;
+
+                                        // Reset iterator
+                                        iterations = 0;
+                                    }
+                                    else
+                                    {
+                                        // Increase iterator
+                                        iterations++;
+                                    }
+
+                                }// End else not border case
+                            }// End for customer1
+                        }// End for customer2
+                    } // End for cluster
+                } // End main iterations
             }// End for vehicle
 
         }

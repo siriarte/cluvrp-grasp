@@ -109,7 +109,8 @@ namespace cluvrp_grasp
                 instance, 
                 parameters.Customer_LS_TwoOpt_Iterations,
                 parameters.Customer_LS_Relocate_Iterations,
-                parameters.Customer_LS_Exchange_Iterations
+                parameters.Customer_LS_Exchange_Iterations,
+                parameters.Customer_LS_SwapCustomers
                 );
 
 
@@ -141,7 +142,7 @@ namespace cluvrp_grasp
                 }
 
                 // Perform Customer Swap
-                if (localSearchsOrder[i] == LocalSearch.SwapCustomers && parameters.Customer_LS_SwapCustomers)
+                if (localSearchsOrder[i] == LocalSearch.SwapCustomers && parameters.Customer_LS_SwapCustomers != 0)
                 {
                     customerLocalSearch.SwapCustomers();
                 }
