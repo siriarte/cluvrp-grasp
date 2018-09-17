@@ -48,10 +48,15 @@ using System.Collections.Generic;
             // For local search execute order
             if (parameters.Cluster_LS_Order.Length == 0)
             {
+                /*
                 this.localSearchsOrder = new List<LocalSearch> { LocalSearch.InsertVehicle, LocalSearch.SwapVehicle,
                 LocalSearch.RndInsertVehicle, LocalSearch.RndSwapVehicle, LocalSearch.TwoOpt,
                 LocalSearch.Relocate, LocalSearch.Exchange, LocalSearch.SwapClusters};
-            }else
+                */
+                this.localSearchsOrder = new List<LocalSearch> { LocalSearch.InsertVehicle, LocalSearch.SwapVehicle,
+                LocalSearch.TwoOpt, LocalSearch.Relocate, LocalSearch.Exchange, LocalSearch.SwapClusters};
+            }
+            else
             {
                 this.localSearchsOrder = new List<LocalSearch>();
                 for (int i = 0; i < parameters.Cluster_LS_Order.Length; i++)
@@ -1079,10 +1084,10 @@ using System.Collections.Generic;
 
         #region Localsearch
         /*
- * 
- * Performance a set of local search techniques
- * 
- */
+         * 
+         * Performance a set of local search techniques
+         * 
+         */
         private void localSearch(CluVRPSolution newSolution)
         {
             // Create a local search handler for cluster-level problem
@@ -1154,7 +1159,7 @@ using System.Collections.Generic;
                 // Perform SwapClusters
                 if (ls == LocalSearch.SwapClusters)
                 {
-                    localSearchsCluster.SwapClusters();
+                    localSearchsCluster.swapClusters();
                 }
 
 

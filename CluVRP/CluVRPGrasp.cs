@@ -10,17 +10,17 @@ namespace cluvrp_grasp
     enum CluVRPType { Normal, Weak }
 
     class CluVRPGrasp
-    {       
+    {
 
         // Main GRASP handle main iteration depending if use Complete version or TwoPhase
         public static CluVRPSolution Grasp(CluVRPInstance instance, Parameters parameters)
         {
             // For best solution
             CluVRPSolution bestSolution = new CluVRPSolution();
-          
+
             // Main cycle
             int iterator = 0;
-            while(iterator < parameters.CluVRP_GRASPIterations)
+            while (iterator < parameters.CluVRP_GRASPIterations)
             {
                 // New Grasp for Cluster level instance
                 ClusterGRASP clusterGrasp = new ClusterGRASP(instance, parameters);
@@ -34,7 +34,7 @@ namespace cluvrp_grasp
                     iterator++;
                     continue;
                 }
-          
+
                 // Verify if cluster solution is correct
                 cluVRPSolution.verifyClusterSolution(instance);
 
@@ -44,26 +44,26 @@ namespace cluvrp_grasp
                 // Execute Grasp procedure
                 customerGrasp.Grasp();
 
-                SwapClusters(cluVRPSolution, instance);
-
-                swapVehicle(cluVRPSolution, instance);
-
+                // Perform LS
+                if (parameters.Cluster_LS_RndInsertVehicle > 0)
+                {
+                    cluVRPLocalSearchs(cluVRPSolution, instance, parameters);
+                }
                 // Verify if customer solution is correct
                 cluVRPSolution.verifyCustomerSolution(instance);
-                
 
                 // Update best solution
                 if (cluVRPSolution.totalCustomerRouteDistance < bestSolution.totalCustomerRouteDistance)
                 {
                     bestSolution = cluVRPSolution;
                 }
-                
+
                 // Increase iterator
                 iterator++;
             }
-                        
-           // Return best solution
-           return bestSolution;
+
+            // Return best solution
+            return bestSolution;
         }
 
         // Main GRASP (for Weak cluster constrains) handle main iteration depending if use Complete version or TwoPhase
@@ -88,7 +88,7 @@ namespace cluvrp_grasp
                     iterator++;
                     continue;
                 }
-                
+
                 // Verify if cluster solution is correct
                 cluVRPSolution.verifyClusterSolution(instance);
 
@@ -100,7 +100,7 @@ namespace cluvrp_grasp
 
                 // Verify if customer solution is correct
                 cluVRPSolution.verifyCustomerWeakSolution(instance);
-                
+
                 // Update best solution
                 if (cluVRPSolution.totalCustomerRouteDistance < bestSolution.totalCustomerRouteDistance)
                 {
@@ -114,57 +114,114 @@ namespace cluvrp_grasp
             // Return best solution
             return bestSolution;
         }
+        
+        // New LS to final solutions
+        public static void cluVRPLocalSearchs(CluVRPSolution cluVRPSolution, CluVRPInstance instance, Parameters parameters) {
 
-        public static void SwapClusters(CluVRPSolution solution, CluVRPInstance instance)
-        {
+            // Perform LS at cluster level
+            double oldTotalDistance = cluVRPSolution.totalCustomerRouteDistance;
+            swapClusters(cluVRPSolution, instance, parameters);
+            swapVehicle(cluVRPSolution, instance, parameters);
+
+            // If some cluster position change make LS at customer level
+            if (cluVRPSolution.totalCustomerRouteDistance < oldTotalDistance)
+            {
+                // Create a local search handler for cluster-level problem
+                CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(cluVRPSolution,
+                    instance,
+                    parameters.Customer_LS_TwoOpt_Iterations,
+                    parameters.Customer_LS_Relocate_Iterations,
+                    parameters.Customer_LS_Exchange_Iterations
+                    );
+
+                // Perform one iteration of LS at customer level
+                customerLocalSearch.twoOpt();
+                customerLocalSearch.exchange();
+                customerLocalSearch.relocate();
+                customerLocalSearch.swapCustomers();
+            }
+
+            // End
+            return;
+        }
+
+        // Swap Cluster heuristic (diff to the cluster levels because the customers paths has been builded)
+        public static void swapClusters(CluVRPSolution solution, CluVRPInstance instance, Parameters parameters) {
+
+            // Calculate old distances for each vehicle
+            double[] bestVehicleDistance = new double[solution.clusterRouteForVehicule.Length];
+            for (int vehicleIt = 0; vehicleIt < bestVehicleDistance.Length; vehicleIt++)
+            {
+                bestVehicleDistance[vehicleIt] = Functions.calculateTotalTravelDistance(solution.customersPaths, instance.customersDistanceMatrix, vehicleIt);
+            }
+
+            // For each vehicle
             for (int vehicle = 0; vehicle < solution.customersPaths.Length; vehicle++)
             {
-                for (int clusterIt1 = 1; clusterIt1 + 1 < solution.customersPaths[vehicle].Length; clusterIt1++)
+                // Main cycle
+                while (true)
                 {
-                    for (int clusterIt2 = 1; clusterIt2 + 1 < solution.customersPaths[vehicle].Length; clusterIt2++)
+                    // If solution improves try with new iteration
+                    bool solutionImproves = false;
+
+                    // For each cluster1
+                    for (int clusterIt1 = 1; clusterIt1 + 1 < solution.customersPaths[vehicle].Length; clusterIt1++)
                     {
-                        if (clusterIt1 != clusterIt2)
+                        // For each cluster2
+                        for (int clusterIt2 = 1; clusterIt2 + 1 < solution.customersPaths[vehicle].Length; clusterIt2++)
                         {
-                            List<int> cluster1Last = solution.customersPaths[vehicle][clusterIt1-1];
-                            List<int> cluster1 = solution.customersPaths[vehicle][clusterIt1];
-                            List<int> cluster1Next = solution.customersPaths[vehicle][clusterIt1 +1];
-
-                            List<int> cluster2Last = solution.customersPaths[vehicle][clusterIt2 - 1];
-                            List<int> cluster2 = solution.customersPaths[vehicle][clusterIt2];
-                            List<int> cluster2Next = solution.customersPaths[vehicle][clusterIt2 + 1];
-
-                            double oldDistance = Functions.calculateTotalTravelDistance(solution.customersPaths, instance.customersDistanceMatrix, vehicle);
-                            solution.customersPaths[vehicle][clusterIt1] = cluster2;
-                            solution.customersPaths[vehicle][clusterIt2] = cluster1;
-                            Functions.Swap(solution.clusterRouteForVehicule[vehicle], clusterIt1, clusterIt2);
-                            
-                            double newDistance = Functions.calculateTotalTravelDistance(solution.customersPaths, instance.customersDistanceMatrix, vehicle);
-
-                            if (oldDistance <= newDistance)
+                            // If is not the same cluster
+                            if (clusterIt1 != clusterIt2)
                             {
-                                solution.customersPaths[vehicle][clusterIt1] = cluster1;
-                                solution.customersPaths[vehicle][clusterIt2] = cluster2;
+                                List<int> cluster1Last = solution.customersPaths[vehicle][clusterIt1 - 1];
+                                List<int> cluster1 = solution.customersPaths[vehicle][clusterIt1];
+                                List<int> cluster1Next = solution.customersPaths[vehicle][clusterIt1 + 1];
+
+                                List<int> cluster2Last = solution.customersPaths[vehicle][clusterIt2 - 1];
+                                List<int> cluster2 = solution.customersPaths[vehicle][clusterIt2];
+                                List<int> cluster2Next = solution.customersPaths[vehicle][clusterIt2 + 1];
+
+                                solution.customersPaths[vehicle][clusterIt1] = cluster2;
+                                solution.customersPaths[vehicle][clusterIt2] = cluster1;
                                 Functions.Swap(solution.clusterRouteForVehicule[vehicle], clusterIt1, clusterIt2);
-                            }
-                            else
-                            {
-                                solution.vehiculeRouteDistance[vehicle] = newDistance;
-                            }
 
+                                double newDistance = Functions.calculateTotalTravelDistance(solution.customersPaths, instance.customersDistanceMatrix, vehicle);
+
+                                if (solution.vehiculeRouteDistance[vehicle] <= newDistance + 0.00001)
+                                {
+                                    solution.customersPaths[vehicle][clusterIt1] = cluster1;
+                                    solution.customersPaths[vehicle][clusterIt2] = cluster2;
+                                    Functions.Swap(solution.clusterRouteForVehicule[vehicle], clusterIt1, clusterIt2);
+                                }
+                                else
+                                {
+                                    solution.vehiculeRouteDistance[vehicle] = newDistance;
+                                    solutionImproves = true;
+                                }
+                            }
                         }
                     }
+                    if (!solutionImproves) break;
                 }
             }
+
+            // End
+            return;
         }
 
         // Try to swap all the clusters (one bye one) for all vehicles (one by one)
-        public static void swapVehicle(CluVRPSolution solution, CluVRPInstance instance)
+        public static void swapVehicle(CluVRPSolution solution, CluVRPInstance instance, Parameters parameters)
         {
+            // Cluster demand 
             int[] clusterDemand = instance.clusters_demand;
 
-            for (int iterations = 0; iterations < 1; iterations++)
-            {
+            // More than 1 vehicle is needed
+            if (solution.clusterRouteForVehicule.Length < 2) return;
 
+            // Main cycle
+            int iterations = 0;
+            while (iterations < parameters.Cluster_LS_RndInsertVehicle)
+            {  
                 // For random order on iterations
                 List<int> rndPosition = new List<int>();
                 for (int i = 0; i < solution.clusterRouteForVehicule.Length; i++) rndPosition.Add(i);
@@ -192,43 +249,68 @@ namespace cluvrp_grasp
                                     // Calculate the space on vehicle if make a swap
                                     int clusterSwappedV1 = solution.clusterRouteForVehicule[vehicle1][cluster1];
                                     int clusterSwappedV2 = solution.clusterRouteForVehicule[vehicle2][cluster2];
+
                                     int newSpaceV1 = solution.vehicleRemSpace[vehicle1] + clusterDemand[clusterSwappedV1] - clusterDemand[clusterSwappedV2];
                                     int newSpaceV2 = solution.vehicleRemSpace[vehicle2] + clusterDemand[clusterSwappedV2] - clusterDemand[clusterSwappedV1];
 
                                     // If swap is possible
                                     if (newSpaceV1 > 0 && newSpaceV2 > 0 && clusterSwappedV1 != 0 && clusterSwappedV2 != 0 && clusterSwappedV1 != clusterSwappedV2)
                                     {
+                                        int lastClusterSwappedV1 = solution.clusterRouteForVehicule[vehicle1][cluster1 - 1];
+                                        int lastClusterSwappedV2 = solution.clusterRouteForVehicule[vehicle2][cluster2 - 1];
+                                        int nextClusterSwappedV1 = solution.clusterRouteForVehicule[vehicle1][cluster1 + 1];
+                                        int nextClusterSwappedV2 = solution.clusterRouteForVehicule[vehicle2][cluster2 + 1];
+
                                         // Calculate old distances for each vehicle
-                                        double oldDistanceVehicle1 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle1], instance.clustersDistanceMatrix);
-                                        double oldDistanceVehicle2 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle2], instance.clustersDistanceMatrix);
+                                        double oldDistanceVehicle1 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle1], instance.customersDistanceMatrix);
+                                        double oldDistanceVehicle2 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle2], instance.customersDistanceMatrix);
 
                                         // Swap clusters
-                                        solution.clusterRouteForVehicule[vehicle1][cluster1] = clusterSwappedV2;
-                                        solution.clusterRouteForVehicule[vehicle2][cluster2] = clusterSwappedV1;
+                                        List<int> cluster1Swp = solution.customersPaths[vehicle1][cluster1];
+                                        List<int> cluster2Swp = solution.customersPaths[vehicle2][cluster2];
+                                        solution.customersPaths[vehicle1][cluster1] = cluster2Swp;
+                                        solution.customersPaths[vehicle2][cluster2] = cluster1Swp;
 
                                         // Calculate new distances for each vehicle
-                                        double newDistanceVehicle1 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle1], instance.clustersDistanceMatrix);
-                                        double newDistanceVehicle2 = Functions.calculateClusterTravelDistanceForVehicle(solution.clusterRouteForVehicule[vehicle2], instance.clustersDistanceMatrix);
+                                        double newDistanceVehicle1 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle1], instance.customersDistanceMatrix);
+                                        double newDistanceVehicle2 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle2], instance.customersDistanceMatrix);
 
                                         // Calculate new total distance
                                         double newDistance = solution.totalClusterRouteDistance - (oldDistanceVehicle1 + oldDistanceVehicle2) + (newDistanceVehicle1 + newDistanceVehicle2);
 
                                         // If new distance is short
-                                        if (newDistance < solution.totalClusterRouteDistance)
+                                        if (newDistance + 0.0001 < solution.totalClusterRouteDistance)
                                         {
                                             // Update distance and space remaining
                                             solution.totalClusterRouteDistance = newDistance;
                                             solution.vehicleRemSpace[vehicle1] = newSpaceV1;
                                             solution.vehicleRemSpace[vehicle2] = newSpaceV2;
+                                            solution.clusterRouteForVehicule[vehicle1][cluster1] = clusterSwappedV2;
+                                            solution.clusterRouteForVehicule[vehicle2][cluster1] = clusterSwappedV1;
+
+                                            // Reset iterator
+                                            iterations = 0;
+
+                                            // DEBUG
+                                            Logger.GetInstance().logLine("DEBUG - Improve on swapVehicle");
+
                                         }
                                         // If new distance is not short
                                         else
                                         {
                                             // Undo swap
-                                            solution.clusterRouteForVehicule[vehicle1][cluster1] = clusterSwappedV1;
-                                            solution.clusterRouteForVehicule[vehicle2][cluster2] = clusterSwappedV2;
+                                            solution.customersPaths[vehicle1][cluster1] = cluster1Swp;
+                                            solution.customersPaths[vehicle2][cluster2] = cluster2Swp;
+
+                                            // Increase iterator
+                                            iterations++;
                                         }
-                                    } // End if swap is possible
+                                    }
+                                    else
+                                    {
+                                        iterations++;
+                                    } 
+                                    // End if swap is possible
                                 } // End for cluster 2
                             } // End for cluster 1
                         } // End if is not the same vehicle

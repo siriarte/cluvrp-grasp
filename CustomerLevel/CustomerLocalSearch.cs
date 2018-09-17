@@ -28,7 +28,7 @@ namespace cluvrp_grasp
             this.maxIterationsWithoutImprovementTwoOpt = maxIterationsWithoutImprovementTwoOpt;
             this.maxIterationsWithoutImprovementRelocate = maxIterationsWithoutImprovementRelocate;
             this.maxIterationsWithoutImprovementExchange = maxIterationsWithoutImprovementExchange;
-            this.maxIterationsWithoutImprovementSwapCustomers = maxIterationsWithoutImprovementSwapCustomers;
+            this.maxIterationsWithoutImprovementSwapCustomers = maxIterationsWithoutImprovementTwoOpt;
         }
 
         // TwoOpt local-search 
@@ -362,14 +362,20 @@ namespace cluvrp_grasp
         }
         
         // Swap Algorithm
-        public void SwapCustomers()
+        public void swapCustomers()
         {
             // For each vehicle
             for (int vehicle = 0; vehicle < solution.customersPaths.Length; vehicle++)
             {
-                int iterations = 0;
-                while (iterations < maxIterationsWithoutImprovementSwapCustomers &&  solution.customersPaths[vehicle].Length > 3)
+                // If vehicle has only 1 cluster doesn't try
+                if (solution.customersPaths[vehicle].Length > 3) continue;
+
+                // Main cycle
+                while (true)
                 {
+                    // If solution improves try with one more iteration
+                    bool solutionImproves = false;
+
                     // For each cluster
                     for (int clusterIt = 1; clusterIt < solution.customersPaths[vehicle].Length - 1; clusterIt++)
                     {
@@ -382,7 +388,7 @@ namespace cluvrp_grasp
                         int cluster = rndPosition[clusterIt - 1];
 
                         // Calculate path distance including In and Out of cluster
-                        double bestDistance = Functions.calculateInOutAndPathDistance(solution.customersPaths[vehicle], cluster, instance.customersDistanceMatrix);
+                        double bestDistance = solution.vehiculeRouteDistance[vehicle];
 
                         // For each customer
                         for (int customerIt1 = 0; customerIt1 < solution.customersPaths[vehicle][cluster].Count; customerIt1++)
@@ -393,7 +399,6 @@ namespace cluvrp_grasp
                                 // No swap for same customers
                                 if (customerIt1 == customerIt2)
                                 {
-                                    iterations++;
                                     continue;
                                 }
 
@@ -415,15 +420,12 @@ namespace cluvrp_grasp
                                         bestDistance = newDistance;
 
                                         // Reset iterator
-                                        iterations = 0;
+                                        solutionImproves = true;
                                     }
                                     else
                                     {
                                         // Perform Swap back
-                                        Functions.Swap(solution.customersPaths[vehicle][cluster], customerIt1, customerIt2);
-
-                                        // Increase iterator
-                                        iterations++;                                            
+                                        Functions.Swap(solution.customersPaths[vehicle][cluster], customerIt1, customerIt2);                                    
                                     }
                                 }
                                 // If is not a boerder case only calculate the diff on the swap
@@ -474,23 +476,21 @@ namespace cluvrp_grasp
                                         bestDistance = newDistance;
 
                                         // Reset iterator
-                                        iterations = 0;
-                                    }
-                                    else
-                                    {
-                                        // Increase iterator
-                                        iterations++;
+                                        solutionImproves = true;
                                     }
 
                                 }// End else not border case
                             }// End for customer1
                         }// End for customer2
                     } // End for cluster
+
+                    // If not improves for the cluster continue with the next
+                    if (!solutionImproves) break;
+
                 } // End main iterations
             }// End for vehicle
 
         }
-
 
     }
 }

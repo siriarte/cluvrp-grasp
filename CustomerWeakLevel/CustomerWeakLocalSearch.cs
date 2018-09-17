@@ -345,71 +345,82 @@ namespace cluvrp_grasp
         }
 
         // Swap Algorithm
-        public void SwapCustomers()
+        public void swapCustomers()
         {
             // For each vehicle
             for (int vehicle = 0; vehicle < solution.customersWeakRoute.Length; vehicle++)
             {                   
                 // Calculate path distance including In and Out of cluster
-                double bestDistance = Functions.calculateCustomerTravelDistanceForVehicle(solution.customersWeakRoute[vehicle], instance.customersDistanceMatrix);
+                double bestDistance = solution.vehiculeRouteDistance[vehicle];
 
-                // For each customer except depot (start and end)
-                for (int customerIt1 = 1; customerIt1 + 1 < solution.customersWeakRoute[vehicle].Count; customerIt1++)
+                // If solution improves try one more iteration at same cluster
+                bool solutionImproves = false;
+
+                // Main cycle
+                while (true)
                 {
-                    // Against all customer on the path (start and end)
-                    for (int customerIt2 = 1; customerIt2 + 1 < solution.customersWeakRoute[vehicle].Count; customerIt2++)
+                    // For each customer except depot (start and end)
+                    for (int customerIt1 = 1; customerIt1 + 1 < solution.customersWeakRoute[vehicle].Count; customerIt1++)
                     {
-                        // No swap for same customers
-                        if (customerIt1 == customerIt2)
+                        // Against all customer on the path (start and end)
+                        for (int customerIt2 = 1; customerIt2 + 1 < solution.customersWeakRoute[vehicle].Count; customerIt2++)
                         {
-                            continue;
-                        }
+                            // No swap for same customers
+                            if (customerIt1 == customerIt2)
+                            {
+                                continue;
+                            }
 
-                        // Calculate old diff distance
-                        int customer1 = solution.customersWeakRoute[vehicle][customerIt1];
-                        int customer2 = solution.customersWeakRoute[vehicle][customerIt2];
-                        int customer1_next = solution.customersWeakRoute[vehicle][customerIt1 + 1];
-                        int customer1_last = solution.customersWeakRoute[vehicle][customerIt1 + -1];
-                        int customer2_next = solution.customersWeakRoute[vehicle][customerIt2 + 1];
-                        int customer2_last = solution.customersWeakRoute[vehicle][customerIt2 -1];
+                            // Calculate old diff distance
+                            int customer1 = solution.customersWeakRoute[vehicle][customerIt1];
+                            int customer2 = solution.customersWeakRoute[vehicle][customerIt2];
+                            int customer1_next = solution.customersWeakRoute[vehicle][customerIt1 + 1];
+                            int customer1_last = solution.customersWeakRoute[vehicle][customerIt1 + -1];
+                            int customer2_next = solution.customersWeakRoute[vehicle][customerIt2 + 1];
+                            int customer2_last = solution.customersWeakRoute[vehicle][customerIt2 - 1];
 
-                        double oldDiffCustomer1 = instance.customersDistanceMatrix[customer1_last][customer1] +
-                           instance.customersDistanceMatrix[customer1][customer1_next];
-                        double oldDiffCustomer2 = instance.customersDistanceMatrix[customer2_last][customer2] +
-                            instance.customersDistanceMatrix[customer2][customer2_next];
-                        
-                        // If one is the next of the other
-                        if (customerIt2 - customerIt1 == 1)
-                        {
-                            customer1_next = customer1;
-                            customer2_last = customer2;
-                        }else if (customerIt1 - customerIt2 == 1)
-                        {
-                            customer2_next = customer2;
-                            customer1_last = customer1;
-                        }
+                            double oldDiffCustomer1 = instance.customersDistanceMatrix[customer1_last][customer1] +
+                               instance.customersDistanceMatrix[customer1][customer1_next];
+                            double oldDiffCustomer2 = instance.customersDistanceMatrix[customer2_last][customer2] +
+                                instance.customersDistanceMatrix[customer2][customer2_next];
 
-                        // Calculate new diff distance 
-                        double newDiffCustomer1 = instance.customersDistanceMatrix[customer2_last][customer1] +
-                           instance.customersDistanceMatrix[customer1][customer2_next];
-                        double newDiffCustomer2 = instance.customersDistanceMatrix[customer1_last][customer2] +
-                           instance.customersDistanceMatrix[customer2][customer1_next];
-                       
-                        // Calculate total new distance
-                        double newDistance = bestDistance - (oldDiffCustomer1 + oldDiffCustomer2) + (newDiffCustomer1 + newDiffCustomer2); 
+                            // If one is the next of the other
+                            if (customerIt2 - customerIt1 == 1)
+                            {
+                                customer1_next = customer1;
+                                customer2_last = customer2;
+                            }
+                            else if (customerIt1 - customerIt2 == 1)
+                            {
+                                customer2_next = customer2;
+                                customer1_last = customer1;
+                            }
 
-                        // If solution not improve swap back
-                        if (newDistance <= bestDistance)
-                        {                            
-                            // Perform Swap
-                            Functions.Swap(solution.customersWeakRoute[vehicle], customerIt1, customerIt2);
-                               
-                            // Update distance
-                            bestDistance = newDistance;
-                            solution.vehiculeRouteDistance[vehicle] = newDistance;
-                        }
-                    }// End for customer1
-                }// End for customer2
+                            // Calculate new diff distance 
+                            double newDiffCustomer1 = instance.customersDistanceMatrix[customer2_last][customer1] +
+                               instance.customersDistanceMatrix[customer1][customer2_next];
+                            double newDiffCustomer2 = instance.customersDistanceMatrix[customer1_last][customer2] +
+                               instance.customersDistanceMatrix[customer2][customer1_next];
+
+                            // Calculate total new distance
+                            double newDistance = bestDistance - (oldDiffCustomer1 + oldDiffCustomer2) + (newDiffCustomer1 + newDiffCustomer2);
+
+                            // If solution not improve swap back
+                            if (newDistance <= bestDistance)
+                            {
+                                // Perform Swap
+                                Functions.Swap(solution.customersWeakRoute[vehicle], customerIt1, customerIt2);
+
+                                // Update distance
+                                bestDistance = newDistance;
+                                solution.vehiculeRouteDistance[vehicle] = newDistance;
+                            }
+                        }// End for customer1
+                    }// End for customer2
+
+                    // If solution not improve continue with next cluster
+                    if (!solutionImproves) break;
+                }
             }// End for vehicle
 
             // End
