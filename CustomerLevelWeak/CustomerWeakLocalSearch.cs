@@ -11,6 +11,7 @@ namespace cluvrp_grasp
         public int maxIterationsWithoutImprovementTwoOpt { get; set; }
         public int maxIterationsWithoutImprovementRelocate { get; set; }
         public int maxIterationsWithoutImprovementExchange { get; set; }
+        public int maxIterationsWithoutImprovementSwapCustomers { get; set; }
         public CluVRPSolution solution { get; set; }
         public CluVRPInstance instance { get; set; }
 
@@ -19,13 +20,15 @@ namespace cluvrp_grasp
             CluVRPInstance instance,
             int maxIterationsWithoutImprovementTwoOpt = 100,
             int maxIterationsWithoutImprovementRelocate = 100,
-            int maxIterationsWithoutImprovementExchange = 100)
+            int maxIterationsWithoutImprovementExchange = 100,
+            int maxIterationsWithoutImprovementSwapCustomers = 100)
         {
             this.solution = solution;
             this.instance = instance;
             this.maxIterationsWithoutImprovementTwoOpt = maxIterationsWithoutImprovementTwoOpt;
             this.maxIterationsWithoutImprovementRelocate = maxIterationsWithoutImprovementRelocate;
             this.maxIterationsWithoutImprovementExchange = maxIterationsWithoutImprovementExchange;
+            this.maxIterationsWithoutImprovementSwapCustomers = maxIterationsWithoutImprovementSwapCustomers;
         }
 
         // TwoOpt local-search 
@@ -353,24 +356,39 @@ namespace cluvrp_grasp
                 // Calculate path distance including In and Out of cluster
                 double bestDistance = solution.vehiculeRouteDistance[vehicle];
 
-                // If solution improves try one more iteration at same cluster
-                bool solutionImproves = false;
+                // For random order on iterations
+                List<int> rndPosition = new List<int>();
+                for (int i = 0; i < solution.customersWeakRoute[vehicle].Count; i++) rndPosition.Add(i);
 
                 // Main cycle
-                while (true)
+                int iterator = 0;
+                while (iterator < maxIterationsWithoutImprovementSwapCustomers)
                 {
+
+                    // Suffle list positions
+                    Functions.Shuffle<int>(new Random(), rndPosition);
+
+                    // If solution improves jump and start again with the same vehicle
+                    bool solutionImproves = false;
+
                     // For each customer except depot (start and end)
-                    for (int customerIt1 = 1; customerIt1 + 1 < solution.customersWeakRoute[vehicle].Count; customerIt1++)
+                    for (int customerIt_1 = 0; customerIt_1 < solution.customersWeakRoute[vehicle].Count; customerIt_1++)
                     {
                         // Against all customer on the path (start and end)
-                        for (int customerIt2 = 1; customerIt2 + 1 < solution.customersWeakRoute[vehicle].Count; customerIt2++)
+                        for (int customerIt_2 = 0; customerIt_2 < solution.customersWeakRoute[vehicle].Count; customerIt_2++)
                         {
-                            // No swap for same customers
-                            if (customerIt1 == customerIt2)
+                            // Select rnd position for iterators
+                            int customerIt1 = rndPosition[customerIt_1];
+                            int customerIt2 = rndPosition[customerIt_2];
+
+                            // No swap for same customers or depot
+                            if (customerIt_1 == customerIt_2 || 
+                                customerIt1 == 0 || customerIt1 == solution.customersWeakRoute[vehicle].Count - 1 ||
+                                customerIt2 == 0 || customerIt2 == solution.customersWeakRoute[vehicle].Count - 1)
                             {
                                 continue;
                             }
-
+                            
                             // Calculate old diff distance
                             int customer1 = solution.customersWeakRoute[vehicle][customerIt1];
                             int customer2 = solution.customersWeakRoute[vehicle][customerIt2];
@@ -406,7 +424,7 @@ namespace cluvrp_grasp
                             double newDistance = bestDistance - (oldDiffCustomer1 + oldDiffCustomer2) + (newDiffCustomer1 + newDiffCustomer2);
 
                             // If solution not improve swap back
-                            if (newDistance <= bestDistance)
+                            if (newDistance + 0.00001 <= bestDistance)
                             {
                                 // Perform Swap
                                 Functions.Swap(solution.customersWeakRoute[vehicle], customerIt1, customerIt2);
@@ -414,12 +432,21 @@ namespace cluvrp_grasp
                                 // Update distance
                                 bestDistance = newDistance;
                                 solution.vehiculeRouteDistance[vehicle] = newDistance;
+
+                                // Reset irator
+                                iterator = 0;
+                                solutionImproves = true;
+                                break;
                             }
                         }// End for customer1
+
+                        // To start from vehicle again
+                        if (solutionImproves) break;
+
                     }// End for customer2
 
                     // If solution not improve continue with next cluster
-                    if (!solutionImproves) break;
+                    if (!solutionImproves) iterator++;
                 }
             }// End for vehicle
 
