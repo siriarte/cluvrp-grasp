@@ -1,13 +1,14 @@
-﻿using System;
+﻿using cluvrp_grasp.CluVRP;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace cluvrp_grasp
 {
-    enum CluVRPVersion { TwoPhase, Complete }
-    enum CluVRPType { Normal, Weak }
+    enum CluVRPVersion { Strong, Weak }
 
     class CluVRPGrasp
     {
@@ -16,7 +17,7 @@ namespace cluvrp_grasp
         public static CluVRPSolution Grasp(CluVRPInstance instance, Parameters parameters)
         {
             // For best solution
-            CluVRPSolution bestSolution = new CluVRPSolution();
+            CluVRPSolution bestSolution = new CluVRPSolution(instance);
 
             // Main cycle
             int iterator = 0;
@@ -39,67 +40,40 @@ namespace cluvrp_grasp
                 cluVRPSolution.verifyClusterSolution(instance);
 
                 // New Grasp for Cluster level instance
-                CustomerGRASP customerGrasp = new CustomerGRASP(instance, cluVRPSolution, parameters);
+                CustomerLevel customerGrasp = null;
+                if (parameters.CluVRP_Version == CluVRPVersion.Strong)
+                {
+                    customerGrasp = new CustomerStrongGRASP(instance, cluVRPSolution, parameters);
+                }
+                else if (parameters.CluVRP_Version == CluVRPVersion.Weak)
+                {
+                    customerGrasp = new CustomerWeakGRASP(instance, cluVRPSolution, parameters);
+                }
 
                 // Execute Grasp procedure
                 customerGrasp.Grasp();
-
-                // Perform LS
-                if (parameters.Cluster_LS_RndInsertVehicle > 0)
+                
+                //if solution is not available continue with next iteration
+                if (cluVRPSolution.customersPaths == null && cluVRPSolution.customersWeakRoute == null)
                 {
-                    cluVRPLocalSearchs(cluVRPSolution, instance, parameters);
-                }
-                // Verify if customer solution is correct
-                cluVRPSolution.verifyCustomerSolution(instance);
-
-                // Update best solution
-                if (cluVRPSolution.totalCustomerRouteDistance < bestSolution.totalCustomerRouteDistance)
-                {
-                    bestSolution = cluVRPSolution;
-                }
-
-                // Increase iterator
-                iterator++;
-            }
-
-            // Return best solution
-            return bestSolution;
-        }
-
-        // Main GRASP (for Weak cluster constrains) handle main iteration depending if use Complete version or TwoPhase
-        public static CluVRPSolution GraspForWeakCustomer(CluVRPInstance instance, Parameters parameters)
-        {
-            // For best solution
-            CluVRPSolution bestSolution = new CluVRPSolution();
-
-            // Main cycle
-            int iterator = 0;
-            while (iterator < parameters.CluVRP_GRASPIterations)
-            {
-                // New Grasp for Cluster level instance
-                ClusterGRASP clusterGrasp = new ClusterGRASP(instance, parameters);
-
-                // Execute Grasp procedure
-                CluVRPSolution cluVRPSolution = clusterGrasp.Grasp();
-
-                // If solutions is not avalaible continue next iteration
-                if (cluVRPSolution.clusterRouteForVehicule == null)
-                {
-                    iterator++;
                     continue;
                 }
 
-                // Verify if cluster solution is correct
-                cluVRPSolution.verifyClusterSolution(instance);
-
-                // New Grasp for Cluster level instance
-                CustomerWeakGRASP customerGrasp = new CustomerWeakGRASP(instance, cluVRPSolution, parameters);
-
-                // Execute Grasp procedure
-                customerGrasp.Grasp();
+                // Perform LS
+                if (parameters.CluVRP_LS_SwapVehicle > 0 && parameters.CluVRP_Version == CluVRPVersion.Strong)
+                {
+                    cluVRPLocalSearchs(cluVRPSolution, instance, parameters);
+                }
 
                 // Verify if customer solution is correct
-                cluVRPSolution.verifyCustomerWeakSolution(instance);
+                if (parameters.CluVRP_Version == CluVRPVersion.Strong)
+                {
+                    cluVRPSolution.verifyCustomerSolution(instance);
+                }
+                else if (parameters.CluVRP_Version == CluVRPVersion.Weak)
+                {
+                    cluVRPSolution.verifyCustomerWeakSolution(instance);
+                }
 
                 // Update best solution
                 if (cluVRPSolution.totalCustomerRouteDistance < bestSolution.totalCustomerRouteDistance)
@@ -127,11 +101,12 @@ namespace cluvrp_grasp
             if (cluVRPSolution.totalCustomerRouteDistance < oldTotalDistance)
             {
                 // Create a local search handler for cluster-level problem
-                CustomerLocalSearch customerLocalSearch = new CustomerLocalSearch(cluVRPSolution,
+                CustomerStrongLocalSearch customerLocalSearch = new CustomerStrongLocalSearch(cluVRPSolution,
                     instance,
                     parameters.Customer_LS_TwoOpt_Iterations,
                     parameters.Customer_LS_Relocate_Iterations,
-                    parameters.Customer_LS_Exchange_Iterations
+                    parameters.Customer_LS_Exchange_Iterations,
+                    parameters.Customer_LS_SwapCustomers
                     );
 
                 // Perform one iteration of LS at customer level
@@ -220,7 +195,7 @@ namespace cluvrp_grasp
 
             // Main cycle
             int iterations = 0;
-            while (iterations < parameters.Cluster_LS_RndInsertVehicle)
+            while (iterations < parameters.CluVRP_LS_SwapVehicle)
             {  
                 // For random order on iterations
                 List<int> rndPosition = new List<int>();

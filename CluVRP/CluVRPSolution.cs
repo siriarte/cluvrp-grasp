@@ -19,6 +19,7 @@ namespace cluvrp_grasp
         public FitAlgorithm fitUsed { set; get; }
         public List<LocalSearch> bestClusterLSOrder { set; get; }
         public List<LocalSearch> bestCustomerLSOrder { set; get; }
+        public Instance instaceType { set; get; }
 
         // For customer problem
         public List<int>[][] customersPaths { set; get; }
@@ -46,15 +47,29 @@ namespace cluvrp_grasp
         {
             get
             {
+                // If not solution available return max value
                 if (_vehiculeRouteDistance == null) return double.MaxValue;
+
+                // If instance is battarra type the solution is an integer
+                if(instaceType == Instance.GoldenBattarra || instaceType == Instance.GVRP) { 
+                    int sum = 0;
+                    for(int vehicle = 0; vehicle < _vehiculeRouteDistance.Length; vehicle++)
+                    {
+                        sum += (int)_vehiculeRouteDistance[vehicle];
+                    }
+                    return sum;
+                }
+               
+                // For Izquierdo the solution is double
                 return _vehiculeRouteDistance.Sum();
             }
         }
 
         // Constructor
-        public CluVRPSolution()
+        public CluVRPSolution(CluVRPInstance instance)
         {
             totalClusterRouteDistance = double.MaxValue;
+            instaceType = instance.instance_type;
         }
 
         // Set cluster solution
@@ -186,7 +201,7 @@ namespace cluvrp_grasp
             }
 
             // Total distance is correct
-            Debug.Assert(Math.Truncate(totalCustomerRouteDistance) == Math.Truncate(Functions.calculateTotalTravelDistance(customersPaths, instance.customersDistanceMatrix)), "The final distance is not correct");
+            Debug.Assert(Math.Truncate(totalCustomerRouteDistance) == Math.Truncate(Functions.calculateTotalTravelDistance(customersPaths, instance.customersDistanceMatrix, instance)), "The final distance is not correct");
 
         }
 

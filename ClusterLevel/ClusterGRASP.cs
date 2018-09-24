@@ -41,7 +41,7 @@ using System.Collections.Generic;
         {
             // Set instance 
             instance = cluVRPinstance;
-            solution = new CluVRPSolution();
+            solution = new CluVRPSolution(cluVRPinstance);
             fitAlgorithm = parameters.Cluster_FitAlgoritm;
             this.parameters = parameters;
 
@@ -106,7 +106,7 @@ using System.Collections.Generic;
                     }
 
                     // Create a Greedy Randomized Solution
-                    CluVRPSolution newSolution = new CluVRPSolution();
+                    CluVRPSolution newSolution = new CluVRPSolution(instance);
                     if (instance.instance_type == Instance.GoldenIzquierdo)
                     {
                         newSolution = constructGreedyRandomizedSolutionIzquierdo(alphaDistance);
@@ -248,7 +248,7 @@ using System.Collections.Generic;
             {
                 // Show error and throw exception
                 String msg = "Greedy at Cluster-Level Error - ClusterToVisit list is not empty on " + fitAlgorithm + " algorithm";
-                Console.WriteLine(msg);
+                //Console.WriteLine(msg);
                 throw new Exception(msg);
               }
       
@@ -262,7 +262,7 @@ using System.Collections.Generic;
             double travelTotalDistance = Functions.calculateTotalClusterTravelDistance(clusterRouteForVehicle, instance.clustersDistanceMatrix);
 
             // Set solution
-            CluVRPSolution newSolution = new CluVRPSolution();
+            CluVRPSolution newSolution = new CluVRPSolution(instance);
             newSolution.setClusterSolution(clusterRouteForVehicle, vehicleRemSpace, travelTotalDistance);
 
             // Return solution
@@ -323,7 +323,7 @@ using System.Collections.Generic;
             double travelTotalDistance = Functions.calculateTotalClusterTravelDistance(clusterRouteForVehicle, instance.clustersDistanceMatrix);
 
             // Set solution
-            CluVRPSolution newSolution = new CluVRPSolution();
+            CluVRPSolution newSolution = new CluVRPSolution(instance);
             newSolution.setClusterSolution(clusterRouteForVehicle, vehicleRemSpace, travelTotalDistance);
 
             // Return solution
@@ -1096,8 +1096,7 @@ using System.Collections.Generic;
                 parameters.Cluster_LS_TwoOpt_Iterations,
                 parameters.Cluster_LS_Relocate_Iterations,
                 parameters.Cluster_LS_Exchange_Iterations,
-                parameters.Cluster_LS_RndSwapVehicle,
-                parameters.Cluster_LS_RndInsertVehicle,
+                parameters.Cluster_LS_SwapClusters,
                 parameters.Cluster_LS_SwapVehicle,
                 parameters.Cluster_LS_InsertVehicle
                 );
@@ -1128,13 +1127,13 @@ using System.Collections.Generic;
                 }
 
                 // Perform random interVehicle Insert
-                if (ls == LocalSearch.RndInsertVehicle && parameters.Cluster_LS_RndInsertVehicle != 0)
+                if (ls == LocalSearch.RndInsertVehicle && parameters.CluVRP_LS_SwapVehicle != 0)
                 {
                     localSearchsCluster.interVehicleRandomChange(instance.clusters_demand);
                 }
 
                 // Perform random interVehicle Swap
-                if (ls == LocalSearch.RndSwapVehicle && parameters.Cluster_LS_RndSwapVehicle != 0)
+                if (ls == LocalSearch.RndSwapVehicle && parameters.CluVRP_LS_SwapClusters != 0)
                 {
                     localSearchsCluster.interVehicleRandomSwap();
                 }

@@ -68,8 +68,8 @@ namespace cluvrp_grasp
             ret += "CLUSTER ALPHA CAPACITY/BACKTODEPOT = " + parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
             ret += "CLUSTER LS SWAP VEHICLE = " + parameters.Cluster_LS_SwapVehicle.ToString() + separator;
             ret += "CLUSTER LS INSERT VEHICLE = " + parameters.Cluster_LS_InsertVehicle.ToString() + separator;
-            ret += "CLUSTER LS RND SWAP VEHICLE = " + parameters.Cluster_LS_RndSwapVehicle + separator;
-            ret += "CLUSTER LS RND INSERT VEHICLE = " + parameters.Cluster_LS_RndInsertVehicle + separator;
+            ret += "CLUSTER LS RND SWAP VEHICLE = " + parameters.CluVRP_LS_SwapClusters + separator;
+            ret += "CLUSTER LS RND INSERT VEHICLE = " + parameters.CluVRP_LS_SwapVehicle + separator;
             ret += "CLUSTER LS TWO-OPT = " + parameters.Cluster_LS_TwoOpt_Iterations + separator;
             ret += "CLUSTER LS RELOCATE = " + parameters.Cluster_LS_Relocate_Iterations + separator;
             ret += "CLUSTER LS EXCHANGE = " + parameters.Cluster_LS_Exchange_Iterations + separator;
@@ -105,13 +105,16 @@ namespace cluvrp_grasp
         }
 
         // Calculate the total travel (visiting all the custer and customers by each vehicle)
-        static public double calculateTotalTravelDistance(List<int>[][] customersCircuit, double[][] customersDistanceMatrix)
+        static public double calculateTotalTravelDistance(List<int>[][] customersCircuit, double[][] customersDistanceMatrix, CluVRPInstance instance)
         {
             double distance = 0;
 
             for (int vehicle = 0; vehicle < customersCircuit.Length; vehicle++)
             {
-                distance += calculateTotalTravelDistance(customersCircuit, customersDistanceMatrix, vehicle);
+                if(instance.instance_type == Instance.GoldenBattarra || instance.instance_type == Instance.GVRP)
+                    distance += (int)calculateTotalTravelDistance(customersCircuit, customersDistanceMatrix, vehicle);
+                if (instance.instance_type == Instance.GoldenIzquierdo)
+                    distance += calculateTotalTravelDistance(customersCircuit, customersDistanceMatrix, vehicle);
             }
 
             return distance;

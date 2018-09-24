@@ -9,7 +9,7 @@ namespace cluvrp_grasp
     class Program
     {
         // Main Function
-        static void GraspProcedureCycleParameters(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare, CluVRPType cluvrpType = CluVRPType.Normal)
+        static void GraspProcedureCycleParameters(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare)
         {
             // Star watch to calculate total process time
             var totalWatch = System.Diagnostics.Stopwatch.StartNew();
@@ -19,7 +19,7 @@ namespace cluvrp_grasp
 
             // For best solution set
             Dictionary<CluVRPInstance, CluVRPSolution> bestSolutionForInstance = new Dictionary<CluVRPInstance, CluVRPSolution>();
-            CluVRPSolution solution = new CluVRPSolution();
+            CluVRPSolution solution;
             double[] bestIndividualTotalDistance = new double[solutionToCompare.Length];
             double[] bestIndividualPropDistance = new double[solutionToCompare.Length];
             double[] bestIndividualTime = new double[solutionToCompare.Length];
@@ -84,15 +84,13 @@ namespace cluvrp_grasp
                     // Set max distance value
                     double distance = 0;
                     string fitAlgoBestSol = "";
+                    
+                    // Create a new solution
+                    solution = new CluVRPSolution(instance);
 
                     // Calculate solution for normal CluVRP or weak cluster constrains
-                    if (cluvrpType == CluVRPType.Normal)
-                    {                        
-                        solution = CluVRPGrasp.Grasp(instance, parameters);
-                    }else
-                    {
-                        solution = CluVRPGrasp.GraspForWeakCustomer(instance, parameters);
-                    }
+                    solution = CluVRPGrasp.Grasp(instance, parameters);
+       
                     // If not possible solution
                     if (solution.clusterRouteForVehicule == null)
                     {
@@ -285,9 +283,10 @@ namespace cluvrp_grasp
             // End
             return;
         }
+        
 
         // Main Function
-        static void GraspProcedure(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare, CluVRPType cluvrpType = CluVRPType.Normal)
+        static void GraspProcedure(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare)
         {
 
             // Star watch to calculate total process time
@@ -301,7 +300,7 @@ namespace cluvrp_grasp
 
             // For best results 
             Dictionary<CluVRPInstance, CluVRPSolution> bestSolutionForInstance = new Dictionary<CluVRPInstance, CluVRPSolution>();
-            CluVRPSolution solution = new CluVRPSolution();
+            CluVRPSolution solution;
             double[] bestSolutionTotalDistance = new double[instancesNumber];
             double[] bestSolutionPropDistance = new double[instancesNumber];
             double[] bestSolutionTime = new double[instancesNumber];
@@ -333,7 +332,7 @@ namespace cluvrp_grasp
                             "* CONFIG -> " + parametersFilePath + '\n' +
                             "* SET INSTANCE -> " + instanceSetFilePath + '\n' +
                             "* LOG FILE -> " + logger.getLogFilePath() + '\n' +
-                            "******************************************************" + '\n');
+                            "*****************************************************" + '\n');
 
             // For each instance
             int instanceIterator = 0;
@@ -341,6 +340,9 @@ namespace cluvrp_grasp
             {
                 // For this instance
                 double distance;
+
+                // Create new solution
+                solution = new CluVRPSolution(instance);
 
                 // For each parameter configuration
                 foreach (Parameters parameters in parametersList)
@@ -353,14 +355,7 @@ namespace cluvrp_grasp
                     //logger.logLine(actualParameters);
 
                     // Calculate solution for normal CluVRP or weak cluster constrains
-                    if (cluvrpType == CluVRPType.Normal)
-                    {
-                        solution = CluVRPGrasp.Grasp(instance, parameters);
-                    }
-                    else
-                    {
-                        solution = CluVRPGrasp.GraspForWeakCustomer(instance, parameters);
-                    }
+                    solution = CluVRPGrasp.Grasp(instance, parameters);
 
                     // If not possible solution
                     if (solution.clusterRouteForVehicule == null)
@@ -488,7 +483,7 @@ namespace cluvrp_grasp
         {
 
             // Default type of clvrp
-            CluVRPType cluVRPType = CluVRPType.Normal;
+            CluVRPVersion cluVRPVersion = CluVRPVersion.Strong;
 
             // Check numbers of parameters
             if (args.Length < 4)
@@ -501,7 +496,7 @@ namespace cluvrp_grasp
             }
             // If type of cluvrp is defined set it
             else if(args.Length == 5){
-                cluVRPType = (CluVRPType)int.Parse(args[4]);
+                cluVRPVersion = (CluVRPVersion)int.Parse(args[4]);
             }
 
             // Set variables
@@ -521,7 +516,7 @@ namespace cluvrp_grasp
             double[] solutionToCompare = Functions.createSolutionArrayForInstances(instanceSetFilePath, solutionsFilePath);
   
             // Excute GRASP
-            GraspProcedure(parametersFilePath, instanceSetFilePath, logFilePath, solutionToCompare, cluVRPType);
+            GraspProcedure(parametersFilePath, instanceSetFilePath, logFilePath, solutionToCompare);
 
             // End
             return;
