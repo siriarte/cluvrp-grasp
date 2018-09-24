@@ -60,7 +60,7 @@ namespace cluvrp_grasp
                 }
 
                 // Perform LS
-                if (parameters.CluVRP_LS_SwapVehicle > 0 && parameters.CluVRP_Version == CluVRPVersion.Strong)
+                if ((parameters.CluVRP_LS_SwapClusters> 0 || parameters.CluVRP_LS_SwapVehicle > 0) && parameters.CluVRP_Version == CluVRPVersion.Strong)
                 {
                     cluVRPLocalSearchs(cluVRPSolution, instance, parameters);
                 }
@@ -148,34 +148,43 @@ namespace cluvrp_grasp
                             // If is not the same cluster
                             if (clusterIt1 != clusterIt2)
                             {
+                                // Calculate last and next cluster for cluster1
                                 List<int> cluster1Last = solution.customersPaths[vehicle][clusterIt1 - 1];
                                 List<int> cluster1 = solution.customersPaths[vehicle][clusterIt1];
                                 List<int> cluster1Next = solution.customersPaths[vehicle][clusterIt1 + 1];
 
+                                // Calculate last and next cluster for cluster2
                                 List<int> cluster2Last = solution.customersPaths[vehicle][clusterIt2 - 1];
                                 List<int> cluster2 = solution.customersPaths[vehicle][clusterIt2];
                                 List<int> cluster2Next = solution.customersPaths[vehicle][clusterIt2 + 1];
 
+                                // Perform swap
                                 solution.customersPaths[vehicle][clusterIt1] = cluster2;
                                 solution.customersPaths[vehicle][clusterIt2] = cluster1;
                                 Functions.Swap(solution.clusterRouteForVehicule[vehicle], clusterIt1, clusterIt2);
 
+                                // Calculate new distance
                                 double newDistance = Functions.calculateTotalTravelDistance(solution.customersPaths, instance.customersDistanceMatrix, vehicle);
 
+                                // If new distance is not better
                                 if (solution.vehiculeRouteDistance[vehicle] <= newDistance + 0.00001)
                                 {
+                                    // Back the changes
                                     solution.customersPaths[vehicle][clusterIt1] = cluster1;
                                     solution.customersPaths[vehicle][clusterIt2] = cluster2;
                                     Functions.Swap(solution.clusterRouteForVehicule[vehicle], clusterIt1, clusterIt2);
                                 }
                                 else
                                 {
+                                    // If new solution is better update distance
                                     solution.vehiculeRouteDistance[vehicle] = newDistance;
                                     solutionImproves = true;
                                 }
                             }
                         }
                     }
+
+                    // If solution not improves jump to next vehicle
                     if (!solutionImproves) break;
                 }
             }
