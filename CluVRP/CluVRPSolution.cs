@@ -242,7 +242,7 @@ namespace cluvrp_grasp
             }
 
             // Total distance is correct
-            Debug.Assert(Math.Truncate(totalCustomerRouteDistance) == Math.Truncate(Functions.calculateCustomerTotalTravelDistanceForVehicle(customersWeakRoute, instance.customersDistanceMatrix)), "CustomerWeak - The final distance is not correct");
+            Debug.Assert(Math.Truncate(totalCustomerRouteDistance) == Math.Truncate(Functions.calculateCustomerTotalTravelDistanceForVehicle(customersWeakRoute, instance.customersDistanceMatrix, instance)), "CustomerWeak - The final distance is not correct");
 
         }
 

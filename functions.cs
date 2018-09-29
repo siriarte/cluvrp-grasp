@@ -120,7 +120,7 @@ namespace cluvrp_grasp
             return distance;
         }
 
-        // Calculate the total travel visiting all the custer by ONE vehicle
+        // Calculate the total travel visiting all the custer for ONE vehicle
         static public double calculateTotalTravelDistance(List<int>[][] customersCircuit, double[][] customersDistanceMatrix, int vehicle)
         {
             double distance = 0;
@@ -183,7 +183,7 @@ namespace cluvrp_grasp
         }
 
         // Calculate the total customer distance of a vehicle travel
-        public static double calculateCustomerTravelDistanceForVehicle(List<int> travel, double[][] customersDistanceMatrix)
+        public static double calculateCustomerTravelDistance(List<int> travel, double[][] customersDistanceMatrix)
         {
             // Set variables
             double totalDistance = 0;
@@ -201,15 +201,20 @@ namespace cluvrp_grasp
         }
 
         // Calculate the total customer distance of a all vehicles
-        public static double calculateCustomerTotalTravelDistanceForVehicle(List<int>[] travel, double[][] customersDistanceMatrix)
+        public static double calculateCustomerTotalTravelDistanceForVehicle(List<int>[] travel, double[][] customersDistanceMatrix, CluVRPInstance instance)
         {
             // Set variables
             double totalDistance = 0;
 
             for (int vehicle = 0; vehicle < travel.Length; vehicle++)
             {
-                totalDistance += calculateCustomerTravelDistanceForVehicle(travel[vehicle], customersDistanceMatrix);
+                if (instance.instance_type == Instance.GoldenBattarra || instance.instance_type == Instance.GVRP)
+                    totalDistance += (int) calculateCustomerTravelDistance(travel[vehicle], customersDistanceMatrix);
+                if (instance.instance_type == Instance.GoldenIzquierdo)
+                    totalDistance += calculateCustomerTravelDistance(travel[vehicle], customersDistanceMatrix);
+
             }
+
             // Return total distance
             return totalDistance;
         }

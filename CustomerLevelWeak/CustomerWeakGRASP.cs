@@ -229,7 +229,7 @@ namespace cluvrp_grasp
                 customersCircuit[vehicle].Add(1);
 
                 // Calculte total inter-cluster distance
-                vehiculeTotalDistance[vehicle] = Functions.calculateCustomerTravelDistanceForVehicle(customersCircuit[vehicle], instance.customersDistanceMatrix);
+                vehiculeTotalDistance[vehicle] = Functions.calculateCustomerTravelDistance(customersCircuit[vehicle], instance.customersDistanceMatrix);
             }
 
             // Set solution

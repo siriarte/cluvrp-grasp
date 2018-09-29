@@ -42,7 +42,7 @@ namespace cluvrp_grasp
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
                 // Best distance 
-                double bestDistance = Functions.calculateCustomerTravelDistanceForVehicle(customersCircuit[vehicle], instance.customersDistanceMatrix);
+                double bestDistance = Functions.calculateCustomerTravelDistance(customersCircuit[vehicle], instance.customersDistanceMatrix);
 
                 // Main cycle
                 int iteration = 0;
@@ -68,7 +68,7 @@ namespace cluvrp_grasp
                             customersCircuit[vehicle] = newRoute;
 
                             // Calculate the new distance
-                            double newDistance = Functions.calculateCustomerTravelDistanceForVehicle(customersCircuit[vehicle], instance.customersDistanceMatrix);
+                            double newDistance = Functions.calculateCustomerTravelDistance(customersCircuit[vehicle], instance.customersDistanceMatrix);
 
                             // If distance if better
                             if (newDistance + 0.000001 < bestDistance && isValidRoute(newRoute))

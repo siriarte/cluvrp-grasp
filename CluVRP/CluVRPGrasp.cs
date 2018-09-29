@@ -246,8 +246,8 @@ namespace cluvrp_grasp
                                         int nextClusterSwappedV2 = solution.clusterRouteForVehicule[vehicle2][cluster2 + 1];
 
                                         // Calculate old distances for each vehicle
-                                        double oldDistanceVehicle1 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle1], instance.customersDistanceMatrix);
-                                        double oldDistanceVehicle2 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle2], instance.customersDistanceMatrix);
+                                        double oldDistanceVehicle1 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle1], instance.customersDistanceMatrix, instance);
+                                        double oldDistanceVehicle2 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle2], instance.customersDistanceMatrix, instance);
 
                                         // Swap clusters
                                         List<int> cluster1Swp = solution.customersPaths[vehicle1][cluster1];
@@ -256,8 +256,8 @@ namespace cluvrp_grasp
                                         solution.customersPaths[vehicle2][cluster2] = cluster1Swp;
 
                                         // Calculate new distances for each vehicle
-                                        double newDistanceVehicle1 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle1], instance.customersDistanceMatrix);
-                                        double newDistanceVehicle2 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle2], instance.customersDistanceMatrix);
+                                        double newDistanceVehicle1 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle1], instance.customersDistanceMatrix, instance);
+                                        double newDistanceVehicle2 = Functions.calculateCustomerTotalTravelDistanceForVehicle(solution.customersPaths[vehicle2], instance.customersDistanceMatrix, instance);
 
                                         // Calculate new total distance
                                         double newDistance = solution.totalClusterRouteDistance - (oldDistanceVehicle1 + oldDistanceVehicle2) + (newDistanceVehicle1 + newDistanceVehicle2);
