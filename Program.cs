@@ -286,7 +286,7 @@ namespace cluvrp_grasp
         
 
         // Main Function
-        static void GraspProcedure(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare)
+        static void GraspProcedure(string parametersFilePath, string instanceSetFilePath, string logFilePath, double[] solutionToCompare, CluVRPVersion cluVRPVersion)
         {
 
             // Star watch to calculate total process time
@@ -319,8 +319,8 @@ namespace cluvrp_grasp
             // Get logger
             Logger logger = Logger.GetInstance();
 
-            // To logger verbose on
-            logger.setVerbose(true);
+            // To logger verbose on/off
+            logger.setVerbose(false);
             logger.setLogFilePath(logFilePath);
 
             // Get instances 
@@ -349,6 +349,12 @@ namespace cluvrp_grasp
                 {
                     // Star watch to calculate time
                     var watch = System.Diagnostics.Stopwatch.StartNew();
+
+                    // If CluVRP_Version in parameters is None(3) it has to be taken from command line
+                    if(parameters.CluVRP_Version == CluVRPVersion.None)
+                    {
+                        parameters.CluVRP_Version = cluVRPVersion;
+                    } 
 
                     // Actual Parameter
                     string actualParameters = Functions.parametersToString(parameters);
@@ -468,7 +474,7 @@ namespace cluvrp_grasp
             // Draw PNG solution
             foreach (CluVRPInstance instance in bestSolutionForInstance.Keys)
             {
-                CluVRPSolution.solutionDrawPythonCode(instance, bestSolutionForInstance[instance]);
+                //CluVRPSolution.solutionDrawPythonCode(instance, bestSolutionForInstance[instance]);
             }
 
             // Pause
@@ -490,7 +496,7 @@ namespace cluvrp_grasp
             {
                 Console.WriteLine(
                     "Parameter is missing: " + '\n' +
-                    "Use: cluvrp_grasp parametersFilePath instanceSetFilePath logFilePath solutionsFilePath" + '\n' + '\n'
+                    "Use: cluvrp_grasp parametersFilePath instanceSetFilePath logFilePath solutionsFilePath typeOfCluVRP" + '\n' + '\n'
                 );
                 return;
             }
@@ -516,7 +522,7 @@ namespace cluvrp_grasp
             double[] solutionToCompare = Functions.createSolutionArrayForInstances(instanceSetFilePath, solutionsFilePath);
   
             // Excute GRASP
-            GraspProcedure(parametersFilePath, instanceSetFilePath, logFilePath, solutionToCompare);
+            GraspProcedure(parametersFilePath, instanceSetFilePath, logFilePath, solutionToCompare, cluVRPVersion);
 
             // End
             return;

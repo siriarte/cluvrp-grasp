@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace cluvrp_grasp
 {
-    enum CluVRPVersion { Strong, Weak }
+    enum CluVRPVersion { Strong, Weak, None }
 
     class CluVRPGrasp
     {
