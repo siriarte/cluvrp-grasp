@@ -484,7 +484,7 @@ using System.Collections.Generic;
                     }
 
                 }
-
+                    
                 // If there is not capacity available
                 // use new vehicle is neccesary
                 if (minCapacity == instance.capacity + 1)
@@ -1096,9 +1096,9 @@ using System.Collections.Generic;
                 parameters.Cluster_LS_TwoOpt_Iterations,
                 parameters.Cluster_LS_Relocate_Iterations,
                 parameters.Cluster_LS_Exchange_Iterations,
-                parameters.Cluster_LS_SwapClusters,
+                parameters.Cluster_LS_InsertVehicle,
                 parameters.Cluster_LS_SwapVehicle,
-                parameters.Cluster_LS_InsertVehicle
+                parameters.Cluster_LS_SwapClusters
                 );
 
 
@@ -1113,30 +1113,6 @@ using System.Collections.Generic;
             {
                 // Next local search 
                 LocalSearch ls = (LocalSearch)localSearchsOrder[i];
-
-                // Perform interVehicle Swap
-                if (ls == LocalSearch.SwapVehicle && parameters.Cluster_LS_InsertVehicle > 0)
-                {
-                    localSearchsCluster.swapVehicle(instance.clusters_demand);
-                }
-
-                // Perform interVehicle Insert
-                if (ls == LocalSearch.InsertVehicle && parameters.Cluster_LS_SwapVehicle > 0)
-                {
-                    localSearchsCluster.insertVehicle(instance.clusters_demand);
-                }
-
-                // Perform random interVehicle Insert
-                if (ls == LocalSearch.RndInsertVehicle && parameters.CluVRP_LS_SwapVehicle != 0)
-                {
-                    localSearchsCluster.interVehicleRandomChange(instance.clusters_demand);
-                }
-
-                // Perform random interVehicle Swap
-                if (ls == LocalSearch.RndSwapVehicle && parameters.CluVRP_LS_SwapClusters != 0)
-                {
-                    localSearchsCluster.interVehicleRandomSwap();
-                }
 
                 // Perform Two-opt
                 if (ls == LocalSearch.TwoOpt && parameters.Cluster_LS_TwoOpt_Iterations != 0)
@@ -1155,8 +1131,21 @@ using System.Collections.Generic;
                 {
                     localSearchsCluster.exchange();
                 }
+
+                // Perform interVehicle Insert
+                if (ls == LocalSearch.InsertVehicle && parameters.Cluster_LS_InsertVehicle > 0)
+                {
+                    localSearchsCluster.insertVehicle(instance.clusters_demand);
+                }
+
+                // Perform interVehicle Swap
+                if (ls == LocalSearch.SwapVehicle && parameters.Cluster_LS_SwapVehicle > 0)
+                {
+                    localSearchsCluster.swapVehicle(instance.clusters_demand);
+                }
+
                 // Perform SwapClusters
-                if (ls == LocalSearch.SwapClusters)
+                if (ls == LocalSearch.SwapClusters && parameters.Cluster_LS_SwapClusters != 0)
                 {
                     localSearchsCluster.swapClusters();
                 }

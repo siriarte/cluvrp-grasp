@@ -60,28 +60,29 @@ namespace cluvrp_grasp
             ret += "CLUVRP CLUSTER GRASP ITERATIONS = " + parameters.Cluster_GRASPIterations + separator;
             ret += "CLUVRP CUSTOMER GRASP ITERATIONS = " + parameters.Customer_GRASPIterations + separator;
             ret += "CLUVRP MAIN LS ITERATIONS = " + parameters.CluVRP_LS_Main_Iterations + separator;
+            ret += "CLUVRP FINAL SWAP CLUSTER = " + parameters.CluVRP_LS_SwapClusters + separator;
+            ret += "CLUVRP FINAL SWAP VEHICLE = " + parameters.CluVRP_LS_SwapVehicle + separator;
             ret += separator;
 
             // For cluster
             ret += "CLUSTER FIT ALGORITHM = " + parameters.Cluster_FitAlgoritm + separator;
             ret += "CLUSTER ALPHA DISTANCE = " + parameters.Cluster_AlphaDistance.ToString("0.0") + separator;
             ret += "CLUSTER ALPHA CAPACITY/BACKTODEPOT = " + parameters.Cluster_AlphaCapacity.ToString("0.0") + separator;
-            ret += "CLUSTER LS SWAP VEHICLE = " + parameters.Cluster_LS_SwapVehicle.ToString() + separator;
-            ret += "CLUSTER LS INSERT VEHICLE = " + parameters.Cluster_LS_InsertVehicle.ToString() + separator;
-            ret += "CLUSTER LS RND SWAP VEHICLE = " + parameters.CluVRP_LS_SwapClusters + separator;
-            ret += "CLUSTER LS RND INSERT VEHICLE = " + parameters.CluVRP_LS_SwapVehicle + separator;
             ret += "CLUSTER LS TWO-OPT = " + parameters.Cluster_LS_TwoOpt_Iterations + separator;
             ret += "CLUSTER LS RELOCATE = " + parameters.Cluster_LS_Relocate_Iterations + separator;
             ret += "CLUSTER LS EXCHANGE = " + parameters.Cluster_LS_Exchange_Iterations + separator;
+            ret += "CLUSTER LS INSERT VEHICLE = " + parameters.Cluster_LS_InsertVehicle.ToString() + separator;
+            ret += "CLUSTER LS SWAP VEHICLE = " + parameters.Cluster_LS_SwapVehicle.ToString() + separator;
+            ret += "CLUSTER LS SWAP CLUSTERS = " + parameters.Cluster_LS_SwapClusters.ToString() + separator;
             ret += "CLUSTER LS ORDER = " + '[' + string.Join(",", parameters.Cluster_LS_Order) + ']' + separator;
             ret += separator;
 
             // For customer
             ret += "CUSTOMER ALPHA = " + parameters.Customer_Alpha.ToString("0.0") + separator;
-            ret += "CUSTOMER LS SWAP CUSTOMERS = " + parameters.Customer_LS_SwapCustomers + separator;
             ret += "CUSTOMER LS TWO-OPT = " + parameters.Customer_LS_TwoOpt_Iterations + separator;
             ret += "CUSTOMER LS RELOCATE = " + parameters.Customer_LS_Relocate_Iterations + separator;
             ret += "CUSTOMER LS EXCHANGE = " + parameters.Customer_LS_Exchange_Iterations + separator;
+            ret += "CUSTOMER LS SWAP CUSTOMERS = " + parameters.Customer_LS_SwapCustomers + separator;
             ret += "CUSTOMER LS ORDER = " + '[' + string.Join(",", parameters.Customer_LS_Order) + ']' + separator;
 
             // Return string

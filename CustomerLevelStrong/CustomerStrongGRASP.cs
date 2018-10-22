@@ -233,6 +233,9 @@ namespace cluvrp_grasp
 
                         // Quit visited customer
                         customersToVisit.Remove(customerSelected);
+
+                        // Set new actual customer
+                        startingCustomer = customerSelected;
                     }
 
                     // Add final customer that connect to i+1 cluster
