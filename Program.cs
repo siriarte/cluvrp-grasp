@@ -329,6 +329,7 @@ namespace cluvrp_grasp
             // Log run
             logger.logLine("*****************************************************" + '\n' +
                             "* STARTING TEST:" + '\n' +
+                            "* DATE -> " + DateTime.Now.ToString() + '\n' +
                             "* CONFIG -> " + parametersFilePath + '\n' +
                             "* SET INSTANCE -> " + instanceSetFilePath + '\n' +
                             "* LOG FILE -> " + logger.getLogFilePath() + '\n' +

@@ -820,7 +820,7 @@ using System.Collections.Generic;
                 // If there is space on vehicle j AND
                 // The remaning space is less than minCapacity AND
                 // the distance es acceptable for RCL condition
-                if (vehicleRemSpace[j] - clusterDemand > 0)
+                if (vehicleRemSpace[j] - clusterDemand >= 0)
                 {
                     // Add the vehicle to RCL if is possible
                     if (distanceBetweenClusters <= RCLCondition)
@@ -839,7 +839,7 @@ using System.Collections.Generic;
                 for (int j = 0; j < numberOfVehicles; j++)
                 {
                     // If vehicle has space
-                    if (vehicleRemSpace[j] - clusterDemand > 0)
+                    if (vehicleRemSpace[j] - clusterDemand >= 0)
                     {
                         RCL.Add(j);
                     }
