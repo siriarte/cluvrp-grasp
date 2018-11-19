@@ -843,7 +843,7 @@ using System.Collections.Generic;
                     {
                         RCL.Add(j);
                     }
-                    else if (instance.capacity == clusterDemand)
+                    else if (instance.capacity == clusterDemand && vehicleRemSpace[j] == clusterDemand)
                     {
                         RCL.Add(j);
                     }
