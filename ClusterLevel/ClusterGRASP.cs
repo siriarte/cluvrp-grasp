@@ -140,10 +140,12 @@ using System.Collections.Generic;
                     }
 
                     // Local search
+                    var totalLSWatch = System.Diagnostics.Stopwatch.StartNew();
                     for (int i = 0; i < parameters.CluVRP_LS_Main_Iterations; i++)
                     {
                         localSearch(newSolution);
                     }
+                    newSolution.cluster_LSCycleTime += totalLSWatch.ElapsedMilliseconds;
 
                     // Update Best solution
                     if (newSolution.totalClusterRouteDistance < solution.totalClusterRouteDistance)
@@ -154,8 +156,23 @@ using System.Collections.Generic;
                             newSolution.totalClusterRouteDistance
                             );
                         solution.bestClusterLSOrder = localSearchsOrder;
-                    }
 
+                        solution.clusterLevelIterations = iterator;
+                        solution.cluster_twoOpt_iterations = newSolution.cluster_twoOpt_iterations;
+                        solution.cluster_relocate_iterations = newSolution.cluster_relocate_iterations;
+                        solution.cluster_exchange_iterations = newSolution.cluster_exchange_iterations;
+                        solution.cluster_swapClusters_iterations = newSolution.cluster_swapClusters_iterations;
+                        solution.cluster_swapVehicle_iterations = newSolution.cluster_swapVehicle_iterations;
+                        solution.cluster_insertVehicle_iterations = newSolution.cluster_insertVehicle_iterations;
+
+                        solution.cluster_LSCycleTime = newSolution.cluster_LSCycleTime;
+                        solution.cluster_twoOpt_time = newSolution.cluster_twoOpt_time;
+                        solution.cluster_relocate_time = newSolution.cluster_relocate_time;
+                        solution.cluster_exchange_time = newSolution.cluster_exchange_time;
+                        solution.cluster_swapClusters_time = newSolution.cluster_swapClusters_time;
+                        solution.cluster_swapVehicle_time = newSolution.cluster_swapVehicle_time;
+                        solution.cluster_insertVehicle_time = newSolution.cluster_insertVehicle_time;
+                    }
                 }
                 catch(Exception)
                 {
@@ -1105,7 +1122,6 @@ using System.Collections.Generic;
                 parameters.Cluster_LS_SwapClusters
                 );
 
-
             // If random order for local searchs is activated
             if (parameters.Cluster_LS_Order.Length == 0)
             {
@@ -1121,40 +1137,50 @@ using System.Collections.Generic;
                 // Perform Two-opt
                 if (ls == LocalSearch.TwoOpt && parameters.Cluster_LS_TwoOpt_Iterations != 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     localSearchsCluster.twoOpt();
+                    newSolution.cluster_twoOpt_time += totalWatch.ElapsedMilliseconds;
                 }
 
                 // Perform Relocate
                 if (ls == LocalSearch.Relocate && parameters.Cluster_LS_Relocate_Iterations != 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     localSearchsCluster.relocate();
+                    newSolution.cluster_relocate_time += totalWatch.ElapsedMilliseconds;
                 }
 
                 // Perform Exchange
                 if (ls == LocalSearch.Exchange && parameters.Cluster_LS_Exchange_Iterations != 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     localSearchsCluster.exchange();
+                    newSolution.cluster_exchange_time += totalWatch.ElapsedMilliseconds;
                 }
 
                 // Perform interVehicle Insert
                 if (ls == LocalSearch.InsertVehicle && parameters.Cluster_LS_InsertVehicle > 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     localSearchsCluster.insertVehicle(instance.clusters_demand);
+                    newSolution.cluster_insertVehicle_time += totalWatch.ElapsedMilliseconds;
                 }
 
                 // Perform interVehicle Swap
                 if (ls == LocalSearch.SwapVehicle && parameters.Cluster_LS_SwapVehicle > 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     localSearchsCluster.swapVehicle(instance.clusters_demand);
+                    newSolution.cluster_swapVehicle_time += totalWatch.ElapsedMilliseconds;
                 }
 
                 // Perform SwapClusters
                 if (ls == LocalSearch.SwapClusters && parameters.Cluster_LS_SwapClusters != 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     localSearchsCluster.swapClusters();
+                    newSolution.cluster_swapClusters_time += totalWatch.ElapsedMilliseconds;
                 }
-
-
             }
         }
         #endregion

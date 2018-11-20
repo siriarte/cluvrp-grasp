@@ -279,7 +279,7 @@ namespace cluvrp_grasp
 
             // Pause
             //System.Console.ReadKey();
-
+            
             // End
             return;
         }
@@ -441,6 +441,7 @@ namespace cluvrp_grasp
                 // Print solution
                 string outLine = s_fileName + '\t' + '\t' + s_distance + '\t' + s_bestSolutionPropDistance + "%" + '\t' + s_bestSolutionTime + "s" + '\t' + '\t' + s_averageDistance + '\t' + s_averagePropDistance + "%" + '\t' +  s_averageTime + "s";
                 logger.logLine(outLine);
+                logger.logTimeAndIterations(solution, instance.file_name);
 
                 // Increase distance counter
                 instanceIterator++;

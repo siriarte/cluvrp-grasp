@@ -78,6 +78,10 @@ namespace cluvrp_grasp
                                 bestDistance = newDistance;
 
                                 // Restart iterator
+                                if(solution.customer_twoOpt_iterations <= iteration)
+                                {
+                                    solution.customer_twoOpt_iterations = iteration;
+                                }
                                 iteration = 0;
                             }
                             else
@@ -145,6 +149,10 @@ namespace cluvrp_grasp
                             if (relocate(vehicle, i, j))
                             {
                                 // Restart iterator
+                                if(solution.customer_relocate_iterations <= iteration)
+                                {
+                                    solution.customer_relocate_iterations = iteration;
+                                }
                                 iteration = 0;
                             }
                         } // End for j
@@ -241,6 +249,10 @@ namespace cluvrp_grasp
                             if (exchange(vehicle, i, j))
                             {
                                 // Restart iterator
+                                if (solution.customer_exchange_iterations <= iteration)
+                                {
+                                    solution.customer_exchange_iterations = iteration;
+                                }
                                 iteration = 0;
                             }
                         } // End for i
@@ -434,6 +446,10 @@ namespace cluvrp_grasp
                                 solution.vehiculeRouteDistance[vehicle] = newDistance;
 
                                 // Reset irator
+                                if (solution.customer_swapCustomers_iterations <= iterator)
+                                {
+                                    solution.customer_swapCustomers_iterations = iterator;
+                                }
                                 iterator = 0;
                                 solutionImproves = true;
                                 break;

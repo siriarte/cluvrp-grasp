@@ -21,6 +21,37 @@ namespace cluvrp_grasp
         public List<LocalSearch> bestCustomerLSOrder { set; get; }
         public Instance instaceType { set; get; }
 
+        // For Iteration and Times
+        public int cluVRPIterations { set; get; }
+        public int clusterLevelIterations { set; get; }
+        public int customerLevelIterations { set; get; }
+        public int LSCycleterations { set; get; }
+        public int cluster_twoOpt_iterations { set; get; }
+        public int cluster_relocate_iterations { set; get; }
+        public int cluster_exchange_iterations { set; get; }
+        public int cluster_swapClusters_iterations { set; get; }
+        public int cluster_swapVehicle_iterations { set; get; }
+        public int cluster_insertVehicle_iterations { set; get; }
+        public int customer_twoOpt_iterations { set; get; }
+        public int customer_relocate_iterations { set; get; }
+        public int customer_exchange_iterations { set; get; }
+        public int customer_swapCustomers_iterations { set; get; }
+
+        public long clusterLevelTime { set; get; }
+        public long customerLevelTime { set; get; }
+        public long cluster_LSCycleTime { set; get; }
+        public long cluster_twoOpt_time { set; get; }
+        public long cluster_relocate_time { set; get; }
+        public long cluster_exchange_time { set; get; }
+        public long cluster_swapClusters_time { set; get; }
+        public long cluster_swapVehicle_time { set; get; }
+        public long cluster_insertVehicle_time { set; get; }
+        public long customer_LSCycleTime { set; get; }
+        public long customer_twoOpt_time { set; get; }
+        public long customer_relocate_time { set; get; }
+        public long customer_exchange_time { set; get; }
+        public long customer_swapCustomers_time { set; get; }
+
         // For customer problem
         public List<int>[][] customersPaths { set; get; }
         public double[] _vehiculeRouteDistance;

@@ -80,16 +80,30 @@ namespace cluvrp_grasp
                 CluVRPSolution newSolution = constructGreedyRandomizedSolution(customersOnVehicle, alpha);
 
                 // Local search 
+                var totalLSWatch = System.Diagnostics.Stopwatch.StartNew();
                 for (int i = 0; i < parameters.CluVRP_LS_Main_Iterations; i++)
                 {
                     this.localSearch(newSolution);
                 }
+                solution.customer_LSCycleTime += totalLSWatch.ElapsedMilliseconds;
 
                 // Update Best solution
                 if (newSolution.totalCustomerRouteDistance < solution.totalCustomerRouteDistance)
                 {
                     solution.setWeakCostumerSolution(newSolution.customersWeakRoute, newSolution.vehiculeRouteDistance);
                     solution.bestCustomerLSOrder = localSearchsOrder;
+
+                    solution.customerLevelIterations = iterator;
+                    solution.customer_twoOpt_iterations = newSolution.customer_twoOpt_iterations;
+                    solution.customer_relocate_iterations = newSolution.customer_relocate_iterations;
+                    solution.customer_exchange_iterations = newSolution.customer_exchange_iterations;
+                    solution.customer_swapCustomers_iterations = newSolution.customer_swapCustomers_iterations;
+
+                    solution.customer_LSCycleTime = newSolution.customer_LSCycleTime;
+                    solution.customer_twoOpt_time = newSolution.customer_twoOpt_time;
+                    solution.customer_relocate_time = newSolution.customer_relocate_time;
+                    solution.customer_exchange_time = newSolution.customer_exchange_time;
+                    solution.customer_swapCustomers_time = newSolution.customer_swapCustomers_time;
                 }
 
                 // Increace iterator
@@ -159,25 +173,33 @@ namespace cluvrp_grasp
                 // Perform TwoOpt
                 if (localSearchsOrder[i] == LocalSearch.TwoOpt && parameters.Customer_LS_TwoOpt_Iterations != 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     customerLocalSearch.twoOpt();
+                    customerLocalSearch.solution.customer_twoOpt_time += totalWatch.ElapsedMilliseconds;
                 }
 
                 // Perform Relocate
                 if (localSearchsOrder[i] == LocalSearch.Relocate && parameters.Customer_LS_Relocate_Iterations != 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     customerLocalSearch.relocate();
+                    customerLocalSearch.solution.customer_relocate_time += totalWatch.ElapsedMilliseconds;
                 }
 
                 // Perform Exchange
                 if (localSearchsOrder[i] == LocalSearch.Exchange && parameters.Customer_LS_Exchange_Iterations != 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     customerLocalSearch.exchange();
+                    customerLocalSearch.solution.customer_exchange_time += totalWatch.ElapsedMilliseconds;
                 }
 
                 // Perform Customer Swap
                 if (localSearchsOrder[i] == LocalSearch.SwapCustomers && parameters.Customer_LS_SwapCustomers != 0)
                 {
+                    var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                     customerLocalSearch.swapCustomers();
+                    customerLocalSearch.solution.customer_swapCustomers_time += totalWatch.ElapsedMilliseconds;
                 }
 
             }

@@ -83,6 +83,10 @@ namespace cluvrp_grasp
                                 // Update with new route and distance
                                 routeForVehicule[vehicle] = newRoute;
                                 bestDistance[vehicle] = newDistance;
+                                if(solution.cluster_twoOpt_iterations <= iterator)
+                                {
+                                    solution.cluster_twoOpt_iterations = iterator;
+                                }
 
                                 // Reset iterator
                                 iterator = 0;
@@ -145,6 +149,10 @@ namespace cluvrp_grasp
                             if (relocate(route, vehicle, i, j))
                             {
                                 // Restart iterator
+                                if(solution.cluster_relocate_iterations <= iteration)
+                                {
+                                    solution.cluster_relocate_iterations = iteration;
+                                }
                                 iteration = 0;
                             }
                         } // End for j
@@ -215,7 +223,7 @@ namespace cluvrp_grasp
         {
             // Get number of vehicles
             int numberOfVehicles = solution.clusterRouteForVehicule.Length;
-
+            
             // For each vehicle
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
@@ -241,6 +249,10 @@ namespace cluvrp_grasp
                             if (exchange(route, vehicle, i, j))
                             {
                                 // Restart iterator
+                                if (solution.cluster_relocate_iterations <= iteration)
+                                {
+                                    solution.cluster_relocate_iterations = iteration;
+                                }
                                 iteration = 0;
                             }
                         } // End for j
@@ -450,6 +462,10 @@ namespace cluvrp_grasp
 
                                     // Try again with the vehicle new cluster order
                                     solutionImproves = true;
+                                    if(solution.cluster_swapVehicle_iterations <= iterator)
+                                    {
+                                        solution.cluster_swapVehicle_iterations = iterator;
+                                    }
                                     iterator = 0;
 
                                     // Update Best distance
@@ -572,19 +588,24 @@ namespace cluvrp_grasp
                                             solution.clusterRouteForVehicule[vehicle2][cluster2] = clusterSwappedV1;
 
                                             // Reset iterator
+                                            if(solution.cluster_swapVehicle_iterations <= iterations)
+                                            {
+                                                solution.cluster_swapVehicle_iterations = iterations;
+                                            }
                                             iterations = 0;
+
                                         }
                                         // If new distance is not best
                                         else
                                         {
                                             // Increase iterator
-                                            iterations++;
+                                            //iterations++;
                                         }
                                     }
                                     else
                                     {
                                         // Increase iterator
-                                        iterations++;
+                                        //iterations++;
 
                                     } // End if swap is possible
                                 } // End for cluster 2
@@ -592,8 +613,11 @@ namespace cluvrp_grasp
                         } // End if is not the same vehicle
                     } // End for vehicle 2
                 } // End for vehicle 1
-            }
 
+                // Increase iterator
+                iterations++;
+            }
+ 
             //End
             return;
         }
@@ -662,7 +686,12 @@ namespace cluvrp_grasp
                                         solution.totalClusterRouteDistance = newDistance;
 
                                         // Reset iterator
+                                        if(solution.cluster_insertVehicle_iterations <= iterations)
+                                        {
+                                            solution.cluster_insertVehicle_iterations = iterations;
+                                        }
                                         iterations = 0;
+
                                     }
                                     // If distance is not improved
                                     else
@@ -671,18 +700,17 @@ namespace cluvrp_grasp
                                         solution.clusterRouteForVehicule[vehicle1].Insert(cluster1Idx, clusterToInsert);
 
                                         // Increase iterator
-                                        iterations++;
+                                        //iterations++;
                                     }
-                                }else
-                                {
-                                    // Increase iterator
-                                    iterations++;
                                 }
                                 // End if insert is possible
                             } // End for cluster 1 on vehicle 1
                         } // End for not same vehicle
                     } // End for vehicle 2
                 } // End for vehicle 1
+
+                // Increse iterator
+                iterations++;
             }
 
             // End

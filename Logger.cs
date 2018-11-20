@@ -1,4 +1,5 @@
 ﻿using System;
+using cluvrp_grasp;
 
 namespace cluvrp_grasp
 {
@@ -89,5 +90,66 @@ namespace cluvrp_grasp
             return this.logFilePath;
         }
 
+        internal void logTimeAndIterations(CluVRPSolution solution, string instance)
+        {
+            string line = instance + '\t' +
+                solution.cluVRPIterations.ToString() + '\t' +
+                
+                //solution.clusterLevelIterations.ToString() + '\t' +
+                //solution.customerLevelIterations.ToString() + '\t' +
+                //solution.LSCycleterations.ToString() + '\t' +
+
+                (solution.clusterLevelTime).ToString() + '\t' +
+                (solution.customerLevelTime).ToString() + '\t' +
+                (solution.cluster_LSCycleTime).ToString() + '\t' +
+                (solution.customer_LSCycleTime).ToString() + '\t' +
+
+                solution.cluster_twoOpt_iterations.ToString() + '\t' +
+                (solution.cluster_twoOpt_time).ToString() + '\t' +
+
+                solution.cluster_relocate_iterations.ToString() + '\t' +
+                (solution.cluster_relocate_time).ToString() + '\t' +
+
+                solution.cluster_exchange_iterations.ToString() + '\t' +
+                (solution.cluster_exchange_time).ToString() + '\t' +
+
+                solution.cluster_swapClusters_iterations.ToString() + '\t' +
+                (solution.cluster_swapClusters_time).ToString() + '\t' +
+
+                solution.cluster_swapVehicle_iterations.ToString() + '\t' +
+                (solution.cluster_swapVehicle_time).ToString() + '\t' +
+
+                solution.cluster_insertVehicle_iterations.ToString() + '\t' +
+                (solution.cluster_insertVehicle_time).ToString() + '\t' +
+
+                solution.customer_twoOpt_iterations.ToString() + '\t' +
+                (solution.customer_twoOpt_time).ToString() + '\t' +
+
+                solution.customer_relocate_iterations.ToString() + '\t' +
+                (solution.customer_relocate_time).ToString() + '\t' +
+
+                solution.customer_exchange_iterations.ToString() + '\t' +
+                (solution.customer_exchange_time).ToString() + '\t' +
+
+                solution.customer_swapCustomers_iterations.ToString() + '\t' +
+                (solution.customer_swapCustomers_time).ToString();
+
+          try
+            {
+                using (System.IO.StreamWriter file = System.IO.File.AppendText(logFilePath + "_time"))
+                {
+                    file.WriteLine(line);
+                    if (verbose)
+                    {
+                        Console.WriteLine(line);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+        }
     }
+
 }

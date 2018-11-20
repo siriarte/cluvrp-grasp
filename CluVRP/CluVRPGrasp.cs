@@ -27,7 +27,9 @@ namespace cluvrp_grasp
                 ClusterGRASP clusterGrasp = new ClusterGRASP(instance, parameters);
 
                 // Execute Grasp procedure
+                var totalWatch = System.Diagnostics.Stopwatch.StartNew();
                 CluVRPSolution cluVRPSolution = clusterGrasp.Grasp();
+                cluVRPSolution.clusterLevelTime = totalWatch.ElapsedMilliseconds;
 
                 // If solutions is not available continue with next iteration
                 if (cluVRPSolution.clusterRouteForVehicule == null)
@@ -51,8 +53,10 @@ namespace cluvrp_grasp
                 }
 
                 // Execute Grasp procedure
+                totalWatch = System.Diagnostics.Stopwatch.StartNew();
                 customerGrasp.Grasp();
-                
+                cluVRPSolution.customerLevelTime = totalWatch.ElapsedMilliseconds;
+
                 //if solution is not available continue with next iteration
                 if (cluVRPSolution.customersPaths == null && cluVRPSolution.customersWeakRoute == null)
                 {
@@ -79,6 +83,7 @@ namespace cluvrp_grasp
                 if (cluVRPSolution.totalCustomerRouteDistance < bestSolution.totalCustomerRouteDistance)
                 {
                     bestSolution = cluVRPSolution;
+                    bestSolution.cluVRPIterations = iterator;
                 }
 
                 // Increase iterator

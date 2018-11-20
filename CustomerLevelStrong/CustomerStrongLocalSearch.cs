@@ -37,7 +37,7 @@ namespace cluvrp_grasp
             // Init variables
             List<int>[][] customersCircuit = solution.customersPaths;
             int numberOfVehicles = customersCircuit.Length;
-          
+
             // For each vehicle route
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
@@ -85,6 +85,10 @@ namespace cluvrp_grasp
 
                                     // Restart iterator
                                     iteration = 0;
+                                    if(solution.customer_twoOpt_iterations <= iteration)
+                                    {
+                                        solution.customer_twoOpt_iterations = iteration;
+                                    }
                                 }
                                 else
                                 {
@@ -124,7 +128,7 @@ namespace cluvrp_grasp
         {
             // Init variables
             int numberOfVehicles = solution.customersPaths.Length;
-            
+
             // For each vehicle
             for (int vehicle = 0; vehicle < numberOfVehicles; vehicle++)
             {
@@ -158,6 +162,10 @@ namespace cluvrp_grasp
                                 if (relocate(vehicle, clusterIt, i, j))
                                 {
                                     // Restart iterator
+                                    if(solution.customer_relocate_iterations <= iteration)
+                                    {
+                                        solution.customer_relocate_iterations = iteration;
+                                    }
                                     iteration = 0;
                                 }
                             } // End for j
@@ -256,6 +264,10 @@ namespace cluvrp_grasp
                                 if (exchange(vehicle, cluster, i, j))
                                 {
                                     // Restart iterator
+                                    if (solution.customer_exchange_iterations <= iteration)
+                                    {
+                                        solution.customer_exchange_iterations = iteration;
+                                    }
                                     iteration = 0;
                                 }
                             } // End for i
@@ -434,7 +446,7 @@ namespace cluvrp_grasp
 
                                         // Reset iterator
                                         solutionImproves = true;
-                                        iterator = 0;
+
                                     }
                                     else
                                     {
@@ -491,6 +503,10 @@ namespace cluvrp_grasp
 
                                         // Reset iterator
                                         solutionImproves = true;
+                                        if (solution.customer_swapCustomers_iterations <= iterator)
+                                        {
+                                            solution.customer_swapCustomers_iterations = iterator;
+                                        }
                                         iterator = 0;
                                     }
 
