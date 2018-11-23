@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 /*
  * Grasp for CluVRP at cluster-level. 
@@ -16,7 +17,7 @@ using System.Collections.Generic;
  * 
  * 
  */
- namespace cluvrp_grasp
+namespace cluvrp_grasp
 {
     enum FitAlgorithm {Simple, DoubleRCL, DemandRCL, BestFit, Random };
     enum LocalSearch { InsertVehicle, SwapVehicle, RndInsertVehicle, RndSwapVehicle,
@@ -110,6 +111,22 @@ using System.Collections.Generic;
                     if (instance.instance_type == Instance.GoldenIzquierdo)
                     {
                         newSolution = constructGreedyRandomizedSolutionIzquierdo(alphaDistance);
+
+                        if (newSolution.clusterRouteForVehicule != null)
+                        {
+                            newSolution.clusterRouteForVehicule = newSolution.clusterRouteForVehicule.Where(val => val.Count > 2).ToArray();
+                            int[] vehicleRemSpace = new int[newSolution.clusterRouteForVehicule.Length];
+                            int j = 0;
+                            for (int i = 0; i < newSolution.vehicleRemSpace.Length; i++) {
+                                if (newSolution.vehicleRemSpace[i] < instance.capacity)
+                                {
+                                    vehicleRemSpace[j] = newSolution.vehicleRemSpace[i];
+                                    j++;
+                                }
+                            }
+                            newSolution.vehicleRemSpace = vehicleRemSpace;
+                        }
+
                     }
                     else
                     {
@@ -141,9 +158,18 @@ using System.Collections.Generic;
 
                     // Local search
                     var totalLSWatch = System.Diagnostics.Stopwatch.StartNew();
+                    double routeDistance = newSolution.totalClusterRouteDistance;
                     for (int i = 0; i < parameters.CluVRP_LS_Main_Iterations; i++)
                     {
+                        //Perform local searchs
                         localSearch(newSolution);
+
+                        // For control of best iteration number
+                        if (newSolution.totalClusterRouteDistance < routeDistance)
+                        {
+                            newSolution.cluster_LSCycle_iterations = i;
+                            routeDistance = newSolution.totalClusterRouteDistance;
+                        }
                     }
                     newSolution.cluster_LSCycleTime += totalLSWatch.ElapsedMilliseconds;
 
@@ -158,6 +184,7 @@ using System.Collections.Generic;
                         solution.bestClusterLSOrder = localSearchsOrder;
 
                         solution.clusterLevelIterations = iterator;
+                        solution.cluster_LSCycle_iterations = newSolution.cluster_LSCycle_iterations;
                         solution.cluster_twoOpt_iterations = newSolution.cluster_twoOpt_iterations;
                         solution.cluster_relocate_iterations = newSolution.cluster_relocate_iterations;
                         solution.cluster_exchange_iterations = newSolution.cluster_exchange_iterations;

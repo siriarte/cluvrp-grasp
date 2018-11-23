@@ -101,8 +101,15 @@ namespace cluvrp_grasp
 
                 (solution.clusterLevelTime).ToString() + '\t' +
                 (solution.customerLevelTime).ToString() + '\t' +
+                solution.cluster_LSCycle_iterations.ToString() + '\t' +
+                solution.customer_LSCycle_iterations.ToString() + '\t' +
                 (solution.cluster_LSCycleTime).ToString() + '\t' +
                 (solution.customer_LSCycleTime).ToString() + '\t' +
+
+                solution.cluvrp_swapClusters_iterations.ToString() + '\t' +
+                solution.cluvrp_swapClusters_time.ToString() + '\t' +
+                solution.cluvrp_swapVehicle_iterations.ToString() + '\t' +
+                solution.cluvrp_swapVehicle_time.ToString() + '\t' +
 
                 solution.cluster_twoOpt_iterations.ToString() + '\t' +
                 (solution.cluster_twoOpt_time).ToString() + '\t' +

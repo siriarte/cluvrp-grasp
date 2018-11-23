@@ -26,17 +26,24 @@ namespace cluvrp_grasp
         public int clusterLevelIterations { set; get; }
         public int customerLevelIterations { set; get; }
         public int LSCycleterations { set; get; }
+        public int cluster_LSCycle_iterations { set; get; }
+
+        public int cluvrp_swapClusters_iterations { set; get; }
+        public int cluvrp_swapVehicle_iterations { set; get; }
         public int cluster_twoOpt_iterations { set; get; }
         public int cluster_relocate_iterations { set; get; }
         public int cluster_exchange_iterations { set; get; }
         public int cluster_swapClusters_iterations { set; get; }
         public int cluster_swapVehicle_iterations { set; get; }
         public int cluster_insertVehicle_iterations { set; get; }
+        public int customer_LSCycle_iterations { set; get; }
         public int customer_twoOpt_iterations { set; get; }
         public int customer_relocate_iterations { set; get; }
         public int customer_exchange_iterations { set; get; }
         public int customer_swapCustomers_iterations { set; get; }
 
+        public long cluvrp_swapClusters_time { set; get; }
+        public long cluvrp_swapVehicle_time { set; get; }
         public long clusterLevelTime { set; get; }
         public long customerLevelTime { set; get; }
         public long cluster_LSCycleTime { set; get; }
@@ -188,9 +195,17 @@ namespace cluvrp_grasp
         public void verifyCustomerSolution(CluVRPInstance instance)
         {
             // Verify number of vehicles
-            int numberOfVehicles = instance.vehicles;
-            Debug.Assert(customersPaths.Length == numberOfVehicles, "The number of vehicles on the  customer path is incorrect");
-            Debug.Assert(vehiculeRouteDistance.Length == numberOfVehicles, "The number of vehicles on the route distance is incorrect");
+            int numberOfVehicles;
+            if (instance.instance_type != Instance.GoldenIzquierdo)
+            {
+                numberOfVehicles = instance.vehicles;
+                Debug.Assert(customersPaths.Length == numberOfVehicles, "The number of vehicles on the  customer path is incorrect");
+                Debug.Assert(vehiculeRouteDistance.Length == numberOfVehicles, "The number of vehicles on the route distance is incorrect");
+
+            }else
+            {
+                numberOfVehicles = customersPaths.Length;
+            }
 
             // Verify number of clusters
             int numberOfClusters = instance.clusters.Length;
@@ -240,7 +255,14 @@ namespace cluvrp_grasp
         public void verifyCustomerWeakSolution(CluVRPInstance instance)
         {
             // Verify number of vehicles
-            int numberOfVehicles = instance.vehicles;
+            int numberOfVehicles;
+            if (instance.instance_type != Instance.GoldenIzquierdo) {
+                numberOfVehicles = instance.vehicles;
+             }
+            else
+            {
+                numberOfVehicles = customersWeakRoute.Length;
+            }
             Debug.Assert(customersWeakRoute.Length == numberOfVehicles, "CustomerWeak - The number of vehicles is incorrect respect to customer path");
             Debug.Assert(vehiculeRouteDistance.Length == numberOfVehicles, "CustomerWeak - The number of vehicles is incorrect respect to vehicles distance vector");
 

@@ -78,9 +78,18 @@ namespace cluvrp_grasp
 
                 // Local search 
                 var totalLSWatch = System.Diagnostics.Stopwatch.StartNew();
-                for (int i = 0; i < parameters.CluVRP_LS_Main_Iterations; i++)
+                double routeDistance = newSolution.totalCustomerRouteDistance;
+                for (int i = 0; i < 1; i++)
                 {
+                    // Perform local searchs
                     this.localSearch(newSolution);
+
+                    // For control of best iteration number
+                    if (newSolution.totalCustomerRouteDistance < routeDistance)
+                    {
+                        newSolution.cluster_LSCycle_iterations = i;
+                        routeDistance = newSolution.totalCustomerRouteDistance;
+                    }
                 }
                 newSolution.customer_LSCycleTime += totalLSWatch.ElapsedMilliseconds;
 
@@ -91,6 +100,7 @@ namespace cluvrp_grasp
                     solution.bestCustomerLSOrder = localSearchsOrder;
 
                     solution.customerLevelIterations = iterator;
+                    solution.customer_LSCycle_iterations = newSolution.customer_LSCycle_iterations;
                     solution.customer_twoOpt_iterations = newSolution.customer_twoOpt_iterations;
                     solution.customer_relocate_iterations = newSolution.customer_relocate_iterations;
                     solution.customer_exchange_iterations = newSolution.customer_exchange_iterations;

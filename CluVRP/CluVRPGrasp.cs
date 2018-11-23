@@ -99,8 +99,13 @@ namespace cluvrp_grasp
 
             // Perform LS at cluster level
             double oldTotalDistance = cluVRPSolution.totalCustomerRouteDistance;
+            var totalWatch = System.Diagnostics.Stopwatch.StartNew();
             swapClusters(cluVRPSolution, instance, parameters);
+            cluVRPSolution.cluvrp_swapClusters_time += totalWatch.ElapsedMilliseconds;
+
+            totalWatch = System.Diagnostics.Stopwatch.StartNew();
             swapVehicle(cluVRPSolution, instance, parameters);
+            cluVRPSolution.cluvrp_swapVehicle_time += totalWatch.ElapsedMilliseconds;
 
             // If some cluster position change make LS at customer level
             if (cluVRPSolution.totalCustomerRouteDistance < oldTotalDistance)
@@ -278,6 +283,10 @@ namespace cluvrp_grasp
                                             solution.clusterRouteForVehicule[vehicle2][cluster1] = clusterSwappedV1;
 
                                             // Reset iterator
+                                            if (solution.cluvrp_swapVehicle_iterations <= iterations)
+                                            {
+                                                solution.cluster_insertVehicle_iterations = iterations;
+                                            }
                                             iterations = 0;
 
                                             // DEBUG

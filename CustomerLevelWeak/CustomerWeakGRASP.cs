@@ -81,11 +81,19 @@ namespace cluvrp_grasp
 
                 // Local search 
                 var totalLSWatch = System.Diagnostics.Stopwatch.StartNew();
-                for (int i = 0; i < parameters.CluVRP_LS_Main_Iterations; i++)
+                double routeDistance = newSolution.totalCustomerRouteDistance;
+                for (int i = 0; i < 1; i++)
                 {
                     this.localSearch(newSolution);
+
+                    // For control of best iteration number
+                    if (newSolution.totalCustomerRouteDistance < routeDistance)
+                    {
+                        newSolution.cluster_LSCycle_iterations = i;
+                        routeDistance = newSolution.totalCustomerRouteDistance;
+                    }
                 }
-                solution.customer_LSCycleTime += totalLSWatch.ElapsedMilliseconds;
+                newSolution.customer_LSCycleTime += totalLSWatch.ElapsedMilliseconds;
 
                 // Update Best solution
                 if (newSolution.totalCustomerRouteDistance < solution.totalCustomerRouteDistance)
@@ -123,10 +131,11 @@ namespace cluvrp_grasp
         private List<int>[] buildCustomersOnVehicle()
         {
             // Init variables
-            List<int>[] customersOnVehicle = new List<int>[instance.vehicles];  
+            int vehicleNumber = solution.clusterRouteForVehicule.Length;
+            List<int>[] customersOnVehicle = new List<int>[vehicleNumber];  
 
             // For each vehicle
-            for(int vehicle = 0; vehicle < instance.vehicles; vehicle++)
+            for(int vehicle = 0; vehicle < vehicleNumber; vehicle++)
             {
                 // New list of customers for all clusters on vehicle
                 customersOnVehicle[vehicle] = new List<int>();
@@ -215,8 +224,9 @@ namespace cluvrp_grasp
         private CluVRPSolution constructGreedyRandomizedSolution(List<int>[] customersOnVehicle, double alpha)
         {
             // Init variables
-            List<int>[] customersCircuit = new List<int>[instance.vehicles];
-            double[] vehiculeTotalDistance = new double[instance.vehicles];            
+            int vehiclesNumber = customersOnVehicle.Length;
+            List<int>[] customersCircuit = new List<int>[vehiclesNumber];
+            double[] vehiculeTotalDistance = new double[vehiclesNumber];            
 
             // For each vehicule cluster-route
             for (int vehicle = 0; vehicle < customersCircuit.Length; vehicle++)
